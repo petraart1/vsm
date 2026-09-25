@@ -8,6 +8,7 @@ import ScalesPanel from "../components/ui/ScalesPanel.jsx";
 import DeltaBadges from "../components/ui/DeltaBadges.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
+import ErrorState from "../components/ui/ErrorState.jsx";
 import Toast from "../components/ui/Toast.jsx";
 import { notifyNotificationsChanged } from "../notificationsBus.js";
 import styles from "./Debrief.module.css";
@@ -76,28 +77,33 @@ export default function Debrief({ route }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  useEffect(() => {
+  function load() {
     setS({ phase: "loading" });
-    api.getDebrief(progressId).then((res) => {
-      if (res.error) {
-        setS({ phase: "unavailable" });
-        return;
-      }
-      setS({ phase: "ready", debrief: res });
-      // Завершение сценария могло начислить уведомления (новая ачивка/личный рекорд/рост в
-      // лидерборде) — обновляем колокольчик в шапке и, если есть новая ачивка, показываем тост
-      // прямо здесь (непрочитанные ACHIEVEMENT_UNLOCKED почти наверняка от этого прохождения,
-      // т.к. уведомление создаётся синхронно с начислением очков).
-      notifyNotificationsChanged();
-      api.getNotifications(undefined, true).then((list) => {
-        const achievementToasts = (list || [])
-          .filter((n) => n.type === "ACHIEVEMENT_UNLOCKED")
-          .slice(0, 3)
-          .map((n) => ({ id: n.id, title: n.title, body: n.body }));
-        if (achievementToasts.length > 0) setToasts(achievementToasts);
-      }).catch(() => { /* тост необязателен, разбор всё равно показан */ });
-    });
-  }, [progressId]);
+    api.getDebrief(progressId).then(
+      (res) => {
+        if (res.error) {
+          setS({ phase: "unavailable" });
+          return;
+        }
+        setS({ phase: "ready", debrief: res });
+        // Завершение сценария могло начислить уведомления (новая ачивка/личный рекорд/рост в
+        // лидерборде) — обновляем колокольчик в шапке и, если есть новая ачивка, показываем тост
+        // прямо здесь (непрочитанные ACHIEVEMENT_UNLOCKED почти наверняка от этого прохождения,
+        // т.к. уведомление создаётся синхронно с начислением очков).
+        notifyNotificationsChanged();
+        api.getNotifications(undefined, true).then((list) => {
+          const achievementToasts = (list || [])
+            .filter((n) => n.type === "ACHIEVEMENT_UNLOCKED")
+            .slice(0, 3)
+            .map((n) => ({ id: n.id, title: n.title, body: n.body }));
+          if (achievementToasts.length > 0) setToasts(achievementToasts);
+        }).catch(() => { /* тост необязателен, разбор всё равно показан */ });
+      },
+      () => setS({ phase: "error" })
+    );
+  }
+
+  useEffect(load, [progressId]);
 
   if (s.phase === "loading") {
     return (
@@ -115,6 +121,10 @@ export default function Debrief({ route }) {
         action={<Button as="a" variant="primary" href="#/profile">В профиль</Button>}
       />
     );
+  }
+
+  if (s.phase === "error") {
+    return <ErrorState message="Не удалось загрузить разбор прохождения." onRetry={load} />;
   }
 
   const d = s.debrief;

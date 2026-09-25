@@ -19,6 +19,7 @@ import ru.vsm.backend.scenario.repository.ScenarioChoiceRepository;
 import ru.vsm.backend.scenario.repository.ScenarioNodeRepository;
 import ru.vsm.backend.scenario.repository.ScenarioRepository;
 import ru.vsm.backend.scenario.repository.UserProgressRepository;
+import ru.vsm.backend.scenario.service.exception.ScenarioHasPlaythroughsException;
 
 /**
  * Транзакционная загрузка одного сценария из {@link ScenarioSeedDto} в БД.
@@ -195,6 +196,44 @@ public class ScenarioSeedService {
 
         log.info("Сценарий '{}' загружен: {} узлов, {} выборов.",
                 dto.getCode(), nodesByCode.size(), choicesByNodeAndCode.size());
+    }
+
+    /**
+     * Вариант {@link #seed(ScenarioSeedDto)} для редактора сценариев (в отличие от загрузки при
+     * старте приложения): вызывающий уже проверил граф {@code ScenarioGraphValidator}'ом, здесь
+     * только правила версионирования содержимого.
+     *
+     * <ul>
+     *   <li>сценария с таким {@code code} ещё нет — создаётся (как обычный {@link #seed});</li>
+     *   <li>уже есть, но по нему есть хотя бы одно прохождение — {@link ScenarioHasPlaythroughsException}
+     *       (409 на HTTP-уровне), граф не трогается;</li>
+     *   <li>уже есть и прохождений ещё не было — обновляется ВСЕГДА (в отличие от {@link #seed},
+     *       который тихо пропускает файл при {@code version <= текущая}): версия из {@code dto}
+     *       принудительно поднимается до {@code текущая + 1}, если автор редактора не поднял её
+     *       сам, — иначе правка в редакторе с той же версией молча проигнорировалась бы.</li>
+     * </ul>
+     *
+     * @return id сохранённого сценария (нового или обновлённого)
+     */
+    @Transactional
+    public UUID upsertForEditor(ScenarioSeedDto dto) {
+        Optional<Scenario> existing = scenarioRepository.findByCode(dto.getCode());
+        if (existing.isPresent()) {
+            Scenario current = existing.get();
+            if (userProgressRepository.existsByScenarioId(current.getId())) {
+                throw new ScenarioHasPlaythroughsException("Сценарий '" + dto.getCode()
+                        + "' уже проходили — обновление графа недоступно, чтобы не сломать историю"
+                        + " прохождений. Создайте новый сценарий с другим code.");
+            }
+            if (dto.getVersion() <= current.getVersion()) {
+                dto.setVersion(current.getVersion() + 1);
+            }
+        }
+        seed(dto);
+        return scenarioRepository.findByCode(dto.getCode())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Сценарий '" + dto.getCode() + "' не найден сразу после сохранения — не должно происходить"))
+                .getId();
     }
 
     /**

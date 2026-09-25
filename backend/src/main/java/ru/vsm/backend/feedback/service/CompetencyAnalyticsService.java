@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.vsm.backend.feedback.dto.BlockCompetencyStatsDto;
 import ru.vsm.backend.feedback.dto.CompetencyAnalyticsResponse;
@@ -40,6 +41,7 @@ import ru.vsm.backend.scenario.repository.UserProgressRepository;
  * {@code scenario_choice_history} + {@code scenario_choices}/{@code scenarios} при каждом запросе).
  */
 @Service
+@RequiredArgsConstructor
 public class CompetencyAnalyticsService {
 
     /** Сколько худших блоков максимум попадает в "просевшие компетенции". */
@@ -53,17 +55,6 @@ public class CompetencyAnalyticsService {
     private final ScenarioRepository scenarioRepository;
     private final ScenarioChoiceHistoryRepository historyRepository;
     private final ScenarioChoiceRepository scenarioChoiceRepository;
-
-    public CompetencyAnalyticsService(
-            UserProgressRepository userProgressRepository,
-            ScenarioRepository scenarioRepository,
-            ScenarioChoiceHistoryRepository historyRepository,
-            ScenarioChoiceRepository scenarioChoiceRepository) {
-        this.userProgressRepository = userProgressRepository;
-        this.scenarioRepository = scenarioRepository;
-        this.historyRepository = historyRepository;
-        this.scenarioChoiceRepository = scenarioChoiceRepository;
-    }
 
     public CompetencyAnalyticsResponse analyze(UUID playerId) {
         List<UserProgress> allProgress = userProgressRepository.findByUserId(playerId);

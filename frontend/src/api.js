@@ -257,6 +257,16 @@ function realStartScenario(scenarioId) {
     .catch(() => ({ error: "not_found" }));
 }
 
+/**
+ * Преобразует сообщение WebSocket-канала (ru.vsm.backend.ws.dto.ProgressWsMessage, type
+ * timeout/completed — см. README, раздел «WebSocket: живой таймер и шкалы») в ту же модель
+ * представления, что и REST choose/timeout: поле currentNode на WS соответствует nextNode
+ * в REST-ответе, остальной набор полей идентичен ChoiceAppliedResponse, поэтому маппинг общий.
+ */
+export function mapWsAppliedChoice(msg) {
+  return realMapChoiceApplied({ ...msg, nextNode: msg.currentNode });
+}
+
 function realApplyChoiceRequest(progressId, pathSuffix) {
   return apiFetch(`/api/scenarios/progress/${progressId}${pathSuffix}`, { method: "POST", requiresPlayer: true })
     .then(realMapChoiceApplied, (err) => ({ error: err.code || "choice_failed" }));
@@ -815,7 +825,8 @@ export const api = {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
-  getCompetencyAnalytics
+  getCompetencyAnalytics,
+  mapWsAppliedChoice
 };
 
 export default api;

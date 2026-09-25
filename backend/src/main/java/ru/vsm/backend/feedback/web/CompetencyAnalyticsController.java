@@ -1,6 +1,7 @@
 package ru.vsm.backend.feedback.web;
 
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,13 +18,10 @@ import ru.vsm.backend.feedback.service.CompetencyAnalyticsService;
  * тот же принцип, что у {@code GamificationQueryService.getProfile}.
  */
 @RestController
+@RequiredArgsConstructor
 public class CompetencyAnalyticsController {
 
     private final CompetencyAnalyticsService competencyAnalyticsService;
-
-    public CompetencyAnalyticsController(CompetencyAnalyticsService competencyAnalyticsService) {
-        this.competencyAnalyticsService = competencyAnalyticsService;
-    }
 
     @GetMapping("/api/feedback/competencies/{playerId}")
     public CompetencyAnalyticsResponse getCompetencyAnalytics(@PathVariable UUID playerId) {

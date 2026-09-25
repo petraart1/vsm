@@ -2,6 +2,8 @@ package ru.vsm.backend.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -13,16 +15,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * origin can be added without touching Java code — see {@link WebConfig}.
  */
 @ConfigurationProperties(prefix = "app.cors")
+@Getter
+@Setter
 public class CorsProperties {
 
     /** Origins allowed to call {@code /api/**} with credentials-less CORS requests. */
     private List<String> allowedOrigins = new ArrayList<>();
-
-    public List<String> getAllowedOrigins() {
-        return allowedOrigins;
-    }
-
-    public void setAllowedOrigins(List<String> allowedOrigins) {
-        this.allowedOrigins = allowedOrigins;
-    }
 }

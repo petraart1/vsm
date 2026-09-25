@@ -18,6 +18,7 @@ import ru.vsm.backend.scenario.domain.ScenarioChoiceHistory;
 import ru.vsm.backend.scenario.domain.ScenarioNode;
 import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 import ru.vsm.backend.scenario.domain.UserProgress;
+import ru.vsm.backend.scenario.event.ProgressStateChangedEvent;
 import ru.vsm.backend.scenario.event.ScenarioCompletedEvent;
 import ru.vsm.backend.scenario.repository.ScenarioChoiceHistoryRepository;
 import ru.vsm.backend.scenario.repository.ScenarioChoiceRepository;
@@ -60,6 +61,11 @@ import ru.vsm.backend.scenario.web.dto.ProgressStateResponse;
  * метода (до коммита) — слушатели домена (gamification/feedback) используют
  * {@code @TransactionalEventListener(phase = AFTER_COMMIT)}, чтобы не видеть событие, если
  * транзакция потом откатится.
+ *
+ * <p>Каждое применение выбора (в {@link #applyResolvedChoice}) также публикует
+ * {@link ru.vsm.backend.scenario.event.ProgressStateChangedEvent} — точка подписки для
+ * WebSocket-пакета {@code ru.vsm.backend.ws} (живые обновления шкал/узла/статуса для
+ * подключённых клиентов), не только для {@link ScenarioCompletedEvent} на завершении.
  */
 @Slf4j
 @Service
@@ -197,11 +203,13 @@ public class ScenarioPlayService {
             publishCompletion(progress);
         }
 
-        return new ChoiceAppliedResponse(
+        ChoiceAppliedResponse response = new ChoiceAppliedResponse(
                 progress.getId(), choice.getId(), choice.getCode(), wasTimeout,
                 appliedLoyaltyDelta, appliedSafetyDelta,
                 progress.getLoyaltyScore(), progress.getSafetyScore(),
                 progress.getStatus(), progress.getFinalOutcome(), nextNodeResponse);
+        eventPublisher.publishEvent(new ProgressStateChangedEvent(progress.getUserId(), response));
+        return response;
     }
 
     /**

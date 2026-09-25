@@ -11,7 +11,10 @@ import ru.vsm.backend.scenario.service.exception.NoActiveTimerException;
 import ru.vsm.backend.scenario.service.exception.ProgressAccessDeniedException;
 import ru.vsm.backend.scenario.service.exception.ProgressAlreadyCompletedException;
 import ru.vsm.backend.scenario.service.exception.ProgressNotFoundException;
+import ru.vsm.backend.scenario.service.exception.ScenarioGraphInvalidException;
+import ru.vsm.backend.scenario.service.exception.ScenarioHasPlaythroughsException;
 import ru.vsm.backend.scenario.service.exception.ScenarioNotFoundException;
+import ru.vsm.backend.scenario.web.dto.EditorErrorResponse;
 import ru.vsm.backend.scenario.web.dto.ErrorResponse;
 
 /** Маппинг исключений домена scenario (REST прохождения) в HTTP-ответы с единым телом ошибки. */
@@ -51,6 +54,19 @@ public class ScenarioExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handle(IllegalArgumentException e) {
         return respond(HttpStatus.BAD_REQUEST, "invalid_argument", e);
+    }
+
+    /** Редактор сценариев: граф не прошёл {@code ScenarioGraphValidator} — список проблем, не одна строка. */
+    @ExceptionHandler(ScenarioGraphInvalidException.class)
+    public ResponseEntity<EditorErrorResponse> handle(ScenarioGraphInvalidException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new EditorErrorResponse("invalid_graph", e.getErrors()));
+    }
+
+    /** Редактор сценариев: обновление графа сценария, по которому уже есть прохождения. */
+    @ExceptionHandler(ScenarioHasPlaythroughsException.class)
+    public ResponseEntity<ErrorResponse> handle(ScenarioHasPlaythroughsException e) {
+        return respond(HttpStatus.CONFLICT, "scenario_has_playthroughs", e);
     }
 
     @ExceptionHandler(MissingRequestHeaderException.class)

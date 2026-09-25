@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -38,6 +39,7 @@ import ru.vsm.backend.scenario.repository.UserProgressRepository;
  * кэширование по многим прохождениям — тогда появится смысл в отдельных таблицах.
  */
 @Service
+@RequiredArgsConstructor
 public class DebriefService {
 
     private final UserProgressRepository userProgressRepository;
@@ -46,21 +48,6 @@ public class DebriefService {
     private final ScenarioChoiceRepository scenarioChoiceRepository;
     private final ScenarioChoiceHistoryRepository historyRepository;
     private final ExplanationResolver explanationResolver;
-
-    public DebriefService(
-            UserProgressRepository userProgressRepository,
-            ScenarioRepository scenarioRepository,
-            ScenarioNodeRepository scenarioNodeRepository,
-            ScenarioChoiceRepository scenarioChoiceRepository,
-            ScenarioChoiceHistoryRepository historyRepository,
-            ExplanationResolver explanationResolver) {
-        this.userProgressRepository = userProgressRepository;
-        this.scenarioRepository = scenarioRepository;
-        this.scenarioNodeRepository = scenarioNodeRepository;
-        this.scenarioChoiceRepository = scenarioChoiceRepository;
-        this.historyRepository = historyRepository;
-        this.explanationResolver = explanationResolver;
-    }
 
     public DebriefResponse buildDebrief(UUID userProgressId) {
         UserProgress progress = userProgressRepository.findById(userProgressId)
