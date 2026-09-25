@@ -15,6 +15,9 @@ package ru.vsm.backend.feedback.dto;
  * @param betterLoyaltyDelta     дельта лояльности лучшей альтернативы
  * @param betterSafetyDelta      дельта безопасности лучшей альтернативы
  * @param adviceText             обучающий текст 2-4 предложения: почему альтернатива сильнее
+ * @param betterExplanation      объяснение лучшей альтернативы ("что можно было сделать иначе"),
+ *                                тот же резолв, что и в шагах таймлайна — приоритет авторскому
+ *                                тексту выбора, см. {@code ExplanationResolver}
  */
 public record KeyMomentDto(
         int sequenceIndex,
@@ -25,5 +28,6 @@ public record KeyMomentDto(
         String betterChoiceText,
         int betterLoyaltyDelta,
         int betterSafetyDelta,
-        String adviceText) {
+        String adviceText,
+        String betterExplanation) {
 }

@@ -3,6 +3,7 @@ package ru.vsm.backend.scenario.seed;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,13 +18,32 @@ import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 import ru.vsm.backend.scenario.repository.ScenarioChoiceRepository;
 import ru.vsm.backend.scenario.repository.ScenarioNodeRepository;
 import ru.vsm.backend.scenario.repository.ScenarioRepository;
+import ru.vsm.backend.scenario.repository.UserProgressRepository;
 
 /**
  * Транзакционная загрузка одного сценария из {@link ScenarioSeedDto} в БД.
  *
- * <p>Идемпотентность: если сценарий с таким {@code code} уже существует — файл пропускается
- * целиком (никаких апдейтов существующего графа). Так повторные перезапуски приложения не плодят
- * дубликаты и не рвут уже начатые {@code UserProgress} у игроков (FK на узлы/выборы остаются валидными).
+ * <p>Идемпотентность и обновление контента, по {@link ScenarioSeedDto#getVersion()}:
+ * <ul>
+ *   <li>сценария с таким {@code code} ещё нет — создаётся заново;</li>
+ *   <li>уже есть, версия в файле <= версии в БД — файл пропускается целиком, граф не трогается
+ *       (обычный путь на каждом рестарте для не изменившегося контента);</li>
+ *   <li>уже есть, версия в файле больше версии в БД, и по сценарию ещё нет ни одного
+ *       {@code UserProgress} (см. {@link UserProgressRepository#existsByScenarioId}) — старый граф
+ *       (узлы+выборы) удаляется и пересобирается заново из файла, сама строка {@code scenarios}
+ *       обновляется на месте (id сохраняется);</li>
+ *   <li>уже есть, версия в файле больше, но по сценарию есть хотя бы одно прохождение (в т.ч.
+ *       {@code COMPLETED}) — обновление пропускается с предупреждением в лог: перезапись узлов/выборов
+ *       порвала бы FK из {@code scenario_choice_history} (там нет {@code ON DELETE CASCADE} на
+ *       {@code scenario_nodes}/{@code scenario_choices}) и/или {@code user_progress.current_node_id}
+ *       у ещё не завершённых прохождений. Обновление такого сценария на непустой БД — ручная операция
+ *       (например, на staging/демо-стенде, где прохождения можно потерять осознанно).</li>
+ * </ul>
+ *
+ * <p>Удаление старого графа при обновлении — {@link #deleteExistingGraph}, вручную и в строгом
+ * порядке (не просто "удалить узлы и положиться на каскад"): {@code scenario_choices.target_node_id}
+ * не имеет {@code ON DELETE CASCADE} и в общем случае указывает вперёд на другие узлы того же
+ * сценария, поэтому сначала снимаются все обратные/вперёд смотрящие ссылки, и только потом узлы.
  *
  * <p>Вынесено в отдельный бин (а не метод в {@link ScenarioSeedLoader}), чтобы
  * {@code @Transactional} применялся через Spring-прокси, а не терялся на self-invocation.
@@ -36,26 +56,55 @@ public class ScenarioSeedService {
     private final ScenarioRepository scenarioRepository;
     private final ScenarioNodeRepository scenarioNodeRepository;
     private final ScenarioChoiceRepository scenarioChoiceRepository;
+    private final UserProgressRepository userProgressRepository;
 
     @Transactional
     public void seed(ScenarioSeedDto dto) {
-        if (scenarioRepository.existsByCode(dto.getCode())) {
-            log.info("Сценарий '{}' уже есть в БД — пропускаю (идемпотентный seed).", dto.getCode());
-            return;
+        Optional<Scenario> existing = scenarioRepository.findByCode(dto.getCode());
+        Scenario reuseScenario = null;
+        if (existing.isPresent()) {
+            Scenario current = existing.get();
+            if (dto.getVersion() <= current.getVersion()) {
+                log.info("Сценарий '{}' версии {} уже есть в БД (файл принёс версию {}) — пропускаю.",
+                        dto.getCode(), current.getVersion(), dto.getVersion());
+                return;
+            }
+            if (userProgressRepository.existsByScenarioId(current.getId())) {
+                log.warn("Сценарий '{}': файл принёс версию {} (в БД {}), но по сценарию уже есть "
+                                + "прохождения — обновление графа пропущено, чтобы не порвать FK "
+                                + "истории/прогресса. Нужна ручная миграция контента на этой БД.",
+                        dto.getCode(), dto.getVersion(), current.getVersion());
+                return;
+            }
+            log.info("Сценарий '{}': обновляю граф с версии {} до {} (прохождений ещё не было).",
+                    dto.getCode(), current.getVersion(), dto.getVersion());
+            deleteExistingGraph(current);
+            reuseScenario = current;
         }
         if (dto.getNodes() == null || dto.getNodes().isEmpty()) {
             throw new IllegalStateException("Сценарий '" + dto.getCode() + "': нет узлов (nodes) в seed-файле");
         }
 
-        Scenario scenario = Scenario.builder()
-                .code(dto.getCode())
-                .situationRefId(dto.getSituationRef())
-                .block(dto.getBlock())
-                .title(dto.getTitle())
-                .description(dto.getDescription())
-                .flagship(dto.isFlagship())
-                .build();
-        scenario = scenarioRepository.save(scenario);
+        Scenario scenario;
+        if (reuseScenario != null) {
+            reuseScenario.setSituationRefId(dto.getSituationRef());
+            reuseScenario.setBlock(dto.getBlock());
+            reuseScenario.setTitle(dto.getTitle());
+            reuseScenario.setDescription(dto.getDescription());
+            reuseScenario.setFlagship(dto.isFlagship());
+            reuseScenario.setVersion(dto.getVersion());
+            scenario = scenarioRepository.save(reuseScenario);
+        } else {
+            scenario = scenarioRepository.save(Scenario.builder()
+                    .code(dto.getCode())
+                    .situationRefId(dto.getSituationRef())
+                    .block(dto.getBlock())
+                    .title(dto.getTitle())
+                    .description(dto.getDescription())
+                    .flagship(dto.isFlagship())
+                    .version(dto.getVersion())
+                    .build());
+        }
         UUID scenarioId = scenario.getId();
 
         // Проход 1: создать все узлы без default_choice_id (choices ещё не существуют).
@@ -118,6 +167,8 @@ public class ScenarioSeedService {
                                 .reassure(rs.isReassure())
                                 .build())
                         .explanationKey(c.getExplanationKey())
+                        .explanation(c.getExplanation())
+                        .normRef(c.getNormRef())
                         .sortOrder(c.getSortOrder())
                         .build();
                 choicesByNodeAndCode.put(n.getCode() + "::" + c.getCode(), scenarioChoiceRepository.save(choice));
@@ -144,6 +195,50 @@ public class ScenarioSeedService {
 
         log.info("Сценарий '{}' загружен: {} узлов, {} выборов.",
                 dto.getCode(), nodesByCode.size(), choicesByNodeAndCode.size());
+    }
+
+    /**
+     * Удаляет весь существующий граф сценария (узлы+выборы) перед перезаписью более новой версией.
+     * Порядок принципиален из-за трёх FK без {@code ON DELETE CASCADE} в обратную сторону
+     * ({@code scenarios.entry_node_id}, {@code scenario_nodes.default_choice_id},
+     * {@code scenario_choices.target_node_id}) — граф в общем случае содержит и "вперёд смотрящие",
+     * и обратные ссылки между узлами (см. javadoc класса про циклы), поэтому нельзя просто удалить
+     * узлы: любой ещё не удалённый выбор, у которого {@code target_node_id} указывает на уже
+     * удаляемый узел, оборвёт constraint. Разрываем ссылки в правильном порядке вместо того чтобы
+     * полагаться на порядок каскадов:
+     * <ol>
+     *   <li>{@code scenarios.entry_node_id} → null (уже сохранённый сценарий не должен указывать
+     *       на узел, который сейчас будет удалён);</li>
+     *   <li>{@code scenario_nodes.default_choice_id} → null на всех узлах сценария (иначе следующий
+     *       шаг не сможет удалить их собственные выборы по умолчанию);</li>
+     *   <li>удалить все {@code scenario_choices} этих узлов (это же снимает все
+     *       {@code target_node_id}-ссылки на другие узлы того же сценария, т.к. ссылающиеся строки
+     *       исчезают целиком);</li>
+     *   <li>удалить сами {@code scenario_nodes} — на них уже никто не ссылается.</li>
+     * </ol>
+     */
+    private void deleteExistingGraph(Scenario scenario) {
+        scenario.setEntryNodeId(null);
+        scenarioRepository.saveAndFlush(scenario);
+
+        List<ScenarioNode> oldNodes = scenarioNodeRepository.findByScenarioId(scenario.getId());
+        for (ScenarioNode n : oldNodes) {
+            if (n.getDefaultChoiceId() != null) {
+                n.setDefaultChoiceId(null);
+            }
+        }
+        scenarioNodeRepository.saveAllAndFlush(oldNodes);
+
+        for (ScenarioNode n : oldNodes) {
+            List<ScenarioChoice> choices = scenarioChoiceRepository.findByNodeIdOrderBySortOrder(n.getId());
+            if (!choices.isEmpty()) {
+                scenarioChoiceRepository.deleteAll(choices);
+            }
+        }
+        scenarioChoiceRepository.flush();
+
+        scenarioNodeRepository.deleteAll(oldNodes);
+        scenarioNodeRepository.flush();
     }
 
     private NodeType parseNodeType(String scenarioCode, NodeSeedDto n) {

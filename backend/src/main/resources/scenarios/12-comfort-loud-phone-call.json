@@ -1,0 +1,85 @@
+{
+  "code": "comfort-loud-phone-call",
+  "situationRef": 12,
+  "block": "comfort",
+  "title": "Громкий разговор по телефону",
+  "description": "Пассажир через несколько кресел громко разговаривает по телефону, соседи начинают оборачиваться. Вопрос бытовой и обычно решается одной вежливой фразой.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир через проход громко обсуждает что-то по телефону — разговор слышно по всему салону, соседи начинают оборачиваться.",
+      "choices": [
+        {
+          "code": "silent-gesture",
+          "text": "Молча подойти и жестом указать на знак тишины, не говоря ни слова.",
+          "loyaltyDelta": -2,
+          "safetyDelta": 3,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "rule": true
+          },
+          "explanationKey": "comfort-loud-phone-call.start.silent-gesture",
+          "explanation": "Формально сигнал подан, но молчаливый жест выглядит как немой упрёк, а не вежливое обращение проводника.",
+          "sortOrder": 0
+        },
+        {
+          "code": "ignore-to-avoid-awkwardness",
+          "text": "Сделать вид, что ничего не замечаешь, чтобы не создавать неловкую ситуацию.",
+          "loyaltyDelta": -10,
+          "safetyDelta": -3,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "comfort-loud-phone-call.start.ignore-to-avoid-awkwardness",
+          "explanation": "Бездействие оставляет соседних пассажиров один на один с шумом, хотя короткая вежливая просьба решает вопрос за секунды.",
+          "sortOrder": 1,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 12: «Будьте добры, разговаривайте чуть тише, пожалуйста»."
+        },
+        {
+          "code": "polite-request",
+          "text": "Подойти и вежливо, с улыбкой попросить говорить немного тише, объяснив, что вагон общий.",
+          "loyaltyDelta": 9,
+          "safetyDelta": 6,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "comfort-loud-phone-call.start.polite-request",
+          "explanation": "Короткая вежливая просьба решает бытовой вопрос без неловкости для обеих сторон — именно та реплика, которую подсказывает методичка.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 12: «Будьте добры, разговаривайте чуть тише, пожалуйста»."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир замечает жест, слегка понижает голос, но выглядит скорее недоумевающим, чем понявшим просьбу.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Молчаливый жест сработал лишь частично — без слов просьба звучит двусмысленно."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Громкий разговор продолжается ещё несколько перегонов, соседние пассажиры один за другим начинают жаловаться.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: лёгкое неудобство, которое решалось одной фразой, осталось без внимания и накопило раздражение соседей."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир извиняется и заканчивает разговор тише, соседи заметно расслабляются.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: вежливая короткая просьба сняла неудобство без всякой неловкости."
+    }
+  ]
+}

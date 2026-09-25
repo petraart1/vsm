@@ -74,6 +74,71 @@ class ScenarioSeedIntegrationTest {
         assertThat(entryNode.getDefaultChoiceId()).isNotNull();
     }
 
+    /**
+     * Проверяет, что все известные на данный момент seed-файлы из {@code classpath:scenarios/*.json}
+     * загружены при старте. Намеренно {@code contains}, а не {@code containsExactlyInAnyOrder}: несколько
+     * агентов параллельно добавляют новые файлы ситуаций в {@code resources/scenarios/}, точное число
+     * сценариев на любой момент времени не фиксировано (см. STATUS.md). Полное покрытие 51/51 проверяется
+     * отдельным подсчётом файлов, а не перечислением кодов здесь.
+     */
+    @Test
+    void allKnownSeedFilesAreLoadedAtStartup() {
+        assertThat(scenarioRepository.findAll())
+                .extracting(Scenario::getCode)
+                .contains(
+                        "boarding-no-ticket", "medical-passenger-unwell", "intoxicated-passenger",
+                        "passengers-arguing",
+                        "boarding-no-id", "boarding-late-passenger", "boarding-dead-phone",
+                        "baggage-bicycle-unpacked", "baggage-aisle-blocked",
+                        "safety-smoking", "safety-alcohol-outside-bistro", "safety-property-damage",
+                        "catering-dish-unavailable",
+                        "catering-service-is-paid", "catering-portion-size", "catering-alcohol-to-intoxicated",
+                        "catering-peek-at-first-class",
+                        "medical-medication-request", "medical-panic-attack", "medical-lost-child",
+                        "medical-crying-child-complaints", "medical-general-panic",
+                        "conflict-passenger-rude", "conflict-filming-without-consent",
+                        "misc-delay-complaint", "misc-missing-service", "misc-baby-care-space",
+                        "misc-slept-through-stop", "misc-wants-to-complain", "misc-watch-my-child");
+    }
+
+    @Test
+    void intoxicatedPassengerFlagshipScenarioHasHiddenRadioFormulationMechanic() {
+        Scenario scenario = scenarioRepository.findByCode("intoxicated-passenger").orElseThrow();
+        assertThat(scenario.isFlagship()).isTrue();
+        assertThat(scenario.getBlock()).isEqualTo("safety");
+
+        ScenarioNode radioNode = scenarioNodeRepository
+                .findByScenarioIdAndCode(scenario.getId(), "radio-call-chief")
+                .orElseThrow();
+        List<ru.vsm.backend.scenario.domain.ScenarioChoice> radioChoices =
+                scenarioChoiceRepository.findByNodeIdOrderBySortOrder(radioNode.getId());
+        assertThat(radioChoices).hasSize(2);
+
+        ru.vsm.backend.scenario.domain.ScenarioChoice neutral = radioChoices.stream()
+                .filter(c -> c.getCode().equals("neutral-formulation")).findFirst().orElseThrow();
+        ru.vsm.backend.scenario.domain.ScenarioChoice open = radioChoices.stream()
+                .filter(c -> c.getCode().equals("open-formulation")).findFirst().orElseThrow();
+
+        // Пассажир узел "не слышит" — обе формулировки не влияют на лояльность,
+        // но открытая формулировка штрафует безопасность, нейтральная — нет.
+        assertThat(neutral.getLoyaltyDelta()).isZero();
+        assertThat(open.getLoyaltyDelta()).isZero();
+        assertThat(neutral.getSafetyDelta()).isPositive();
+        assertThat(open.getSafetyDelta()).isNegative();
+        assertThat(open.getExplanation()).isNotBlank();
+    }
+
+    @Test
+    void passengersArguingConflictFlagshipScenarioIsSeeded() {
+        Scenario scenario = scenarioRepository.findByCode("passengers-arguing").orElseThrow();
+        assertThat(scenario.isFlagship()).isTrue();
+        assertThat(scenario.getBlock()).isEqualTo("conflict");
+
+        List<ScenarioNode> nodes = scenarioNodeRepository.findByScenarioId(scenario.getId());
+        assertThat(nodes).hasSize(11);
+        assertThat(nodes).filteredOn(ScenarioNode::isTerminal).hasSize(7);
+    }
+
     @Test
     void reseedingExistingScenarioCodeIsSkippedAndDoesNotDuplicate() {
         long nodesBefore = scenarioRepository.findByCode("boarding-no-ticket")

@@ -1,0 +1,86 @@
+{
+  "code": "comfort-dirty-seat",
+  "situationRef": 27,
+  "block": "comfort",
+  "title": "Грязное место/столик",
+  "description": "Пассажир, заняв своё место, обнаруживает грязный столик или пятно на кресле. Вопрос решается извинением и организацией уборки или заменой места.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир, садясь, замечает: «Столик грязный, и на кресле пятно — может, поменяете место или уберёте?»",
+      "choices": [
+        {
+          "code": "wipe-table-only",
+          "text": "Извиниться и предложить протереть столик влажной салфеткой, не проверяя состояние кресла.",
+          "loyaltyDelta": 2,
+          "safetyDelta": 2,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "solution": true
+          },
+          "explanationKey": "comfort-dirty-seat.start.wipe-table-only",
+          "explanation": "Быстрое, но неполное решение: часть жалобы — пятно на кресле — осталась без внимания.",
+          "sortOrder": 0
+        },
+        {
+          "code": "deny-cleaned-before-departure",
+          "text": "Сказать, что вагон убирали перед рейсом, значит всё чисто, и предложить не обращать внимания.",
+          "loyaltyDelta": -14,
+          "safetyDelta": -4,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "comfort-dirty-seat.start.deny-cleaned-before-departure",
+          "explanation": "Отрицание очевидной жалобы вместо реакции на неё — пассажир не получает ни извинений, ни решения, только ощущение, что его словам не верят.",
+          "sortOrder": 1,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 27: извиниться, организовать уборку/замену."
+        },
+        {
+          "code": "wipe-and-offer-clean-seat",
+          "text": "Извиниться за неудобство, протереть столик и, если пятно на кресле не убирается на месте, предложить пересадку на чистое место того же класса.",
+          "loyaltyDelta": 10,
+          "safetyDelta": 5,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "comfort-dirty-seat.start.wipe-and-offer-clean-seat",
+          "explanation": "Полный цикл: извинение прозвучало, столик приведён в порядок сразу же, а для оставшейся проблемы с креслом сразу найдена рабочая альтернатива.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 27: извиниться, организовать уборку/замену."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Столик становится чистым, но пятно на кресле так и остаётся — пассажир садится с неудовольствием.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Половина жалобы решена, вторая половина осталась без внимания."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир весь путь недовольно поглядывает на грязный столик и пятно на кресле, ощущая, что ему не поверили.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: очевидная жалоба была отвергнута вместо решения."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Столик протёрт, а пассажир пересаживается на чистое место того же класса — уже через минуту садится довольным.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: обе части жалобы решены быстро и с извинением."
+    }
+  ]
+}

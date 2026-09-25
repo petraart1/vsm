@@ -1,0 +1,86 @@
+{
+  "code": "lost-found-package-request",
+  "situationRef": 39,
+  "block": "lost_found",
+  "title": "Просьба передать посылку",
+  "description": "Пассажир перед отправлением просит проводника лично передать личную вещь знакомому на конечной станции. Правила безопасности запрещают провоз и передачу личных вещей от лица проводника — для этого есть официальный сервис МПО на вокзале.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир перед отправлением просит: «Друг встретит поезд в Санкт-Петербурге, передадите ему просто эту сумку? Он подойдёт прямо к вагону».",
+      "choices": [
+        {
+          "code": "refuse-rule-only",
+          "text": "Вежливо отказать, сославшись просто на «правила», не предложив альтернативы.",
+          "loyaltyDelta": -6,
+          "safetyDelta": 6,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "rule": true
+          },
+          "explanationKey": "lost-found-package-request.start.refuse-rule-only",
+          "explanation": "Отказ формально верный, но без указания реальной альтернативы (сервис МПО) выглядит как отписка.",
+          "sortOrder": 0,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок H, ситуация 39: правила безопасности запрещают приём личных вещей для передачи, сервис МПО на вокзале — официальная альтернатива."
+        },
+        {
+          "code": "agree-to-carry-personally",
+          "text": "Согласиться взять и передать посылку лично, чтобы выручить пассажира.",
+          "loyaltyDelta": 8,
+          "safetyDelta": -20,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "lost-found-package-request.start.agree-to-carry-personally",
+          "explanation": "Приём личных вещей для передачи напрямую запрещён правилами безопасности: содержимое непроверено, а ответственность ложится на проводника без каких-либо оснований.",
+          "sortOrder": 1,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок H, ситуация 39: правила безопасности запрещают приём личных вещей для передачи, сервис МПО на вокзале — официальная альтернатива."
+        },
+        {
+          "code": "explain-rule-suggest-mpo",
+          "text": "Признать желание помочь, вежливо объяснить, что правила безопасности запрещают провоз и передачу личных вещей от лица проводника, и подсказать сервис малой почтовой отправки (МПО) на вокзале как официальную альтернативу.",
+          "loyaltyDelta": 7,
+          "safetyDelta": 9,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "lost-found-package-request.start.explain-rule-suggest-mpo",
+          "explanation": "Правило не нарушено, а пассажир при этом получает конкретный рабочий вариант решения вопроса вместо голого отказа.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок H, ситуация 39: правила безопасности запрещают приём личных вещей для передачи, сервис МПО на вокзале — официальная альтернатива."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир соглашается не передавать посылку через проводника, но уходит с ощущением, что ему просто отказали без объяснений.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Правило соблюдено, но без указания реальной альтернативы отказ выглядит формальным."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Проводник везёт непроверенную личную вещь через весь маршрут — при контроле это прямое нарушение правил безопасности перевозки.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: согласие взять непроверенную личную вещь для передачи нарушает правила безопасности."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир узнаёт про сервис МПО на вокзале и соглашается отправить вещь официально.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: правило соблюдено, а пассажир получил рабочую альтернативу вместо отказа."
+    }
+  ]
+}

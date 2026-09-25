@@ -1,0 +1,86 @@
+{
+  "code": "catering-alcohol-to-intoxicated",
+  "situationRef": 50,
+  "block": "catering",
+  "title": "Просьба алкоголя у нетрезвого пассажира",
+  "description": "Уже выпивший пассажир в вагоне-бистро просит продать ему ещё алкоголь.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир, уже явно нетрезвый, облокачивается на стойку бистро: «Давайте ещё, мне не хватит».",
+      "choices": [
+        {
+          "code": "sell-anyway",
+          "text": "Продать напиток, раз пассажир платёжеспособен и явно не буянит.",
+          "loyaltyDelta": 10,
+          "safetyDelta": -20,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "catering-alcohol-to-intoxicated.start.sell-anyway",
+          "explanation": "Продажа алкоголя явно нетрезвому пассажиру — прямое нарушение: спокойное поведение в моменте не снимает риска ухудшения состояния или конфликта позже в пути, ответственность за это лежит на бригаде.",
+          "sortOrder": 0,
+          "normRef": "СТО РЖД 03.011-2026 — ответственная продажа алкоголя: обслуживание не должно создавать риск для пассажира и порядка в поезде."
+        },
+        {
+          "code": "blunt-refuse",
+          "text": "Сухо отказать: «Больше не налью» — и переключиться на следующего пассажира.",
+          "loyaltyDelta": -10,
+          "safetyDelta": 10,
+          "target": "blunt-terminal",
+          "roleSteps": {
+            "rule": true
+          },
+          "explanationKey": "catering-alcohol-to-intoxicated.start.blunt-refuse",
+          "explanation": "Формально верное решение, но без вежливой альтернативы отказ выглядит грубо и оставляет пассажира раздражённым без предложенного выхода.",
+          "sortOrder": 1,
+          "normRef": "СТО РЖД 03.011-2026 — ответственная продажа алкоголя: обслуживание не должно создавать риск для пассажира и порядка в поезде."
+        },
+        {
+          "code": "refuse-with-alternative-and-escalate",
+          "text": "Вежливо отказать со ссылкой на ответственную продажу алкоголя, предложить чай, кофе или безалкогольный напиток; при признаках агрессии — сообщить начальнику поезда.",
+          "loyaltyDelta": 2,
+          "safetyDelta": 15,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "catering-alcohol-to-intoxicated.start.refuse-with-alternative-and-escalate",
+          "explanation": "Отказ смягчён конкретной альтернативой, а эскалация предусмотрена именно на случай реального риска конфликта, а не заранее — это и есть баланс между вежливостью и безопасностью.",
+          "sortOrder": 2,
+          "normRef": "СТО РЖД 03.011-2026 — ответственная продажа алкоголя: обслуживание не должно создавать риск для пассажира и порядка в поезде."
+        }
+      ]
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Через некоторое время пассажиру становится плохо, приходится вызывать начальника поезда уже в экстренном порядке.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Продажа алкоголя нетрезвому пассажиру напрямую привела к ухудшению его состояния — ответственность бригады, которой можно было избежать."
+    },
+    {
+      "code": "blunt-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир недовольно бурчит, но отходит от стойки.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Правило соблюдено, но резкость отказа не добавляет пассажиру желания вернуться к сервису бистро в будущем."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир соглашается на чай, инцидентов до конца поездки не возникает.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший баланс: ответственный отказ подан вежливо, с альтернативой, риск конфликта учтён заранее."
+    }
+  ]
+}

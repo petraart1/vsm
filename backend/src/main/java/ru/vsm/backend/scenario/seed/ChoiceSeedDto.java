@@ -27,5 +27,11 @@ public class ChoiceSeedDto {
     /** Ключ пояснения для экрана разбора, не сам текст. */
     private String explanationKey;
 
+    /** Авторский текст пояснения (1-3 предложения: почему выбор хорош/плох), опционален. */
+    private String explanation;
+
+    /** Опц. ссылка на норму: документ + пункт/тема из dataset/standards/. */
+    private String normRef;
+
     private int sortOrder = 0;
 }

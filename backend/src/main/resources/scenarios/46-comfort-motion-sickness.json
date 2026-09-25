@@ -1,0 +1,85 @@
+{
+  "code": "comfort-motion-sickness",
+  "situationRef": 46,
+  "block": "comfort",
+  "title": "Пассажира укачивает",
+  "description": "Пассажиру становится нехорошо от укачивания. Простая и доступная помощь — предложить пересесть по ходу движения поезда и принести воду с лимоном.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир, бледный, тихо говорит: «Меня укачивает, что-то нехорошо — есть что-то, что поможет?»",
+      "choices": [
+        {
+          "code": "suggest-move-direction-only",
+          "text": "Предложить пересесть по ходу движения поезда, ничего больше не предлагая.",
+          "loyaltyDelta": 3,
+          "safetyDelta": 3,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "solution": true
+          },
+          "explanationKey": "comfort-motion-sickness.start.suggest-move-direction-only",
+          "explanation": "Дельный практический совет, но без признания самочувствия пассажира и без предложения воды разговор выглядит скомканным.",
+          "sortOrder": 0
+        },
+        {
+          "code": "advise-just-endure",
+          "text": "Посоветовать просто перетерпеть — поездка скоро закончится.",
+          "loyaltyDelta": -12,
+          "safetyDelta": -4,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "comfort-motion-sickness.start.advise-just-endure",
+          "explanation": "Игнорирование жалобы на плохое самочувствие вместо простых доступных мер — вода с лимоном и пересадка по ходу движения — оставляет пассажира один на один с нарастающим недомоганием.",
+          "sortOrder": 1,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок G, ситуация 46: предложить пересесть по ходу движения, предложить воду с лимоном."
+        },
+        {
+          "code": "acknowledge-move-and-bring-water",
+          "text": "Признать неприятность ситуации, предложить пересесть по ходу движения поезда при наличии мест и принести воду с лимоном.",
+          "loyaltyDelta": 10,
+          "safetyDelta": 7,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "comfort-motion-sickness.start.acknowledge-move-and-bring-water",
+          "explanation": "Полный набор простых и доступных мер: признание самочувствия, смена места по ходу движения и вода с лимоном — именно то, что реально облегчает укачивание в дороге.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок G, ситуация 46: предложить пересесть по ходу движения, предложить воду с лимоном."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир пересаживается по ходу движения, самочувствие немного улучшается, но признания его неприятного состояния так и не прозвучало.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Практический совет сработал частично, но разговор был скомканным."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажиру становится хуже, он вынужден сам искать помощь у соседей, пока бригада не отреагировала.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: доступные простые меры не были предложены, а жалоба проигнорирована."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир пересаживается по ходу движения и получает воду с лимоном — самочувствие быстро улучшается.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: простые доступные меры применены полностью и вовремя."
+    }
+  ]
+}

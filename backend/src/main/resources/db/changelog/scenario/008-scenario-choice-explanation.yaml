@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-008-scenario-choice-explanation
+      author: vsm
+      comment: >
+        Авторское пояснение к выбору для экрана разбора (1-3 предложения: почему выбор хорош/плох)
+        и опциональная ссылка на норматив (документ + пункт/тема из dataset/standards/). Оба поля
+        nullable — часть выборов достаточно объяснить алгоритмическим fallback'ом обучающей
+        обратной связи (см. ru.vsm.backend.feedback.service.ExplanationResolver), явный текст
+        приоритетнее, когда заполнен.
+      changes:
+        - addColumn:
+            tableName: scenario_choices
+            columns:
+              - column:
+                  name: explanation
+                  type: text
+                  remarks: авторский текст пояснения к выбору для разбора, не обязателен
+              - column:
+                  name: norm_ref
+                  type: varchar(255)
+                  remarks: опц. ссылка на норму (документ + пункт/тема из dataset/standards/)

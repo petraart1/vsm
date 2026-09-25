@@ -1,0 +1,80 @@
+{
+  "code": "misc-wants-to-complain",
+  "situationRef": 44,
+  "block": "misc",
+  "title": "Пассажир хочет написать жалобу",
+  "description": "Пассажир недоволен чем-либо и требует немедленно предоставить возможность пожаловаться.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир требовательно говорит: «Я хочу написать жалобу прямо сейчас, немедленно дайте мне книгу отзывов!»",
+      "choices": [
+        {
+          "code": "argue",
+          "text": "Начать спорить, что жалоба необоснованна, и убеждать пассажира не жаловаться.",
+          "loyaltyDelta": -15,
+          "safetyDelta": 0,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "misc-wants-to-complain.start.argue",
+          "explanation": "Спор вместо предоставления канала жалобы — типичная ошибка: попытка отговорить только укрепляет пассажира в решении жаловаться, причём уже и на этот разговор тоже.",
+          "sortOrder": 0
+        },
+        {
+          "code": "delay",
+          "text": "Сказать, что книги отзывов сейчас нет под рукой, и предложить зайти позже.",
+          "loyaltyDelta": -5,
+          "safetyDelta": 0,
+          "target": "delay-terminal",
+          "roleSteps": {},
+          "explanationKey": "misc-wants-to-complain.start.delay",
+          "explanation": "Формальный ответ без конкретного альтернативного канала (QR-код, контакты контактного центра) оставляет пассажира без реального способа подать жалобу здесь и сейчас.",
+          "sortOrder": 1
+        },
+        {
+          "code": "provide-channel-and-try-resolve",
+          "text": "Не спорить, сразу предоставить книгу отзывов, QR-код на форму обратной связи или контакты контактного центра, при готовности пассажира — попытаться урегулировать вопрос на месте.",
+          "loyaltyDelta": 10,
+          "safetyDelta": 2,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "misc-wants-to-complain.start.provide-channel-and-try-resolve",
+          "explanation": "Немедленное предоставление канала жалобы — единственно верная реакция на такой запрос; попытка урегулировать вопрос на месте может вообще снять необходимость в письменной жалобе.",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир записывает в жалобу ещё и то, что проводник пытался его отговорить.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Спор вместо предоставления канала жалобы усугубил исходную претензию новой."
+    },
+    {
+      "code": "delay-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир недовольно ждёт, репутация бригады страдает от одного лишь ощущения отказа.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Формально жалобу подать не отказались, но отсутствие мгновенной альтернативы выглядит как уклонение."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир, получив канал для жалобы, неожиданно соглашается обсудить вопрос на месте — проблема решается без письменного обращения.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: право пассажира на жалобу не оспаривается, а готовность решить вопрос сразу экономит время всем."
+    }
+  ]
+}

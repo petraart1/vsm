@@ -1,0 +1,83 @@
+{
+  "code": "conflict-filming-without-consent",
+  "situationRef": 25,
+  "block": "conflict",
+  "title": "Съёмка других пассажиров без согласия",
+  "description": "Пассажир снимает видео или фото соседей по вагону без их согласия — те чувствуют себя некомфортно и обращаются к проводнику.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир жалуется вам: «Вон тот человек уже минут пять снимает нас на телефон, мы не давали согласия, что ему нужно?»",
+      "choices": [
+        {
+          "code": "ignore",
+          "text": "Ответить, что это личное дело пассажиров, и вмешиваться не будете.",
+          "loyaltyDelta": -12,
+          "safetyDelta": -2,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "conflict-filming-without-consent.start.ignore",
+          "explanation": "Отказ реагировать на обоснованную жалобу оставляет пострадавших пассажиров без поддержки и может привести к тому, что они начнут выяснять отношения со снимающим самостоятельно.",
+          "sortOrder": 0
+        },
+        {
+          "code": "harsh-confront",
+          "text": "Подойти и резко потребовать немедленно удалить все записи под угрозой высадки.",
+          "loyaltyDelta": -8,
+          "safetyDelta": 5,
+          "target": "harsh-terminal",
+          "roleSteps": {
+            "rule": true
+          },
+          "explanationKey": "conflict-filming-without-consent.start.harsh-confront",
+          "explanation": "Требование удалить записи и угроза высадки выходят за рамки полномочий проводника в бытовом конфликте такого уровня — реакция несоразмерна ситуации и провоцирует новый виток конфликта.",
+          "sortOrder": 1
+        },
+        {
+          "code": "polite-request-to-stop",
+          "text": "Подойти к снимающему пассажиру, вежливо попросить прекратить съёмку без согласия окружающих, объяснить, что это причиняет неудобство соседям.",
+          "loyaltyDelta": 8,
+          "safetyDelta": 5,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "conflict-filming-without-consent.start.polite-request-to-stop",
+          "explanation": "Вежливая, но конкретная просьба прекратить съёмку решает проблему без превышения полномочий и без публичного скандала.",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажиры, чьи жалобы проигнорировали, продолжают конфликтовать со снимающим самостоятельно, атмосфера в вагоне портится.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Бездействие при обоснованной жалобе — упущенная возможность спокойно погасить конфликт на раннем этапе."
+    },
+    {
+      "code": "harsh-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир прекращает съёмку, но демонстративно возмущён «произволом» проводника и намерен пожаловаться.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Формально проблема решена, но несоразмерно резкая реакция создала новый повод для недовольства."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир извиняется и убирает телефон, соседи благодарят проводника за внимание к ситуации.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Конфликт погашен вежливой, но чёткой просьбой — без скандала и без превышения полномочий."
+    }
+  ]
+}

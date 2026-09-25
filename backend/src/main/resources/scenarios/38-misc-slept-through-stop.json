@@ -1,0 +1,83 @@
+{
+  "code": "misc-slept-through-stop",
+  "situationRef": 38,
+  "block": "misc",
+  "title": "Заснул и пропустил станцию",
+  "description": "Пассажир проспал свою станцию, поезд уже едет дальше.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир в панике вскакивает: «Это же была моя станция! Я проспал! Что мне теперь делать?!»",
+      "choices": [
+        {
+          "code": "blame",
+          "text": "Заметить, что проводник не обязан будить каждого, и посоветовать в следующий раз не спать.",
+          "loyaltyDelta": -15,
+          "safetyDelta": 0,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "misc-slept-through-stop.start.blame",
+          "explanation": "Обвинение пассажира не решает его проблему и звучит особенно несправедливо, если бригада заранее не предупреждала о приближении станции, как того требует правило.",
+          "sortOrder": 0
+        },
+        {
+          "code": "vague-comfort",
+          "text": "Успокоить пассажира общими словами, не уточняя конкретный порядок действий.",
+          "loyaltyDelta": -2,
+          "safetyDelta": 0,
+          "target": "vague-terminal",
+          "roleSteps": {
+            "acknowledge": true
+          },
+          "explanationKey": "misc-slept-through-stop.start.vague-comfort",
+          "explanation": "Сочувствие есть, но без конкретного следующего шага пассажир остаётся растерянным и не понимает, что делать дальше.",
+          "sortOrder": 1
+        },
+        {
+          "code": "calm-inform-chief-and-explain",
+          "text": "Успокоить пассажира, сообщить начальнику поезда, объяснить дальнейший порядок действий: выход на ближайшей станции и способ вернуться — электричка, такси или обмен билета.",
+          "loyaltyDelta": 12,
+          "safetyDelta": 5,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "misc-slept-through-stop.start.calm-inform-chief-and-explain",
+          "explanation": "Чёткий порядок действий снимает панику быстрее всего, а своевременное предупреждение о станциях в будущем снимает часть вины с бригады, если оно было сделано заранее.",
+          "sortOrder": 2,
+          "normRef": "СТО РЖД 03.011-2026 — коммуникация с пассажирами: прибытие объявляется за 10-15 минут до остановки, что снимает часть ответственности с бригады при пропуске станции пассажиром."
+        }
+      ]
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир, разозлённый обвинением, требует жалобную книгу и грозится написать в соцсетях.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Перекладывание вины на пассажира не решает проблему и усиливает конфликт на пустом месте."
+    },
+    {
+      "code": "vague-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир немного успокаивается, но продолжает нервно спрашивать, что делать дальше.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Сочувствие без конкретного плана действий не снимает тревогу пассажира полностью."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир выходит на ближайшей станции с чётким планом, как вернуться, и благодарит за помощь.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Чёткий порядок действий и вовлечение начальника поезда сняли панику и дали пассажиру реальный выход из ситуации."
+    }
+  ]
+}

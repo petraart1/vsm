@@ -62,6 +62,15 @@ public class Scenario {
     @Column(name = "entry_node_id")
     private UUID entryNodeId;
 
+    /**
+     * Версия контента графа (растёт при правках seed-файла). {@code ScenarioSeedService} сравнивает
+     * версию из файла с этим полем, чтобы решить, можно ли безопасно перезаписать граф уже
+     * существующего сценария — см. javadoc {@code ScenarioSeedService.seed}.
+     */
+    @Column(nullable = false)
+    @Builder.Default
+    private int version = 1;
+
     @Column(nullable = false)
     @Builder.Default
     private boolean active = true;

@@ -1,0 +1,85 @@
+{
+  "code": "comfort-service-area-noise",
+  "situationRef": 48,
+  "block": "comfort",
+  "title": "Жалоба на шум в сервисной зоне",
+  "description": "Пассажир жалуется на шум работающего оборудования в сервисной зоне рядом с местами. Нужно лично проверить источник и по возможности снизить громкость работы.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир подходит: «В сервисной зоне очень шумно — работает какое-то оборудование, мешает отдыхать по соседству».",
+      "choices": [
+        {
+          "code": "promise-without-checking",
+          "text": "Пообещать разобраться и уйти, не проверив источник шума лично.",
+          "loyaltyDelta": -3,
+          "safetyDelta": 2,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "acknowledge": true
+          },
+          "explanationKey": "comfort-service-area-noise.start.promise-without-checking",
+          "explanation": "Признание есть, но без реальной проверки источника шума обещание разобраться остаётся только словами.",
+          "sortOrder": 0
+        },
+        {
+          "code": "refuse-schedule-fixed",
+          "text": "Сказать, что сервисная зона работает по расписанию и ничего изменить нельзя.",
+          "loyaltyDelta": -13,
+          "safetyDelta": -3,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "comfort-service-area-noise.start.refuse-schedule-fixed",
+          "explanation": "Отказ без попытки проверить и снизить громкость оборудования — жалоба, которую было легко решить на месте, осталась без движения.",
+          "sortOrder": 1,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 48: проверить источник, снизить громкость работы."
+        },
+        {
+          "code": "acknowledge-check-reduce-volume",
+          "text": "Признать неудобство, лично проверить источник шума в сервисной зоне и по возможности снизить громкость работы оборудования.",
+          "loyaltyDelta": 9,
+          "safetyDelta": 6,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "comfort-service-area-noise.start.acknowledge-check-reduce-volume",
+          "explanation": "Жалоба доведена до конкретного результата: источник проверен лично и громкость снижена там, где это в пределах возможного.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 48: проверить источник, снизить громкость работы."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Проводник обещает разобраться, но так и не доходит до сервисной зоны — шум продолжается.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Признание жалобы было, но реальной проверки источника не последовало."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Шум продолжается весь оставшийся путь, пассажир жалуется повторно, уже более раздражённо.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: жалоба, решаемая на месте, была отклонена без попытки проверки."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Проводник проверяет сервисную зону и снижает громкость оборудования — пассажир быстро замечает разницу.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: жалоба доведена до конкретного результата."
+    }
+  ]
+}

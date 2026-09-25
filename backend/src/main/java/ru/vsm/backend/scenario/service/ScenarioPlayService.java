@@ -106,7 +106,7 @@ public class ScenarioPlayService {
      */
     @Transactional
     public ChoiceAppliedResponse choose(UUID progressId, UUID playerId, UUID requestedChoiceId) {
-        UserProgress progress = requireProgress(progressId);
+        UserProgress progress = requireProgressForUpdate(progressId);
         checkOwnership(progress, playerId);
         requireInProgress(progress);
         ScenarioNode currentNode = requireNode(progress.getCurrentNodeId());
@@ -130,7 +130,7 @@ public class ScenarioPlayService {
     /** Явный запрос клиента "время вышло" — форсирует default-выбор узла независимо от дедлайна. */
     @Transactional
     public ChoiceAppliedResponse timeout(UUID progressId, UUID playerId) {
-        UserProgress progress = requireProgress(progressId);
+        UserProgress progress = requireProgressForUpdate(progressId);
         checkOwnership(progress, playerId);
         requireInProgress(progress);
         ScenarioNode currentNode = requireNode(progress.getCurrentNodeId());
@@ -146,6 +146,13 @@ public class ScenarioPlayService {
             UserProgress progress, ScenarioNode fromNode, ScenarioChoice choice, boolean wasTimeout) {
         Instant now = Instant.now();
 
+        int loyaltyBefore = progress.getLoyaltyScore();
+        int safetyBefore = progress.getSafetyScore();
+        int loyaltyAfter = clampScale(loyaltyBefore + choice.getLoyaltyDelta());
+        int safetyAfter = clampScale(safetyBefore + choice.getSafetyDelta());
+        int appliedLoyaltyDelta = loyaltyAfter - loyaltyBefore;
+        int appliedSafetyDelta = safetyAfter - safetyBefore;
+
         long sequenceIndex = scenarioChoiceHistoryRepository.countByUserProgressId(progress.getId());
         scenarioChoiceHistoryRepository.save(ScenarioChoiceHistory.builder()
                 .userProgressId(progress.getId())
@@ -153,13 +160,13 @@ public class ScenarioPlayService {
                 .choiceId(choice.getId())
                 .sequenceIndex((int) sequenceIndex)
                 .wasTimeout(wasTimeout)
-                .loyaltyDeltaApplied(choice.getLoyaltyDelta())
-                .safetyDeltaApplied(choice.getSafetyDelta())
+                .loyaltyDeltaApplied(appliedLoyaltyDelta)
+                .safetyDeltaApplied(appliedSafetyDelta)
                 .chosenAt(now)
                 .build());
 
-        progress.setLoyaltyScore(progress.getLoyaltyScore() + choice.getLoyaltyDelta());
-        progress.setSafetyScore(progress.getSafetyScore() + choice.getSafetyDelta());
+        progress.setLoyaltyScore(loyaltyAfter);
+        progress.setSafetyScore(safetyAfter);
         progress.setUpdatedAt(now);
 
         ScenarioNode nextNode = choice.getTargetNodeId() != null ? requireNode(choice.getTargetNodeId()) : null;
@@ -192,9 +199,22 @@ public class ScenarioPlayService {
 
         return new ChoiceAppliedResponse(
                 progress.getId(), choice.getId(), choice.getCode(), wasTimeout,
-                choice.getLoyaltyDelta(), choice.getSafetyDelta(),
+                appliedLoyaltyDelta, appliedSafetyDelta,
                 progress.getLoyaltyScore(), progress.getSafetyScore(),
                 progress.getStatus(), progress.getFinalOutcome(), nextNodeResponse);
+    }
+
+    /**
+     * Шкалы прохождения ограничены {@code [0, 100]} (см. находку code-review: без клампа
+     * {@code loyaltyScore}/{@code safetyScore} уходили в отрицательные значения на провальных
+     * ветках, а фронтовый {@code ScaleBar} и так предполагает 0-100 и лишь маскировал нарушение
+     * инварианта на отображении). Клампится итоговый счёт, а не сырая дельта выбора — поэтому
+     * {@code loyaltyDeltaApplied}/{@code safetyDeltaApplied} в истории и в {@link ChoiceAppliedResponse}
+     * могут быть меньше по модулю, чем {@link ScenarioChoice#getLoyaltyDelta()}/{@code getSafetyDelta()}
+     * seed-данных — это фактически применённый эффект, честный для разбора прохождения.
+     */
+    private int clampScale(int value) {
+        return Math.max(0, Math.min(100, value));
     }
 
     private void completeProgress(UserProgress progress, ScenarioOutcome outcome, Instant now) {
@@ -321,6 +341,16 @@ public class ScenarioPlayService {
 
     private UserProgress requireProgress(UUID progressId) {
         return userProgressRepository.findById(progressId)
+                .orElseThrow(() -> new ProgressNotFoundException("Прохождение '" + progressId + "' не найдено"));
+    }
+
+    /**
+     * Как {@link #requireProgress}, но с пессимистичной блокировкой строки (см. Javadoc
+     * {@link UserProgressRepository#findByIdForUpdate}) — использовать перед любым изменением
+     * состояния прохождения ({@code choose}/{@code timeout}), не для read-only чтения.
+     */
+    private UserProgress requireProgressForUpdate(UUID progressId) {
+        return userProgressRepository.findByIdForUpdate(progressId)
                 .orElseThrow(() -> new ProgressNotFoundException("Прохождение '" + progressId + "' не найдено"));
     }
 

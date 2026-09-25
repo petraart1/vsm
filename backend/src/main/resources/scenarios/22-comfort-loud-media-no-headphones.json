@@ -1,0 +1,85 @@
+{
+  "code": "comfort-loud-media-no-headphones",
+  "situationRef": 22,
+  "block": "comfort",
+  "title": "Громкая музыка/видео без наушников",
+  "description": "Пассажир смотрит видео или слушает музыку на телефоне без наушников, звук мешает соседям. Бытовой вопрос, который решается одной вежливой фразой.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир смотрит видео на телефоне без наушников — звук разносится по вагону, соседи начинают оборачиваться.",
+      "choices": [
+        {
+          "code": "silent-gesture-to-headphones",
+          "text": "Молча подойти и жестом показать на наушники, не говоря ни слова.",
+          "loyaltyDelta": -2,
+          "safetyDelta": 3,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "rule": true
+          },
+          "explanationKey": "comfort-loud-media-no-headphones.start.silent-gesture-to-headphones",
+          "explanation": "Формально сигнал подан, но без единого слова просьба выглядит как немой упрёк, а не вежливое обращение проводника.",
+          "sortOrder": 0
+        },
+        {
+          "code": "ignore-to-avoid-awkwardness",
+          "text": "Сделать вид, что ничего не замечаешь, чтобы не создавать неловкую ситуацию.",
+          "loyaltyDelta": -9,
+          "safetyDelta": -3,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "comfort-loud-media-no-headphones.start.ignore-to-avoid-awkwardness",
+          "explanation": "Бездействие оставляет соседних пассажиров один на один со звуком, хотя короткая вежливая просьба решает вопрос за секунды.",
+          "sortOrder": 1,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 22: «Будьте добры, сделайте звук тише или используйте наушники»."
+        },
+        {
+          "code": "polite-request-headphones",
+          "text": "Вежливо подойти и попросить сделать звук тише или воспользоваться наушниками, объяснив, что вагон общий.",
+          "loyaltyDelta": 8,
+          "safetyDelta": 6,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "comfort-loud-media-no-headphones.start.polite-request-headphones",
+          "explanation": "Короткая вежливая просьба решает бытовой вопрос без неловкости для обеих сторон — именно та реплика, которую подсказывает методичка.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 22: «Будьте добры, сделайте звук тише или используйте наушники»."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир замечает жест и приглушает звук, но выглядит скорее недоумевающим, чем понявшим просьбу.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Молчаливый жест сработал лишь частично — без слов просьба звучит двусмысленно."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Громкое видео продолжается ещё несколько перегонов, соседние пассажиры один за другим начинают жаловаться.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: лёгкое неудобство, которое решалось одной фразой, осталось без внимания и накопило раздражение соседей."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир извиняется и надевает наушники, соседи заметно расслабляются.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: вежливая короткая просьба сняла неудобство без всякой неловкости."
+    }
+  ]
+}

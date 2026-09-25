@@ -30,6 +30,13 @@ public class ScenarioSeedDto {
 
     private boolean flagship = false;
 
+    /**
+     * Версия контента графа, по умолчанию 1. Растёт при содержательных правках seed-файла — так
+     * {@code ScenarioSeedService} узнаёт, что уже загруженный сценарий с тем же {@link #code} нужно
+     * перезаписать (см. javadoc {@code ScenarioSeedService.seed}), а не просто пропустить.
+     */
+    private int version = 1;
+
     /** Код узла, с которого начинается прохождение — должен существовать среди {@link #nodes}. */
     private String entryNode;
 

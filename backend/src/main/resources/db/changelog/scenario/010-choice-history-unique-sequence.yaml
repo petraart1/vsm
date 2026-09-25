@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-010-choice-history-unique-sequence
+      author: vsm
+      comment: >
+        Защита от гонки двойного клика/повторного запроса на POST .../choices/{choiceId} и
+        .../timeout (см. находку code-review): при параллельных запросах на одно и то же
+        прохождение возможна дублирующая запись истории с одинаковым sequence_index. Основной
+        фикс — пессимистичная блокировка UserProgress в ScenarioPlayService (сериализует запросы),
+        этот уникальный индекс — defense-in-depth на уровне БД на случай обхода блокировки.
+      changes:
+        - addUniqueConstraint:
+            tableName: scenario_choice_history
+            columnNames: user_progress_id, sequence_index
+            constraintName: uq_choice_history_progress_sequence

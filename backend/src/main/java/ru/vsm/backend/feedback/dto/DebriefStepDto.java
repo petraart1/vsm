@@ -23,6 +23,12 @@ import ru.vsm.backend.scenario.domain.NodeType;
  * @param scaleConflict        true, если выбор — осознанный компромисс шкал (дельты разного знака)
  * @param explanation          человекочитаемое объяснение «что пошло не так и почему» / что было
  *                             сделано верно для этого шага
+ * @param hiddenCommunicationEffect true, если решение принято в узле-эскалации, где пассажир сам
+ *                             разговор не слышит (все альтернативы в узле дают одну и ту же дельту
+ *                             лояльности), но при этом альтернативы расходятся по эффекту на
+ *                             безопасность — формулировка меняет исход "за кадром", не для
+ *                             пассажира. Признак вычислен по фактическим дельтам узла, не зашит
+ *                             под конкретный сценарий/узел.
  */
 public record DebriefStepDto(
         int sequenceIndex,
@@ -37,5 +43,6 @@ public record DebriefStepDto(
         List<String> roleStepsCompleted,
         List<String> roleStepsSkipped,
         boolean scaleConflict,
-        String explanation) {
+        String explanation,
+        boolean hiddenCommunicationEffect) {
 }

@@ -30,8 +30,9 @@ import ru.vsm.backend.scenario.domain.ScenarioOutcome;
  *                          прохождение идеально — тогда смотри {@link #summary()})
  * @param summary           итоговый обучающий текст: похвала (идеальное прохождение) либо
  *                          разбор ключевой развилки на 2-4 предложения
- * @param normReferences    файлы {@code dataset/standards/} на нормы, нарушенные/подтверждённые
- *                          в этом прохождении (для ссылок на фронтенде), без дублей
+ * @param normReferences    ссылки на нормы ({@link ru.vsm.backend.scenario.domain.ScenarioChoice#getNormRef()}
+ *                          сделанных выборов, как заполнены в данных сценария — без выдуманных
+ *                          ссылок для выборов, где норма не размечена), без дублей
  */
 public record DebriefResponse(
         UUID userProgressId,

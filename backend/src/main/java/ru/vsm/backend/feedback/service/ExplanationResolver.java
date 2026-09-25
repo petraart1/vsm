@@ -13,53 +13,49 @@ import ru.vsm.backend.scenario.domain.ScenarioChoice;
  * Резолвит человекочитаемое объяснение "что пошло не так и почему" / "что сделано верно" для
  * одного выбора в разборе прохождения.
  *
- * <p>Приоритет источников (как просила задача): 1) явный текст пояснения по
- * {@link ScenarioChoice#getExplanationKey()} из {@link #EXPLANATION_TEXTS} — точка расширения на
- * будущее, когда контент-редактор сценариев начнёт заполнять тексты пояснений по ключу;
- * 2) если явного текста нет (сейчас всегда, ни один seed-файл его пока не содержит) —
- * алгоритмический fallback по разметке шагов ролевой модели ({@link RoleStepFlags}), знаку дельт
- * шкал (конфликт шкал = осознанный компромисс) и норме из {@code dataset/standards/}, если
- * нарушена (см. {@link #SAFETY_NORM_BY_SCENARIO_CODE}).
+ * <p>Приоритет источников: 1) авторский текст {@link ScenarioChoice#getExplanation()}, заполняемый
+ * сценаристом прямо в seed-данных выбора — приоритетнее всего остального, ничего не достраивается
+ * поверх; 2) явный текст по {@link ScenarioChoice#getExplanationKey()} из {@link #EXPLANATION_TEXTS}
+ * — точка расширения на будущее (общие формулировки на несколько выборов сразу, по ключу, без
+ * дублирования текста в каждом seed-файле); 3) если ни того, ни другого нет — алгоритмический
+ * fallback по разметке шагов ролевой модели ({@link RoleStepFlags}) и знаку дельт шкал (конфликт
+ * шкал = осознанный компромисс).
+ *
+ * <p>Ссылка на норму ({@link ScenarioChoice#getNormRef()}) берётся напрямую из данных выбора,
+ * независимо от того, какой из трёх источников дал текст объяснения выше — никакой привязки к
+ * коду сценария и никакого домысливания нормы, если поле не заполнено: seed без {@code normRef}
+ * даёт {@link Explanation#normReferences()} пустым.
  */
 @Component
 public class ExplanationResolver {
 
-    /** Точка расширения: explanationKey -> готовый текст. Пока пуст — ни один seed не заполняет. */
+    /** Точка расширения: explanationKey -> готовый текст (общие формулировки без текста в seed). */
     private static final Map<String, String> EXPLANATION_TEXTS = Map.of();
 
     /**
-     * Норма из dataset/standards/, которая подтверждается/нарушается в этом сценарии, когда
-     * рейтинг безопасности снижается ({@code safetyDelta < 0}). Ключ — {@code Scenario.code}.
-     */
-    private static final Map<String, String> SAFETY_NORM_BY_SCENARIO_CODE = Map.of(
-            "boarding-no-ticket",
-            "Нарушение норматива готовности поезда к посадке: без действительного билета "
-                    + "посадка не допускается (dataset/standards/sto-rzd-03011-general.md, "
-                    + "раздел «Применимость к нашему проекту»).",
-            "medical-passenger-unwell",
-            "Неотложные обращения (первая помощь) обязаны быть приоритетом обслуживания "
-                    + "(dataset/standards/sto-rzd-03011-general.md, раздел «Требования к персоналу»).");
-
-    /** Файл нормы для {@link #normReferences()} — тот же ключ, что и выше, отдельно ради краткости. */
-    private static final String STANDARDS_GENERAL_FILE = "dataset/standards/sto-rzd-03011-general.md";
-
-    /**
      * @param choice     выбор игрока
-     * @param nodeType   тип узла, где сделан выбор (ESCALATION поясняется отдельно)
+     * @param nodeType   тип узла, где сделан выбор (ESCALATION поясняется отдельно в fallback-ветке)
      * @param wasTimeout выбор применён автоматически по истечении таймера
-     * @param scenarioCode код сценария (для резолва нормы)
      */
-    public Explanation resolve(ScenarioChoice choice, NodeType nodeType, boolean wasTimeout, String scenarioCode) {
-        String explicit = choice.getExplanationKey() == null ? null : EXPLANATION_TEXTS.get(choice.getExplanationKey());
-        if (explicit != null) {
-            return new Explanation(explicit, List.of());
+    public Explanation resolve(ScenarioChoice choice, NodeType nodeType, boolean wasTimeout) {
+        List<String> normRefs = choice.getNormRef() == null || choice.getNormRef().isBlank()
+                ? List.of()
+                : List.of(choice.getNormRef());
+
+        if (choice.getExplanation() != null && !choice.getExplanation().isBlank()) {
+            return new Explanation(choice.getExplanation().trim(), normRefs);
         }
-        return buildFallback(choice, nodeType, wasTimeout, scenarioCode);
+
+        String mapped = choice.getExplanationKey() == null ? null : EXPLANATION_TEXTS.get(choice.getExplanationKey());
+        if (mapped != null) {
+            return new Explanation(mapped, normRefs);
+        }
+
+        return buildFallback(choice, nodeType, wasTimeout, normRefs);
     }
 
-    private Explanation buildFallback(ScenarioChoice choice, NodeType nodeType, boolean wasTimeout, String scenarioCode) {
+    private Explanation buildFallback(ScenarioChoice choice, NodeType nodeType, boolean wasTimeout, List<String> normRefs) {
         StringBuilder text = new StringBuilder();
-        List<String> normRefs = new ArrayList<>();
 
         if (wasTimeout) {
             text.append("Время на решение истекло — выбор применён автоматически. ");
@@ -90,14 +86,6 @@ public class ExplanationResolver {
             } else if (choice.getSafetyDelta() < 0 && choice.getLoyaltyDelta() > 0) {
                 text.append("Компромисс шкал не в пользу безопасности: лояльность выросла (+"
                         + choice.getLoyaltyDelta() + "), но безопасность просела (" + choice.getSafetyDelta() + "). ");
-            }
-        }
-
-        if (choice.getSafetyDelta() < 0) {
-            String norm = SAFETY_NORM_BY_SCENARIO_CODE.get(scenarioCode);
-            if (norm != null) {
-                text.append(norm).append(' ');
-                normRefs.add(STANDARDS_GENERAL_FILE);
             }
         }
 
@@ -145,7 +133,7 @@ public class ExplanationResolver {
         return steps;
     }
 
-    /** Результат резолва: текст пояснения + ссылки на файлы норм (пусто, если норма не затронута). */
+    /** Результат резолва: текст пояснения + ссылки на нормы (пусто, если норма не заявлена в данных). */
     public record Explanation(String text, List<String> normReferences) {
     }
 }

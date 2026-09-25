@@ -1,0 +1,82 @@
+{
+  "code": "misc-missing-service",
+  "situationRef": 31,
+  "block": "misc",
+  "title": "Недовольство отсутствием услуги",
+  "description": "Пассажир рассчитывал на определённую услугу — например, сувенирную продукцию или конкретный вид питания, — но на борту её нет.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир расстроенно спрашивает: «А где у вас сувениры с символикой поезда? Хотел ребёнку привезти».",
+      "choices": [
+        {
+          "code": "argue",
+          "text": "Начать спорить, что сувениры и не должны быть на борту — это вообще не их обязанность.",
+          "loyaltyDelta": -12,
+          "safetyDelta": 0,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "misc-missing-service.start.argue",
+          "explanation": "Спор вместо предложения альтернативы — типичная ошибка: пассажир не виноват, что не угадал с ожиданиями, а спор только усиливает разочарование.",
+          "sortOrder": 0
+        },
+        {
+          "code": "just-apologize",
+          "text": "Просто извиниться и развести руками, не предлагая ничего взамен.",
+          "loyaltyDelta": -3,
+          "safetyDelta": 0,
+          "target": "apology-only-terminal",
+          "roleSteps": {
+            "acknowledge": true
+          },
+          "explanationKey": "misc-missing-service.start.just-apologize",
+          "explanation": "Извинение — правильный первый шаг, но без альтернативы разговор обрывается на полпути, оставляя пассажира с нерешённым желанием.",
+          "sortOrder": 1
+        },
+        {
+          "code": "apologize-and-suggest-alternative",
+          "text": "Извиниться, объяснить, что на борту этой услуги нет, и подсказать альтернативу — например, сувенирная продукция продаётся в киоске на вокзале прибытия.",
+          "loyaltyDelta": 10,
+          "safetyDelta": 1,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "misc-missing-service.start.apologize-and-suggest-alternative",
+          "explanation": "Признание отсутствия услуги плюс конкретная альтернатива вне поезда полностью закрывает желание пассажира — просто не на борту, а на следующей остановке маршрута.",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир требует жалобную книгу, разговор заканчивается на повышенных тонах.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Спор вместо альтернативы — недовольство, которое легко было снять простым советом, перерастает в конфликт."
+    },
+    {
+      "code": "apology-only-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир вежливо кивает, но уходит с тем же нерешённым вопросом.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Извинение принято, но без альтернативы разговор не довёл пассажира до реального решения."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир записывает название киоска на вокзале и благодарит за совет.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: отсутствие услуги признано честно, а альтернатива найдена за пределами борта."
+    }
+  ]
+}

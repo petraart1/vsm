@@ -1,0 +1,85 @@
+{
+  "code": "comfort-outlet-not-working",
+  "situationRef": 16,
+  "block": "comfort",
+  "title": "Не работает розетка/мультимедиа/кнопка вызова",
+  "description": "У пассажира не работает розетка (или мультимедиа/кнопка вызова). Вопрос технический — требует уведомления бортинженера и начальника поезда, а не обещаний, которые проводник не может выполнить лично.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир говорит: «У меня не работает розетка, телефон садится, а ехать ещё долго».",
+      "choices": [
+        {
+          "code": "apologize-not-my-responsibility",
+          "text": "Извиниться и объяснить, что розетки — не в зоне ответственности проводника, на этом разговор закончить.",
+          "loyaltyDelta": -6,
+          "safetyDelta": 1,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true
+          },
+          "explanationKey": "comfort-outlet-not-working.start.apologize-not-my-responsibility",
+          "explanation": "Извинение прозвучало, но реальный путь решения — сообщить бортинженеру и проверить свободные места — так и не был предложен.",
+          "sortOrder": 0
+        },
+        {
+          "code": "promise-reseat-without-checking",
+          "text": "Сразу пообещать пассажиру пересадку «прямо сейчас», даже не проверив, есть ли вообще свободное место с исправной розеткой поблизости.",
+          "loyaltyDelta": 4,
+          "safetyDelta": -8,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "comfort-outlet-not-working.start.promise-reseat-without-checking",
+          "explanation": "Обещание, данное без проверки фактической доступности места и исправности розетки там, — типичная ложная гарантия, которая создаёт новое разочарование позже.",
+          "sortOrder": 1
+        },
+        {
+          "code": "apologize-check-seat-notify-engineer",
+          "text": "Извиниться за неисправность, проверить наличие свободного места с исправной розеткой поблизости и одновременно сообщить о поломке бортинженеру и начальнику поезда для устранения.",
+          "loyaltyDelta": 9,
+          "safetyDelta": 8,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "comfort-outlet-not-working.start.apologize-check-seat-notify-engineer",
+          "explanation": "Полный протокол: неисправность признана, временное решение (другое место) проверено фактически, а сама поломка передана по верному техническому каналу для устранения.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 16: извиниться, предложить пересадку, проинформировать начальника поезда и бортинженера."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир смиряется с неисправной розеткой на весь путь, извинение звучало, но конкретной помощи не последовало.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Признание проблемы было, но реального решения или технической заявки не последовало."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Свободного места с исправной розеткой поблизости не находится — обещанная пересадка оказывается невыполнимой, пассажир раздражён вдвойне.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: обещание, данное без проверки фактической возможности, привело к новому разочарованию."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир пересаживается на проверенное свободное место с исправной розеткой, а заявка на ремонт уходит бортинженеру.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: временное решение подтверждено фактически, а неисправность передана по техническому каналу."
+    }
+  ]
+}

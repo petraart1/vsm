@@ -1,0 +1,86 @@
+{
+  "code": "comfort-temperature",
+  "situationRef": 15,
+  "block": "comfort",
+  "title": "Некомфортная температура",
+  "description": "Пассажир жалуется на некомфортную температуру в вагоне. Климат управляется централизованно, поэтому проводник не может отрегулировать её лично — вопрос решается через бортинженера.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир жалуется: «Здесь очень холодно, весь ряд мёрзнет, можно что-то сделать?»",
+      "choices": [
+        {
+          "code": "explain-centralized-only",
+          "text": "Сказать, что температуру регулирует централизованная система, и лично проводник ничего изменить не может.",
+          "loyaltyDelta": -8,
+          "safetyDelta": 2,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "rule": true
+          },
+          "explanationKey": "comfort-temperature.start.explain-centralized-only",
+          "explanation": "Технически верно, но фраза звучит как отказ помочь: реальный канал решения вопроса — обращение к бортинженеру — даже не был упомянут.",
+          "sortOrder": 0,
+          "normRef": "СТО РЖД 03.011-2026 — «Комфорт пассажирского места»: комфортная температура 20–24 °C (при наружной ≤10 °C) и 24–28 °C (при наружной 20–40 °C), управляется централизованно."
+        },
+        {
+          "code": "false-promise-fix-personally",
+          "text": "Пообещать лично «сейчас подкручу батарею», хотя проводник не имеет доступа к системе климат-контроля.",
+          "loyaltyDelta": 6,
+          "safetyDelta": -10,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "comfort-temperature.start.false-promise-fix-personally",
+          "explanation": "Обещание того, что физически не в компетенции проводника, создаёт ложные ожидания и неизбежное новое разочарование, когда температура не изменится.",
+          "sortOrder": 1,
+          "normRef": "СТО РЖД 03.011-2026 — «Комфорт пассажирского места»: комфортная температура 20–24 °C (при наружной ≤10 °C) и 24–28 °C (при наружной 20–40 °C), управляется централизованно."
+        },
+        {
+          "code": "acknowledge-poll-neighbors-escalate-to-engineer",
+          "text": "Признать неудобство, коротко уточнить общее ощущение у соседей и передать информацию бортинженеру для регулировки централизованной системы, пообещав вернуться с ответом.",
+          "loyaltyDelta": 10,
+          "safetyDelta": 7,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "comfort-temperature.start.acknowledge-poll-neighbors-escalate-to-engineer",
+          "explanation": "Правильный канал решения — бортинженер, а не личные манипуляции проводника с оборудованием; при этом пассажир получает и признание жалобы, и обещание вернуться с результатом.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 15: выслушать, опросить соседей индивидуально, передать бортинженеру."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир понимает, что вопрос не в компетенции проводника, но уходит с ощущением, что ему просто отказали.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Технически верный ответ прозвучал как отказ — реальный канал решения не был предложен."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Через некоторое время пассажир снова подходит: температура не изменилась, а обещание «подкрутить» оказалось невыполнимым.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: обещание вне компетенции проводника создало ложные ожидания и новое разочарование."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Бортинженер получает заявку и подстраивает климат в вагоне, проводник возвращается к пассажиру с подтверждением, что вопрос решается.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: жалоба передана по верному каналу, а пассажир не остался без ответа."
+    }
+  ]
+}

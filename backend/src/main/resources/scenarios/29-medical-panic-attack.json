@@ -1,0 +1,85 @@
+{
+  "code": "medical-panic-attack",
+  "situationRef": 29,
+  "block": "medical",
+  "title": "Паническая атака или сильное волнение",
+  "description": "У пассажира начинается паническая атака — учащённое дыхание, тревога, дрожь в руках.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир, вцепившись в подлокотник, часто и сбивчиво дышит: «Мне... не хватает воздуха... кажется, мне плохо...»",
+      "choices": [
+        {
+          "code": "leave-alone",
+          "text": "Посоветовать пассажиру успокоиться самостоятельно и отойти по другим делам.",
+          "loyaltyDelta": -15,
+          "safetyDelta": -12,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "medical-panic-attack.start.leave-alone",
+          "explanation": "Оставить пассажира с панической атакой одного — прямой провал: состояние может ухудшиться, а отсутствие поддержки усиливает тревогу.",
+          "sortOrder": 0
+        },
+        {
+          "code": "rush-medical-jargon",
+          "text": "Сразу начать говорить медицинскими терминами о симптомах, чтобы показать компетентность.",
+          "loyaltyDelta": -5,
+          "safetyDelta": 2,
+          "target": "jargon-terminal",
+          "roleSteps": {
+            "acknowledge": true
+          },
+          "explanationKey": "medical-panic-attack.start.rush-medical-jargon",
+          "explanation": "Формально проводник не бездействует, но сложные формулировки в состоянии острой тревоги не помогают пассажиру — простая, спокойная речь работает лучше.",
+          "sortOrder": 1
+        },
+        {
+          "code": "calm-and-stay",
+          "text": "Говорить спокойно и медленно, помочь пассажиру сесть, принести воды, предложить подышать «по квадрату», оставаться рядом до улучшения состояния.",
+          "loyaltyDelta": 15,
+          "safetyDelta": 10,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "medical-panic-attack.start.calm-and-stay",
+          "explanation": "Спокойный голос, вода и техника дыхания «по квадрату», а главное — присутствие рядом до улучшения, это ровно то, что нужно при панической атаке, без слов, которые могут напугать ещё больше.",
+          "sortOrder": 2
+        }
+      ],
+      "timerSeconds": 20,
+      "defaultChoice": "leave-alone"
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Состояние пассажира ухудшается, дыхание учащается ещё больше, приходится в срочном порядке звать на помощь уже в разгар приступа.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Оставить пассажира одного во время панической атаки — прямой провал, состояние ухудшилось из-за отсутствия поддержки."
+    },
+    {
+      "code": "jargon-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир слушает растерянно, тревога не снижается так быстро, как могла бы.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Формальная компетентность не заменяет простую спокойную поддержку — выбран не тот подход."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Дыхание пассажира постепенно выравнивается, он благодарит проводника за то, что остался рядом.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: спокойствие, вода и присутствие рядом сработали именно так, как нужно при панической атаке."
+    }
+  ]
+}

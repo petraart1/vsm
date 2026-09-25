@@ -1,0 +1,84 @@
+{
+  "code": "medical-general-panic",
+  "situationRef": 45,
+  "block": "medical",
+  "title": "Пассажир паникует (общая ситуация)",
+  "description": "Пассажир по неясной причине — страх высокой скорости, замкнутое пространство, тревожная новость — впадает в панику, не связанную с конкретным медицинским симптомом.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир мечется в проходе, сбивчиво говорит: «Мне кажется, что-то случилось, все как-то странно смотрят, что происходит?!»",
+      "choices": [
+        {
+          "code": "unclear",
+          "text": "Растерянно ответить что-то невнятное вроде «да всё нормально, не переживайте» и поспешно отойти.",
+          "loyaltyDelta": -12,
+          "safetyDelta": -8,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "medical-general-panic.start.unclear",
+          "explanation": "Нечёткая формулировка и поспешное бегство от разговора — паника персонала в ответ на панику пассажира только усиливает тревогу, вместо того чтобы её погасить.",
+          "sortOrder": 0
+        },
+        {
+          "code": "firm-but-cold",
+          "text": "Чётко сказать «Успокойтесь, ничего не происходит» и вернуться к своим делам, не задерживаясь.",
+          "loyaltyDelta": -3,
+          "safetyDelta": 2,
+          "target": "curt-terminal",
+          "roleSteps": {
+            "rule": true
+          },
+          "explanationKey": "medical-general-panic.start.firm-but-cold",
+          "explanation": "Формулировка чёткая и в целом верная по содержанию, но отсутствие тепла в тоне и поспешный уход не дают пассажиру времени по-настоящему успокоиться.",
+          "sortOrder": 1
+        },
+        {
+          "code": "calm-clear-and-stay",
+          "text": "Сохранять спокойствие, говорить чётко и понятно, объяснить, что повода для тревоги нет, и остаться рядом на минуту, пока пассажир не успокоится.",
+          "loyaltyDelta": 12,
+          "safetyDelta": 10,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "reassure": true
+          },
+          "explanationKey": "medical-general-panic.start.calm-clear-and-stay",
+          "explanation": "Чёткие, спокойные формулировки и немного времени рядом — именно то, что не даёт панике распространиться дальше по вагону; собственное спокойствие проводника здесь работает как метод, а не только вежливость.",
+          "sortOrder": 2
+        }
+      ],
+      "timerSeconds": 20,
+      "defaultChoice": "unclear"
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Невнятный ответ и поспешный уход только усиливают тревогу — пассажир продолжает беспокоить соседей вопросами.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Нечёткая формулировка и паника персонала в ответ на панику пассажира — ситуация не разрешена, а усугублена."
+    },
+    {
+      "code": "curt-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир формально успокаивается, но остаётся немного напряжён до конца поездки.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Содержание ответа верное, но отсутствие времени и тепла не дало пассажиру полностью успокоиться."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир, получив спокойное объяснение и немного внимания, полностью успокаивается и извиняется за беспокойство.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: чёткость и спокойствие проводника не позволили панике распространиться дальше."
+    }
+  ]
+}

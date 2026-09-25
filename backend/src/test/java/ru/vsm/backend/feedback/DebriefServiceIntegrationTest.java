@@ -113,14 +113,22 @@ class DebriefServiceIntegrationTest {
         assertThat(firstStep.roleStepsSkipped()).containsExactly("Заверить");
         // loyaltyDelta -2, safetyDelta +5 — разные знаки => осознанный компромисс шкал.
         assertThat(firstStep.scaleConflict()).isTrue();
-        assertThat(firstStep.explanation()).contains("компромисс");
+        // Явный авторский текст (choice.explanation) приоритетнее fallback'а — резолвер отдаёт
+        // его как есть, без алгоритмической достройки.
+        assertThat(firstStep.explanation()).isEqualTo(acknowledgeAndExplain.getExplanation());
+        assertThat(firstStep.hiddenCommunicationEffect()).isFalse();
 
         // На узле "start" лучшая альтернатива по сумме дельт — offer-to-check (score 5),
         // выбранный acknowledge-and-explain даёт score 3 => это и есть ключевая развилка.
+        ScenarioChoice offerToCheck = choiceByCode(startNode.getId(), "offer-to-check");
         assertThat(debrief.keyMoment()).isNotNull();
         assertThat(debrief.keyMoment().sequenceIndex()).isEqualTo(0);
-        assertThat(debrief.keyMoment().betterChoiceText())
-                .isEqualTo(choiceByCode(startNode.getId(), "offer-to-check").getText());
+        assertThat(debrief.keyMoment().betterChoiceText()).isEqualTo(offerToCheck.getText());
+        assertThat(debrief.keyMoment().betterExplanation()).isEqualTo(offerToCheck.getExplanation());
+
+        // normRef обоих сделанных выборов заполнен авторски (не хардкод по коду сценария).
+        assertThat(debrief.normReferences())
+                .containsExactlyInAnyOrder(acknowledgeAndExplain.getNormRef(), politeFirmClose.getNormRef());
     }
 
     @Test
@@ -154,9 +162,73 @@ class DebriefServiceIntegrationTest {
         assertThat(debrief.verdict()).isEqualTo("Критическая ошибка безопасности");
         DebriefStepDto step = debrief.timeline().get(0);
         assertThat(step.wasTimeout()).isTrue();
-        assertThat(step.explanation()).contains("Время на решение истекло");
-        assertThat(step.explanation()).contains("dataset/standards/sto-rzd-03011-general.md");
-        assertThat(debrief.normReferences()).containsExactly("dataset/standards/sto-rzd-03011-general.md");
+        // Авторское объяснение приоритетнее fallback'а даже для таймаутного выбора — про истечение
+        // времени сообщает отдельное поле wasTimeout, текст объяснения не подменяется генерик-фразой.
+        assertThat(step.explanation()).isEqualTo(letThroughFriendly.getExplanation());
+        assertThat(debrief.normReferences()).containsExactly(letThroughFriendly.getNormRef());
+    }
+
+    /**
+     * Скрытая механика узла-эскалации "вызов начальника поезда по рации" в сценарии
+     * {@code intoxicated-passenger} (06): обе формулировки дают одинаковую (нулевую) дельту
+     * лояльности — пассажир разговор по рации не слышит, — но расходятся по дельте безопасности.
+     * Открытая ("оценочная") формулировка штрафует безопасность; разбор обязан явно показать этот
+     * шаг с авторским объяснением и ссылкой на норму, а не спрятать его в generic-тексте.
+     */
+    @Test
+    void debriefHighlightsHiddenRadioCommunicationEffectForIntoxicatedPassengerScenario() {
+        Scenario scenario = scenarioRepository.findByCode("intoxicated-passenger").orElseThrow();
+        ScenarioNode startNode = nodeByCode(scenario.getId(), "start");
+        ScenarioChoice calmApproach = choiceByCode(startNode.getId(), "calm-approach");
+        ScenarioNode radioNode = nodeByCode(scenario.getId(), "radio-call-chief");
+        ScenarioChoice openFormulation = choiceByCode(radioNode.getId(), "open-formulation");
+
+        UserProgress progress = userProgressRepository.save(UserProgress.builder()
+                .userId(UUID.randomUUID())
+                .scenarioId(scenario.getId())
+                .currentNodeId(null)
+                .status(ProgressStatus.COMPLETED)
+                .loyaltyScore(calmApproach.getLoyaltyDelta() + openFormulation.getLoyaltyDelta())
+                .safetyScore(calmApproach.getSafetyDelta() + openFormulation.getSafetyDelta())
+                .finalOutcome(ScenarioOutcome.PARTIAL)
+                .build());
+
+        historyRepository.save(ScenarioChoiceHistory.builder()
+                .userProgressId(progress.getId())
+                .nodeId(startNode.getId())
+                .choiceId(calmApproach.getId())
+                .sequenceIndex(0)
+                .wasTimeout(false)
+                .loyaltyDeltaApplied(calmApproach.getLoyaltyDelta())
+                .safetyDeltaApplied(calmApproach.getSafetyDelta())
+                .build());
+        historyRepository.save(ScenarioChoiceHistory.builder()
+                .userProgressId(progress.getId())
+                .nodeId(radioNode.getId())
+                .choiceId(openFormulation.getId())
+                .sequenceIndex(1)
+                .wasTimeout(false)
+                .loyaltyDeltaApplied(openFormulation.getLoyaltyDelta())
+                .safetyDeltaApplied(openFormulation.getSafetyDelta())
+                .build());
+
+        DebriefResponse debrief = debriefService.buildDebrief(progress.getId());
+
+        assertThat(debrief.timeline()).hasSize(2);
+        DebriefStepDto radioStep = debrief.timeline().get(1);
+        assertThat(radioStep.nodeCode()).isEqualTo("radio-call-chief");
+        assertThat(radioStep.choiceCode()).isEqualTo("open-formulation");
+        assertThat(radioStep.loyaltyDelta()).isZero();
+        assertThat(radioStep.safetyDelta()).isEqualTo(openFormulation.getSafetyDelta());
+        // Авторское объяснение и ссылка на норму долетают из seed-данных как есть, без домысливания.
+        assertThat(radioStep.explanation()).isEqualTo(openFormulation.getExplanation());
+        assertThat(radioStep.explanation()).contains("не слышит");
+        assertThat(openFormulation.getNormRef()).isNotBlank();
+        assertThat(debrief.normReferences()).contains(openFormulation.getNormRef());
+        // Скрытая механика распознана алгоритмически по дельтам узла (не зашита под этот сценарий).
+        assertThat(radioStep.hiddenCommunicationEffect()).isTrue();
+        // Обычный узел без этой механики (start) — признак не срабатывает.
+        assertThat(debrief.timeline().get(0).hiddenCommunicationEffect()).isFalse();
     }
 
     private ScenarioNode nodeByCode(UUID scenarioId, String code) {

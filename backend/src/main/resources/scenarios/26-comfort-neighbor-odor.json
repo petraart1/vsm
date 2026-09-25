@@ -1,0 +1,85 @@
+{
+  "code": "comfort-neighbor-odor",
+  "situationRef": 26,
+  "block": "comfort",
+  "title": "Жалоба на запах/дискомфорт от соседа",
+  "description": "Пассажир деликатно жалуется на запах или дискомфорт от соседа по вагону. Тема требует особого такта: вопрос нужно решить без привлечения внимания к третьему пассажиру.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир тихо, стараясь не привлекать внимания, говорит: «От соседнего пассажира сильный запах, мне некомфортно — можно что-то сделать?»",
+      "choices": [
+        {
+          "code": "silently-offer-seat-no-reason",
+          "text": "Проверить наличие свободных мест и молча предложить пассажиру пересесть, не уточняя и не объясняя причину.",
+          "loyaltyDelta": 2,
+          "safetyDelta": 3,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "solution": true
+          },
+          "explanationKey": "comfort-neighbor-odor.start.silently-offer-seat-no-reason",
+          "explanation": "Практичное решение без признания неловкости самой темы — пассажир получает место, но чувствует себя неловко, будто сам создал проблему.",
+          "sortOrder": 0
+        },
+        {
+          "code": "loudly-ask-who-smells",
+          "text": "Громко, при соседе, спросить у жаловавшегося пассажира, от кого именно исходит запах, чтобы «разобраться на месте».",
+          "loyaltyDelta": -14,
+          "safetyDelta": -6,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "comfort-neighbor-odor.start.loudly-ask-who-smells",
+          "explanation": "Публичное выяснение деликатного вопроса при потенциальном «виновнике» — грубое нарушение такта: ситуация должна решаться без привлечения внимания к третьему пассажиру.",
+          "sortOrder": 1,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 26: деликатно, без привлечения внимания."
+        },
+        {
+          "code": "acknowledge-quietly-offer-move",
+          "text": "Признать неловкость темы, тихо уточнить у жаловавшегося, что именно беспокоит, и при наличии мест деликатно предложить пересадку, не называя причину вслух.",
+          "loyaltyDelta": 9,
+          "safetyDelta": 5,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "comfort-neighbor-odor.start.acknowledge-quietly-offer-move",
+          "explanation": "Деликатный полный цикл: жалоба услышана тихо, решение (пересадка) найдено без единого слова, которое могло бы задеть третьего пассажира.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 26: проверить, предложить пересадку при возможности, деликатно."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир пересаживается на свободное место, но уходит с ощущением неловкости, будто сам во всём виноват.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Практический вопрос решён, но такт разговора хромал — признания неловкости темы не было."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Громкий вопрос слышат оба пассажира — жаловавшийся смущён, а сосед, о котором шла речь, догадывается, о чём был разговор.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: деликатная тема была вынесена на публику вместо тихого решения."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир тихо пересаживается на новое место, никто из соседей не догадывается о причине.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: жалоба решена с максимальным тактом, никто не почувствовал себя задетым."
+    }
+  ]
+}

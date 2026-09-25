@@ -1,0 +1,85 @@
+{
+  "code": "seating-wrong-seat",
+  "situationRef": 13,
+  "block": "seating",
+  "title": "Пассажир не на своём месте",
+  "description": "Пассажир обнаруживает, что его место по билету занято другим человеком, который ссылается на путаницу в приложении. Вопрос решается только по билетам, а не на слово.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир с билетом в руке обращается: «Извините, кажется, это моё место, а здесь уже кто-то сидит». Сидящий пассажир пожимает плечами: «У меня в приложении было показано это место, наверное, что-то напутал».",
+      "choices": [
+        {
+          "code": "silently-point-to-ticket-seat",
+          "text": "Молча указать пассажиру, занявшему чужое место, на нужное место по билету, не разбираясь в причине.",
+          "loyaltyDelta": -3,
+          "safetyDelta": 4,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "rule": true
+          },
+          "explanationKey": "seating-wrong-seat.start.silently-point-to-ticket-seat",
+          "explanation": "Формально верно — билет решает спор, — но отсутствие даже короткого уточнения причины оставляет оба пассажира слегка растерянными.",
+          "sortOrder": 0
+        },
+        {
+          "code": "let-stay-without-checking-tickets",
+          "text": "Разрешить пассажиру, занявшему чужое место, остаться там просто потому что не хочет вставать, не сверяя билеты.",
+          "loyaltyDelta": 6,
+          "safetyDelta": -12,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "seating-wrong-seat.start.let-stay-without-checking-tickets",
+          "explanation": "Решение принято без проверки билета: если посадка действительно была ошибочной и место понадобится дальше по маршруту другому пассажиру, конфликт вернётся снова, но уже без времени на решение.",
+          "sortOrder": 1,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок D, ситуация 13: выяснить причину, проверить билет."
+        },
+        {
+          "code": "clarify-check-tickets-reseat",
+          "text": "Признать неловкость ситуации, вежливо уточнить причину, сверить билеты обоих пассажиров и вернуть на место по билету либо оформить пересадку при обоюдном согласии.",
+          "loyaltyDelta": 10,
+          "safetyDelta": 9,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "seating-wrong-seat.start.clarify-check-tickets-reseat",
+          "explanation": "Эталонная последовательность: причина уточнена, билеты сверены, решение принято на основании документов, а не на слово — и при этом обе стороны услышали вежливое объяснение.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок D, ситуация 13: «Добрый день! Позвольте уточнить, Вы пересели?»"
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир пересаживается на своё место по билету, но оба остаются немного растерянными из-за того, что никто ничего не объяснил.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Формально верное, но сухое решение без уточнения причины путаницы."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Через несколько станций выясняется, что место действительно было продано другому пассажиру — спор приходится решать заново, уже на ходу и в спешке.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: решение принято без проверки билетов, и настоящая причина путаницы осталась невыясненной."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Билеты сверены, причина путаницы — ошибка в мобильном приложении — прояснена, пассажир вежливо пересаживается на своё место.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: спор решён по документам и без недосказанности с обеих сторон."
+    }
+  ]
+}

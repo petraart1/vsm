@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -181,21 +182,33 @@ class ScenarioPlayApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.wasTimeout").value(true))
                 .andExpect(jsonPath("$.appliedChoiceCode").value("freeze-and-wait"))
-                .andExpect(jsonPath("$.loyaltyDelta").value(-15))
-                .andExpect(jsonPath("$.safetyDelta").value(-20))
+                // Шкалы клампятся на [0, 100] (см. javadoc ScenarioPlayService.clampScale): счёт стартует
+                // с 0, а raw-дельты выбора -15/-20 упираются в нижнюю границу, поэтому фактически
+                // применённая (и отражённая здесь) дельта — 0, не сырое значение из seed-файла.
+                .andExpect(jsonPath("$.loyaltyDelta").value(0))
+                .andExpect(jsonPath("$.safetyDelta").value(0))
+                .andExpect(jsonPath("$.loyaltyScore").value(0))
+                .andExpect(jsonPath("$.safetyScore").value(0))
                 .andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.finalOutcome").value("FAILURE"))
                 .andExpect(jsonPath("$.nextNode.code").value("failure-panic-delay"));
 
-        assertThat(scenarioChoiceHistoryRepository.findByUserProgressIdOrderBySequenceIndex(progressId))
-                .singleElement()
-                .extracting(ScenarioChoiceHistory::isWasTimeout)
-                .isEqualTo(true);
+        List<ScenarioChoiceHistory> historyRows =
+                scenarioChoiceHistoryRepository.findByUserProgressIdOrderBySequenceIndex(progressId);
+        assertThat(historyRows).hasSize(1);
+        ScenarioChoiceHistory historyEntry = historyRows.get(0);
+        assertThat(historyEntry.isWasTimeout()).isTrue();
+        // История хранит фактически применённую (клампированную) дельту, не сырую из seed-данных —
+        // честно для разбора прохождения (см. находку code-review про клампинг шкал).
+        assertThat(historyEntry.getLoyaltyDeltaApplied()).isZero();
+        assertThat(historyEntry.getSafetyDeltaApplied()).isZero();
 
         ScenarioCompletedEvent event = events.stream(ScenarioCompletedEvent.class).findFirst().orElseThrow();
         assertThat(event.hadTimeout()).isTrue();
         assertThat(event.outcome()).isEqualTo(ScenarioOutcome.FAILURE);
         assertThat(event.allRoleStepsFollowed()).isFalse();
+        assertThat(event.loyaltyScore()).isZero();
+        assertThat(event.safetyScore()).isZero();
     }
 
     @Test

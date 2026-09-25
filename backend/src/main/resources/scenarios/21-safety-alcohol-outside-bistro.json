@@ -1,0 +1,88 @@
+{
+  "code": "safety-alcohol-outside-bistro",
+  "situationRef": 21,
+  "block": "safety",
+  "title": "Употребление алкоголя вне вагона-бистро",
+  "description": "Пассажир распивает алкоголь, купленный заранее, прямо на своём месте — по правилам это допускается только в вагоне-бистро.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир достаёт из сумки бутылку и разливает по стаканам себе и соседу прямо в вагоне.",
+      "choices": [
+        {
+          "code": "firm-redirect",
+          "text": "Вежливо объяснить, что употребление алкоголя допускается только в вагоне-бистро, предложить пройти туда или убрать напиток до прибытия.",
+          "loyaltyDelta": -5,
+          "safetyDelta": 8,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true
+          },
+          "explanationKey": "safety-alcohol-outside-bistro.start.firm-redirect",
+          "explanation": "Правило названо не как запрет вообще, а с конкретной альтернативой (бистро) — это снижает ощущение произвола отказа.",
+          "sortOrder": 0,
+          "normRef": "СТО РЖД 03.011-2026 — правило: употребление алкогольных напитков допускается только в вагоне-бистро."
+        },
+        {
+          "code": "ignore",
+          "text": "Не вмешиваться, пока пассажиры ведут себя тихо.",
+          "loyaltyDelta": 6,
+          "safetyDelta": -15,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "safety-alcohol-outside-bistro.start.ignore",
+          "explanation": "Молчаливое разрешение нарушения формирует прецедент и повышает риск конфликтного поведения при дальнейшем употреблении — контроль за порядком входит в обязанности бригады независимо от того, шумят пассажиры или нет.",
+          "sortOrder": 1,
+          "normRef": "СТО РЖД 03.011-2026 — правило: употребление алкогольных напитков допускается только в вагоне-бистро."
+        },
+        {
+          "code": "explain-and-escalate-on-conflict",
+          "text": "Объяснить правило и предложить убрать напиток; если пассажир отказывается или поведение становится шумным — пригласить начальника поезда для решения.",
+          "loyaltyDelta": 1,
+          "safetyDelta": 12,
+          "target": "escalated-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "safety-alcohol-outside-bistro.start.explain-and-escalate-on-conflict",
+          "explanation": "Пассажир не наказан авансом — сначала обычное объяснение, эскалация только при реальном риске конфликта, как и предписывает протокол.",
+          "sortOrder": 2,
+          "normRef": "СТО РЖД 03.011-2026 — правило: употребление алкогольных напитков допускается только в вагоне-бистро."
+        }
+      ]
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир соглашается либо убрать бутылку, либо допить в вагоне-бистро.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Правило соблюдено без конфликта, альтернатива предложена сразу."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Через полчаса компания пассажиров, употребляющих алкоголь на месте, становится шумной, поступают жалобы соседей.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Бездействие при первом нарушении привело к разрастанию проблемы — порядок в вагоне не удержан."
+    },
+    {
+      "code": "escalated-terminal",
+      "type": "TERMINAL",
+      "text": "Начальник поезда подтверждает требование, пассажир убирает алкоголь без дальнейших споров.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Эскалация к начальнику поезда сработала как предусмотрено протоколом при риске конфликта."
+    }
+  ]
+}

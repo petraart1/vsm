@@ -1,0 +1,84 @@
+{
+  "code": "misc-baby-care-space",
+  "situationRef": 36,
+  "block": "misc",
+  "title": "Пассажир с ребёнком просит место для ухода",
+  "description": "Пассажир с младенцем просит отдельное помещение для переодевания или кормления — специальной комнаты матери и ребёнка в поезде нет.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Мама с младенцем на руках спрашивает: «У вас есть комната матери и ребёнка? Нужно переодеть и покормить малыша».",
+      "choices": [
+        {
+          "code": "bare-refusal",
+          "text": "Ответить, что такой комнаты нет, и больше ничего не предложить.",
+          "loyaltyDelta": -12,
+          "safetyDelta": 0,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "misc-baby-care-space.start.bare-refusal",
+          "explanation": "Формально честный ответ без единой альтернативы оставляет маму с младенцем в неудобном положении посреди вагона.",
+          "sortOrder": 0
+        },
+        {
+          "code": "point-to-toilet",
+          "text": "Предложить воспользоваться обычным туалетом как есть, без уточнения деталей и удобства.",
+          "loyaltyDelta": -2,
+          "safetyDelta": 0,
+          "target": "minimal-terminal",
+          "roleSteps": {
+            "rule": true
+          },
+          "explanationKey": "misc-baby-care-space.start.point-to-toilet",
+          "explanation": "Формальная альтернатива названа, но без учёта реального удобства и приватности — решение половинчатое.",
+          "sortOrder": 1
+        },
+        {
+          "code": "find-private-space-via-chief",
+          "text": "Объяснить, что отдельной комнаты матери и ребёнка в поезде нет, и через начальника поезда уточнить возможность временно предоставить более уединённое место — свободное купе или сьют, если есть.",
+          "loyaltyDelta": 12,
+          "safetyDelta": 2,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "misc-baby-care-space.start.find-private-space-via-chief",
+          "explanation": "Честное объяснение оснащения поезда плюс реальный поиск уединённого места через начальника поезда — лучшее из возможного при отсутствии специальной комнаты.",
+          "sortOrder": 2,
+          "normRef": "СТО РЖД 03.011-2026 — компоновка вагонов по классам: купе и сьюты первого класса — изолированное пространство, которое можно временно задействовать по решению начальника поезда."
+        }
+      ]
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Мама вынуждена справляться прямо в проходе, другие пассажиры чувствуют себя неловко.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Отказ без альтернативы оставил пассажирку с младенцем без какой-либо помощи в объективно сложной ситуации."
+    },
+    {
+      "code": "minimal-terminal",
+      "type": "TERMINAL",
+      "text": "Мама с трудом справляется в тесном туалете, но хотя бы не в проходе.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Минимальная альтернатива предложена, но без попытки найти более удобное решение через начальника поезда."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Начальник поезда временно выделяет свободное купе — мама благодарна за внимание к ситуации.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: честность об оснащении поезда сочетается с реальным поиском комфортного решения."
+    }
+  ]
+}

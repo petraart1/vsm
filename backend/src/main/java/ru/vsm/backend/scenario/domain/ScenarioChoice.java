@@ -68,6 +68,18 @@ public class ScenarioChoice {
     @Column(name = "explanation_key", length = 150)
     private String explanationKey;
 
+    /**
+     * Авторский текст пояснения (1-3 предложения: почему выбор хорош/плох) для экрана разбора.
+     * Приоритетнее алгоритмического fallback'а в {@code ru.vsm.backend.feedback.service.ExplanationResolver},
+     * когда заполнен; может быть {@code null} — тогда разбор строит объяснение сам.
+     */
+    @Column
+    private String explanation;
+
+    /** Опц. ссылка на норматив (документ + пункт/тема из {@code dataset/standards/}), не обязательна. */
+    @Column(name = "norm_ref", length = 255)
+    private String normRef;
+
     @Column(name = "sort_order", nullable = false)
     @Builder.Default
     private int sortOrder = 0;

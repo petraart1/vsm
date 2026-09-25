@@ -1,0 +1,85 @@
+{
+  "code": "medical-lost-child",
+  "situationRef": 30,
+  "block": "medical",
+  "title": "Ребёнок потерялся",
+  "description": "Родители в панике сообщают, что не могут найти ребёнка в поезде.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Взволнованные родители подбегают к вам: «Мы не можем найти сына, ему шесть лет, он был с нами минуту назад — помогите, пожалуйста!»",
+      "choices": [
+        {
+          "code": "announce-with-personal-data",
+          "text": "Немедленно объявить по громкой связи имя, фамилию и приметы ребёнка на весь поезд.",
+          "loyaltyDelta": -8,
+          "safetyDelta": -10,
+          "target": "failure-terminal",
+          "roleSteps": {
+            "solution": true
+          },
+          "explanationKey": "medical-lost-child.start.announce-with-personal-data",
+          "explanation": "Раскрытие личных данных ребёнка в объявлении на весь поезд — нарушение защиты персональных данных и может напугать ребёнка ещё больше, если он услышит своё полное имя от незнакомого голоса по громкой связи.",
+          "sortOrder": 0
+        },
+        {
+          "code": "search-alone-silent",
+          "text": "Молча начать самостоятельно обходить вагоны в поисках ребёнка, ничего не сообщая начальнику поезда.",
+          "loyaltyDelta": -5,
+          "safetyDelta": -12,
+          "target": "uncoordinated-terminal",
+          "roleSteps": {},
+          "explanationKey": "medical-lost-child.start.search-alone-silent",
+          "explanation": "Поиск в одиночку без включения начальника поезда теряет драгоценное время: без координации по всем вагонам ситуация решается медленнее и рискованнее, чем должна.",
+          "sortOrder": 1
+        },
+        {
+          "code": "coordinate-with-chief",
+          "text": "Успокоить родителей, остаться с ними, немедленно сообщить начальнику поезда для координации поиска по вагонам, при объявлении по громкой связи использовать только общие приметы без личных данных.",
+          "loyaltyDelta": 15,
+          "safetyDelta": 15,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "medical-lost-child.start.coordinate-with-chief",
+          "explanation": "Быстрая эскалация начальнику поезда даёт скоординированный поиск по всем вагонам, а формулировка объявления без личных данных защищает ребёнка и не нарушает требования к персональным данным.",
+          "sortOrder": 2
+        }
+      ],
+      "timerSeconds": 20,
+      "defaultChoice": "search-alone-silent"
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Объявление с именем и приметами ребёнка на весь поезд слышат все пассажиры — родители возмущены нарушением приватности, хотя ребёнка вскоре находят в соседнем вагоне.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Раскрытие личных данных ребёнка в публичном объявлении — нарушение, которого можно было избежать общей формулировкой."
+    },
+    {
+      "code": "uncoordinated-terminal",
+      "type": "TERMINAL",
+      "text": "Пока проводник в одиночку обходит вагоны, драгоценные минуты уходят впустую — ребёнка находит начальник поезда, узнавший о пропаже случайно от другого пассажира.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Несвоевременное включение начальника поезда в поиск замедлило и без того критичную по времени ситуацию."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Начальник поезда организует быстрый поиск по вагонам, ребёнок находится в соседнем вагоне у окна — родители безмерно благодарны.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: немедленная координация с начальником поезда и корректная формулировка объявления решили ситуацию быстро и без нарушений."
+    }
+  ]
+}

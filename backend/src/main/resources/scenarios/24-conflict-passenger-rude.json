@@ -1,0 +1,82 @@
+{
+  "code": "conflict-passenger-rude",
+  "situationRef": 24,
+  "block": "conflict",
+  "title": "Пассажир грубит сотруднику",
+  "description": "Пассажир повышает голос и переходит на грубости в адрес проводника при рядовом обращении.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир резко обрывает вас: «Вы вообще умеете нормально объяснять? Сколько можно тупить!»",
+      "choices": [
+        {
+          "code": "argue-back",
+          "text": "Ответить в том же тоне, указать пассажиру на неуместность его поведения.",
+          "loyaltyDelta": -18,
+          "safetyDelta": -3,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "conflict-passenger-rude.start.argue-back",
+          "explanation": "Ответная грубость — типичный провал в подобной ситуации: конфликт эскалируется публично, а исходный вопрос пассажира так и остаётся нерешённым.",
+          "sortOrder": 0
+        },
+        {
+          "code": "silent-withdraw",
+          "text": "Молча отойти, не отвечая, и продолжить работу как ни в чём не бывало.",
+          "loyaltyDelta": -5,
+          "safetyDelta": 3,
+          "target": "withdrawn-terminal",
+          "roleSteps": {},
+          "explanationKey": "conflict-passenger-rude.start.silent-withdraw",
+          "explanation": "Уход от конфликта не эскалирует ситуацию, но и не решает исходный вопрос пассажира и не задаёт границы допустимого тона — проблема осталась подвешенной.",
+          "sortOrder": 1
+        },
+        {
+          "code": "calm-boundary-and-help",
+          "text": "Сохранять дистанцию и спокойствие, вежливо попросить общаться корректно и предложить помощь по существу вопроса.",
+          "loyaltyDelta": 6,
+          "safetyDelta": 8,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "conflict-passenger-rude.start.calm-boundary-and-help",
+          "explanation": "Спокойная граница без ответной грубости деэскалирует ситуацию и одновременно возвращает разговор к сути вопроса пассажира.",
+          "sortOrder": 2,
+          "normRef": "СТО РЖД 03.011-2026 — «Требования к персоналу»: соблюдение этики общения независимо от поведения пассажира."
+        }
+      ]
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Перепалка привлекает внимание соседних пассажиров, кто-то снимает происходящее на телефон.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Ответная грубость превратила рядовое обращение в публичный конфликт — репутационный риск для бригады."
+    },
+    {
+      "code": "withdrawn-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир остаётся недовольным и раздражённым, вопрос, с которым он обращался, так и не решён.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Конфликт не разросся, но и не был закрыт — уход от разговора не заменяет вежливую границу и решение вопроса."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир, немного смутившись, снижает тон и формулирует вопрос уже спокойно — проводник помогает по существу.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Профессиональная граница без ответной грубости — конфликт погашен, а исходный вопрос всё же решён."
+    }
+  ]
+}

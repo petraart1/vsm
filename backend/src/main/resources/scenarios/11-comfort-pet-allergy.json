@@ -1,0 +1,86 @@
+{
+  "code": "comfort-pet-allergy",
+  "situationRef": 11,
+  "block": "comfort",
+  "title": "Аллергия на животных",
+  "description": "У пассажира аллергия на животных, а рядом находится питомец в переноске. Нужно проверить возможность пересадки и не забыть, что при ухудшении самочувствия ситуация требует немедленного подключения начальника поезда.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир взволнованно говорит: «У меня аллергия на кошек, а рядом кто-то с переноской — уже закладывает нос, боюсь, станет хуже».",
+      "choices": [
+        {
+          "code": "silently-check-seats",
+          "text": "Молча проверить наличие свободных мест для пересадки и, если найдутся, предложить их пассажиру.",
+          "loyaltyDelta": 2,
+          "safetyDelta": 5,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "rule": true,
+            "solution": true
+          },
+          "explanationKey": "comfort-pet-allergy.start.silently-check-seats",
+          "explanation": "Практическое решение найдено, но отсутствие даже короткого «понимаю, это неприятно» делает разговор сухим для человека, который явно встревожен своим самочувствием.",
+          "sortOrder": 0
+        },
+        {
+          "code": "refuse-nothing-can-be-done",
+          "text": "Сказать, что ничего сделать нельзя: аллергия — не повод пересаживать пассажира или тем более животное.",
+          "loyaltyDelta": -14,
+          "safetyDelta": -10,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "comfort-pet-allergy.start.refuse-nothing-can-be-done",
+          "explanation": "Отказ без попытки помочь при потенциальном ухудшении самочувствия — игнорирование реального риска для здоровья пассажира, а не просто невежливость.",
+          "sortOrder": 1,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 11: при ухудшении — начальник поезда/первая помощь."
+        },
+        {
+          "code": "acknowledge-move-and-warn-escalation",
+          "text": "Признать серьёзность аллергии, сразу проверить возможность пересадки в другой вагон или место подальше от животного, предупредить, что при ухудшении самочувствия немедленно свяжется с начальником поезда.",
+          "loyaltyDelta": 12,
+          "safetyDelta": 12,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "comfort-pet-allergy.start.acknowledge-move-and-warn-escalation",
+          "explanation": "Полный протокол: аллергия воспринята серьёзно, пересадка найдена быстро, а на случай реального ухудшения самочувствия заранее обозначен канал экстренной помощи через начальника поезда.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 11: уточнить самочувствие, проверить возможность пересадки, при ухудшении — начальник поезда/первая помощь."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир пересаживается на свободное место подальше от животного, но уходит с ощущением, что его тревогу никто не разделил.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Практический вопрос решён, но признания беспокойства пассажира не последовало."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажиру становится хуже, а помощь так и не была предложена вовремя — жалобы приходится решать уже в разгар ухудшения самочувствия.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: отказ без попытки помочь проигнорировал риск для здоровья пассажира."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир пересаживается подальше от животного и успокаивается, зная, что при ухудшении самочувствия бригада отреагирует немедленно.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: аллергия воспринята серьёзно, решение найдено быстро, а экстренный канал помощи обозначен заранее."
+    }
+  ]
+}

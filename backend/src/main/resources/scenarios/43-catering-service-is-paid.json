@@ -1,0 +1,88 @@
+{
+  "code": "catering-service-is-paid",
+  "situationRef": 43,
+  "block": "catering",
+  "title": "Недовольство, что услуга платная",
+  "description": "Пассажир возмущён, что заказанная услуга (например, доп. напиток или спецпитание) оказалась платной — он ожидал, что она включена в билет.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир недоумевает, увидев чек: «Как это платно? Я думал, это всё входит в билет!»",
+      "choices": [
+        {
+          "code": "insist-payment",
+          "text": "Твёрдо настоять на оплате, сослаться на прайс-лист без дальнейших объяснений.",
+          "loyaltyDelta": -12,
+          "safetyDelta": 5,
+          "target": "insist-terminal",
+          "roleSteps": {
+            "rule": true
+          },
+          "explanationKey": "catering-service-is-paid.start.insist-payment",
+          "explanation": "Формально верно, но без разбора, откуда возникло недопонимание, отказ выглядит негибким — часть недовольства можно было снять простым объяснением.",
+          "sortOrder": 0
+        },
+        {
+          "code": "cancel-and-refund",
+          "text": "Раз стоимость пассажиру заранее не озвучили — отменить заказ, вернуть деньги и извиниться за то, что не подтвердили цену до оформления.",
+          "loyaltyDelta": 8,
+          "safetyDelta": -2,
+          "target": "resolved-refund-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "catering-service-is-paid.start.cancel-and-refund",
+          "explanation": "Возврат уместен именно потому, что стоимость не была подтверждена заранее — это ошибка процесса, а не прихоть пассажира; к безопасности эпизод отношения не имеет, поэтому шкала почти не меняется.",
+          "sortOrder": 1
+        },
+        {
+          "code": "explain-class-and-refund",
+          "text": "Уточнить, что именно включено в класс обслуживания пассажира, объяснить разницу между базовыми и платными услугами; если цена не была подтверждена заранее — вернуть деньги с извинением.",
+          "loyaltyDelta": 12,
+          "safetyDelta": 3,
+          "target": "resolved-explained-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "catering-service-is-paid.start.explain-class-and-refund",
+          "explanation": "Полное объяснение того, что входит в класс обслуживания, снимает недопонимание раз и навсегда, а возврат при неподтверждённой цене — справедливое признание ошибки процесса.",
+          "sortOrder": 2,
+          "normRef": "СТО РЖД 03.011-2026 — услуги по классам обслуживания: часть услуг включена в стоимость в зависимости от класса, часть — платная."
+        }
+      ]
+    },
+    {
+      "code": "insist-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир нехотя оплачивает, но остаётся с ощущением, что его не выслушали.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Формально верно, но без объяснения разницы классов обслуживания недовольство осталось нерешённым."
+    },
+    {
+      "code": "resolved-refund-terminal",
+      "type": "TERMINAL",
+      "text": "Деньги возвращены, пассажир извинение принимает спокойно.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Ошибка процесса (цена не подтверждена заранее) признана и исправлена — доверие пассажира сохранено."
+    },
+    {
+      "code": "resolved-explained-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир понимает разницу между классами обслуживания и соглашается либо доплатить осознанно, либо отказаться от услуги.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: недопонимание снято объяснением, а не спором, деньги возвращены там, где это уместно."
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "code": "comfort-children-nearby",
+  "situationRef": 10,
+  "block": "comfort",
+  "title": "Пассажиру мешают дети рядом",
+  "description": "Пассажир тихо жалуется на шум от детей за соседним столиком. Ситуацию нужно решить деликатно, не провоцируя конфликт между пассажирами и не устраивая публичную сцену с обвинением родителей.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир подходит, стараясь говорить тихо: «Дети за соседним столиком постоянно шумят, я не могу отдохнуть — сделайте, пожалуйста, что-нибудь».",
+      "choices": [
+        {
+          "code": "quiet-request-no-feedback",
+          "text": "Подойти к родителям и вежливо, не привлекая внимания, попросить последить за уровнем шума.",
+          "loyaltyDelta": 3,
+          "safetyDelta": 2,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "rule": true,
+            "solution": true
+          },
+          "explanationKey": "comfort-children-nearby.start.quiet-request-no-feedback",
+          "explanation": "Просьба звучит корректно и без сцены, но жаловавшийся пассажир так и не услышал, что его вообще услышали — обратной связи не последовало.",
+          "sortOrder": 0
+        },
+        {
+          "code": "publicly-blame-parents",
+          "text": "Громко, при всех соседях, отчитать родителей за то, что не следят за детьми.",
+          "loyaltyDelta": -12,
+          "safetyDelta": -8,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "comfort-children-nearby.start.publicly-blame-parents",
+          "explanation": "Публичное обвинение родителей при других пассажирах — прямой провал: конфликт разрастается на весь вагон вместо тихого решения один на один.",
+          "sortOrder": 1,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 10: не провоцировать конфликт между пассажирами, тихое обращение."
+        },
+        {
+          "code": "acknowledge-quiet-talk-offer-move",
+          "text": "Признать неудобство жаловавшемуся пассажиру, тихо и без обвинений поговорить с родителями лично, при наличии свободных мест предложить пересадку любой из сторон.",
+          "loyaltyDelta": 10,
+          "safetyDelta": 6,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "comfort-children-nearby.start.acknowledge-quiet-talk-offer-move",
+          "explanation": "Полный и деликатный цикл: жалоба услышана, разговор с родителями происходит без свидетелей, а пересадка даёт запасной вариант, если тихая просьба не поможет.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок E, ситуация 10: тихое обращение, предложить пересадку."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Родители на минуту утихомиривают детей, но жаловавшийся пассажир так и не узнал, что вопрос вообще был поднят.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Проблема решена частично, но без обратной связи пассажир не чувствует, что его услышали."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Родители, публично отчитанные при соседях, возмущены, дети начинают плакать ещё громче — на шум уже оборачивается весь вагон.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: публичное обвинение родителей превратило тихую жалобу в открытый конфликт на весь вагон."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Родители тихо соглашаются присмотреть за детьми внимательнее, а жаловавшийся пассажир получает и ответ, и предложение пересесть на выбор.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: жалоба решена деликатно, обе стороны остались без публичного конфликта."
+    }
+  ]
+}

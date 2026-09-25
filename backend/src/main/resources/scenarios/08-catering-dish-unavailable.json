@@ -1,0 +1,80 @@
+{
+  "code": "catering-dish-unavailable",
+  "situationRef": 8,
+  "block": "catering",
+  "title": "Блюдо есть в меню, но нет в наличии",
+  "description": "Пассажир заказывает блюдо по меню, но оказывается, что именно оно уже закончилось.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир, изучив меню, делает заказ: «Возьму куриное филе с овощами». Но именно это блюдо на сегодня закончилось.",
+      "choices": [
+        {
+          "code": "blunt-refuse",
+          "text": "Сухо сообщить, что блюда нет, и спросить, что ещё будете заказывать.",
+          "loyaltyDelta": -10,
+          "safetyDelta": 0,
+          "target": "blunt-terminal",
+          "roleSteps": {},
+          "explanationKey": "catering-dish-unavailable.start.blunt-refuse",
+          "explanation": "Формально честно, но без извинения и альтернативы отказ выглядит небрежным — пассажир остаётся один на один с проблемой выбора.",
+          "sortOrder": 0
+        },
+        {
+          "code": "blame-passenger",
+          "text": "Предположить вслух, что пассажир просто не воспользовался предзаказом, и потому все проблемы.",
+          "loyaltyDelta": -15,
+          "safetyDelta": 0,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "catering-dish-unavailable.start.blame-passenger",
+          "explanation": "Обвинение пассажира в отсутствии предзаказа — типичная ошибка в этой ситуации: перекладывание ответственности вместо решения не работает и портит впечатление сильнее, чем сам факт отсутствия блюда.",
+          "sortOrder": 1
+        },
+        {
+          "code": "offer-alternative",
+          "text": "Извиниться за неудобство, предложить похожую альтернативу (раз хотел блюдо из птицы — предложить другое блюдо из птицы) и рассказать о сервисе предзаказа питания в приложении на будущее.",
+          "loyaltyDelta": 10,
+          "safetyDelta": 2,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "catering-dish-unavailable.start.offer-alternative",
+          "explanation": "Извинение плюс релевантная альтернатива полностью закрывают неловкость момента, а информация о предзаказе снимает повторение проблемы в будущем.",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "code": "blunt-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир самостоятельно выбирает что-то другое из меню, но остаётся недоволен подачей отказа.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Формально предложение сделано, но без извинения и инициативы — впечатление хуже, чем могло бы быть."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир возмущён обвинением и требует жалобную книгу.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Перекладывание ответственности на пассажира — прямой провал коммуникации, усиливающий, а не гасящий недовольство."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир с удовольствием соглашается на альтернативное блюдо из птицы и берёт на заметку сервис предзаказа.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: неудобство признано, альтернатива в тему, а на будущее предложено удобное решение."
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "code": "medical-crying-child-complaints",
+  "situationRef": 37,
+  "block": "medical",
+  "title": "Плачущий ребёнок, жалобы соседей",
+  "description": "Ребёнок долго плачет, соседние пассажиры жалуются на шум и просят проводника вмешаться.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Сосед по вагону недовольно просит: «Сделайте что-нибудь с этим ребёнком, он уже полчаса плачет, невозможно работать».",
+      "choices": [
+        {
+          "code": "blame-parents",
+          "text": "Подойти к родителям и публично попросить их лучше следить за ребёнком.",
+          "loyaltyDelta": -15,
+          "safetyDelta": 0,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "medical-crying-child-complaints.start.blame-parents",
+          "explanation": "Публичное обвинение родителей — типичная ошибка: пристыдить родителей на глазах у вагона не успокаивает ребёнка и портит отношения сразу с двумя сторонами конфликта.",
+          "sortOrder": 0
+        },
+        {
+          "code": "ignore-complaint",
+          "text": "Сказать соседу, что дети иногда плачут, и больше ничего не предпринимать.",
+          "loyaltyDelta": -5,
+          "safetyDelta": 0,
+          "target": "dismissed-terminal",
+          "roleSteps": {
+            "acknowledge": true
+          },
+          "explanationKey": "medical-crying-child-complaints.start.ignore-complaint",
+          "explanation": "Жалоба соседа формально услышана, но полное бездействие не предлагает решения ни одной из сторон.",
+          "sortOrder": 1
+        },
+        {
+          "code": "help-parents-and-reseat-neighbor",
+          "text": "Деликатно подойти к родителям без обвинений, уточнить, не нужна ли помощь, и параллельно предложить недовольным соседям пересадку при наличии свободных мест.",
+          "loyaltyDelta": 10,
+          "safetyDelta": 2,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "medical-crying-child-complaints.start.help-parents-and-reseat-neighbor",
+          "explanation": "Помощь родителям вместо обвинения и параллельная альтернатива для соседей — пересадка — решают конфликт с обеих сторон одновременно, без публичного пристыжения.",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Родители чувствуют себя униженными перед всем вагоном, ребёнок плачет ещё сильнее от новой суеты вокруг.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Публичное обвинение родителей — прямой провал: ситуация ухудшилась для всех участников конфликта."
+    },
+    {
+      "code": "dismissed-terminal",
+      "type": "TERMINAL",
+      "text": "Сосед остаётся недоволен тем, что его жалобу никак не учли.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Формально никто не пострадал, но ни одна из сторон не получила реальной помощи."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Родители благодарны за деликатность, недовольный сосед пересаживается на свободное место в соседнем ряду.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: обе стороны конфликта получили помощь без взаимных обвинений."
+    }
+  ]
+}

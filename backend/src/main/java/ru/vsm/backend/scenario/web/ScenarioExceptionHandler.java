@@ -1,5 +1,6 @@
 package ru.vsm.backend.scenario.web;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -55,6 +56,17 @@ public class ScenarioExceptionHandler {
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ErrorResponse> handle(MissingRequestHeaderException e) {
         return respond(HttpStatus.BAD_REQUEST, "missing_header", e);
+    }
+
+    /**
+     * Defense-in-depth: основная защита от гонки двойного клика — пессимистичная блокировка
+     * {@code UserProgress} в {@code ScenarioPlayService} (см. {@code UserProgressRepository.findByIdForUpdate}),
+     * но если конкурентная запись всё же пробьёт {@code uq_choice_history_progress_sequence}
+     * (миграция {@code scenario/010}), это конфликт состояния, а не внутренняя ошибка сервера.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handle(DataIntegrityViolationException e) {
+        return respond(HttpStatus.CONFLICT, "concurrent_modification", e);
     }
 
     private ResponseEntity<ErrorResponse> respond(HttpStatus status, String code, Exception e) {

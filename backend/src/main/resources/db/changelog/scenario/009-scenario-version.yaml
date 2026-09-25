@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-009-scenario-version
+      author: vsm
+      comment: >
+        Версия контента сценария (растёт при правках графа в seed-файле). Позволяет
+        ScenarioSeedService безопасно перезаписать граф уже существующего сценария на
+        рестарте, когда seed-файл принёс более новую версию и по сценарию ещё нет ни одного
+        user_progress (см. javadoc ScenarioSeedService.seed) — вместо того чтобы навсегда
+        игнорировать обновлённый контент (было: skip по одному только code).
+      changes:
+        - addColumn:
+            tableName: scenarios
+            columns:
+              - column:
+                  name: version
+                  type: integer
+                  defaultValueNumeric: 1
+                  constraints:
+                    nullable: false

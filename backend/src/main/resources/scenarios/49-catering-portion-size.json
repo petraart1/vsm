@@ -1,0 +1,80 @@
+{
+  "code": "catering-portion-size",
+  "situationRef": 49,
+  "block": "catering",
+  "title": "Недовольство размером порции",
+  "description": "Пассажир считает порцию блюда слишком маленькой и высказывает недовольство.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир смотрит на тарелку с сомнением: «И это всё? За такие деньги я ожидал порцию побольше».",
+      "choices": [
+        {
+          "code": "argue-logistics",
+          "text": "Вступить в спор о том, как формируются порции на кухне, доказывая, что всё по нормативу.",
+          "loyaltyDelta": -10,
+          "safetyDelta": 0,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "catering-portion-size.start.argue-logistics",
+          "explanation": "Спор о логистике формирования порций — типичная ошибка: пассажиру не нужна лекция о технологии, ему нужно решение его конкретного недовольства.",
+          "sortOrder": 0
+        },
+        {
+          "code": "dismiss",
+          "text": "Пожать плечами: «Такая порция у всех, ничего не могу сделать».",
+          "loyaltyDelta": -8,
+          "safetyDelta": 0,
+          "target": "dismiss-terminal",
+          "roleSteps": {},
+          "explanationKey": "catering-portion-size.start.dismiss",
+          "explanation": "Формально ответ честный, но отсутствие сочувствия и альтернативы оставляет пассажира с чувством, что его мнение не имеет значения.",
+          "sortOrder": 1
+        },
+        {
+          "code": "offer-extra",
+          "text": "Не вступать в спор о логистике, признать, что порция может показаться небольшой, и предложить дополнительную позицию из меню за отдельную плату либо бесплатный напиток в качестве жеста.",
+          "loyaltyDelta": 10,
+          "safetyDelta": 1,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "catering-portion-size.start.offer-extra",
+          "explanation": "Признание без спора и конкретное предложение — быстрый и недорогой способ снять недовольство, не вступая в бесполезную дискуссию о нормативах кухни.",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Спор о нормативах порций только раздражает пассажира сильнее, тот требует жалобную книгу.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Спор о логистике не решает исходную проблему пассажира и портит впечатление ещё больше."
+    },
+    {
+      "code": "dismiss-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир молча доедает то, что есть, но остаётся недоволен сервисом в целом.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Формально конфликта нет, но отсутствие какого-либо жеста в сторону пассажира не улучшает ситуацию."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир соглашается на дополнительную позицию, настроение заметно улучшается.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: недовольство снято конкретным жестом без бессмысленного спора о нормативах."
+    }
+  ]
+}

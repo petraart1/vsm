@@ -1,0 +1,80 @@
+{
+  "code": "misc-delay-complaint",
+  "situationRef": 18,
+  "block": "misc",
+  "title": "Недовольство задержкой поезда",
+  "description": "Поезд задерживается, пассажиры недовольны и требуют объяснений.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир раздражённо спрашивает: «Почему мы стоим? Когда поедем? Мне на важную встречу!»",
+      "choices": [
+        {
+          "code": "invent-reason",
+          "text": "Придумать правдоподобное объяснение, чтобы пассажир быстрее успокоился.",
+          "loyaltyDelta": 5,
+          "safetyDelta": -15,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "misc-delay-complaint.start.invent-reason",
+          "explanation": "Выдуманная причина задержки — прямое нарушение: если позже официальная информация не совпадёт с тем, что сказал проводник, доверие к бригаде будет подорвано куда сильнее, чем от честного «уточняю».",
+          "sortOrder": 0
+        },
+        {
+          "code": "no-comment",
+          "text": "Ответить, что информации нет, и отойти.",
+          "loyaltyDelta": -12,
+          "safetyDelta": 3,
+          "target": "no-info-terminal",
+          "roleSteps": {},
+          "explanationKey": "misc-delay-complaint.start.no-comment",
+          "explanation": "Формально не соврали, но отсутствие даже попытки уточнить оставляет пассажира без всякой поддержки в неприятной ситуации.",
+          "sortOrder": 1
+        },
+        {
+          "code": "check-and-inform",
+          "text": "Признать неудобство задержки, уточнить у начальника поезда или машиниста достоверную причину и сроки, сообщить пассажиру только проверенную информацию.",
+          "loyaltyDelta": 8,
+          "safetyDelta": 8,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "misc-delay-complaint.start.check-and-inform",
+          "explanation": "Только достоверная информация от машиниста или начальника поезда — уточнение перед ответом защищает и пассажира от слухов, и бригаду от репутационных рисков в случае несовпадения фактов.",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "Позже по громкой связи объявляют совсем другую причину задержки — пассажир возмущён, что его обманули.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Выдуманное объяснение разошлось с официальной информацией — доверие к бригаде подорвано куда сильнее, чем сама задержка."
+    },
+    {
+      "code": "no-info-terminal",
+      "type": "TERMINAL",
+      "text": "Пассажир остаётся раздражённым и без какой-либо поддержки от бригады.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Честный, но безучастный ответ не помог снять напряжение — уточнить было несложно."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Проводник возвращается с точной информацией от начальника поезда: техническая пауза, отправление через 7 минут.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Достоверная информация, полученная по инстанции, полностью снимает напряжение пассажира."
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "code": "lost-found-item-lost",
+  "situationRef": 17,
+  "block": "lost_found",
+  "title": "Пассажир потерял вещь",
+  "description": "Пассажир обнаруживает пропажу вещи прямо в поезде. Протокол требует зафиксировать описание, место и примерное время, а затем немедленно передать эту информацию начальнику поезда для координации поиска по составу.",
+  "flagship": false,
+  "version": 1,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир взволнованно подходит: «Кажется, я потерял сумку — она была рядом со мной, а теперь её нигде нет! Помогите, пожалуйста, найти».",
+      "choices": [
+        {
+          "code": "brief-ask-search-alone",
+          "text": "Кратко расспросить, где именно пассажир сидел, и предложить поискать вещь самостоятельно в проходе и под соседними креслами.",
+          "loyaltyDelta": 3,
+          "safetyDelta": 3,
+          "target": "partial-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "solution": true
+          },
+          "explanationKey": "lost-found-item-lost.start.brief-ask-search-alone",
+          "explanation": "Практическая попытка помочь есть, но без фиксации точного описания вещи и без передачи информации начальнику поезда шанс найти пропажу в масштабах всего состава резко ниже.",
+          "sortOrder": 0
+        },
+        {
+          "code": "empty-reassurance-no-action",
+          "text": "Пообещать пассажиру, что вещь точно найдётся к концу поездки, ничего для этого не сделав.",
+          "loyaltyDelta": 5,
+          "safetyDelta": -12,
+          "target": "failure-terminal",
+          "roleSteps": {},
+          "explanationKey": "lost-found-item-lost.start.empty-reassurance-no-action",
+          "explanation": "Пустое обещание без фиксации деталей и без включения начальника поезда в поиск — по сути, отказ от помощи, замаскированный под утешение.",
+          "sortOrder": 1,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок H, ситуация 17: зафиксировать описание/место/время, передать начальнику поезда."
+        },
+        {
+          "code": "record-details-notify-chief",
+          "text": "Признать беспокойство пассажира, зафиксировать точное описание вещи, место и примерное время пропажи, немедленно передать данные начальнику поезда для координации поиска по составу и, при необходимости, объявления.",
+          "loyaltyDelta": 11,
+          "safetyDelta": 9,
+          "target": "resolved-terminal",
+          "roleSteps": {
+            "acknowledge": true,
+            "rule": true,
+            "solution": true,
+            "reassure": true
+          },
+          "explanationKey": "lost-found-item-lost.start.record-details-notify-chief",
+          "explanation": "Полный протокол поиска: детали зафиксированы, начальник поезда подключён немедленно, а координированный поиск по всем вагонам куда эффективнее одиночных попыток.",
+          "sortOrder": 2,
+          "normRef": "dataset/scenarios/situations-onboard.md — блок H, ситуация 17: зафиксировать описание/место/время, передать начальнику поезда, возможно объявление по громкой связи."
+        }
+      ]
+    },
+    {
+      "code": "partial-terminal",
+      "type": "TERMINAL",
+      "text": "Поиск в проходе ничего не даёт, а без деталей, переданных начальнику поезда, координированный поиск по составу так и не начался.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Попытка помочь искренняя, но без фиксации деталей и эскалации шанс найти вещь остаётся низким."
+    },
+    {
+      "code": "failure-terminal",
+      "type": "TERMINAL",
+      "text": "К концу поездки вещь так и не находится — пассажир возмущён, что ему просто пообещали и ничего не сделали.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал: пустое обещание без фиксации деталей и без включения начальника поезда — фактический отказ от помощи."
+    },
+    {
+      "code": "resolved-terminal",
+      "type": "TERMINAL",
+      "text": "Начальник поезда, получив точное описание, организует поиск по составу — вещь находится в соседнем вагоне.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: зафиксированные детали и немедленная координация с начальником поезда привели к результату."
+    }
+  ]
+}

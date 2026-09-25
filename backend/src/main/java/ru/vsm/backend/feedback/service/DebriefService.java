@@ -14,6 +14,7 @@ import ru.vsm.backend.feedback.dto.DebriefResponse;
 import ru.vsm.backend.feedback.dto.DebriefStepDto;
 import ru.vsm.backend.feedback.dto.KeyMomentDto;
 import ru.vsm.backend.feedback.dto.RoleStep;
+import ru.vsm.backend.scenario.domain.NodeType;
 import ru.vsm.backend.scenario.domain.ProgressStatus;
 import ru.vsm.backend.scenario.domain.Scenario;
 import ru.vsm.backend.scenario.domain.ScenarioChoice;
@@ -95,8 +96,14 @@ public class DebriefService {
                 continue;
             }
 
+            // Все варианты этого узла нужны и для ключевой развилки ниже, и для распознавания
+            // скрытой механики закадровой коммуникации (эскалация, которую пассажир не слышит) —
+            // считаем один раз на шаг.
+            List<ScenarioChoice> alternatives = scenarioChoiceRepository.findByNodeIdOrderBySortOrder(node.getId());
+            boolean hiddenCommunicationEffect = isHiddenCommunicationEffect(node, alternatives);
+
             ExplanationResolver.Explanation explanation =
-                    explanationResolver.resolve(choice, node.getNodeType(), entry.isWasTimeout(), scenario.getCode());
+                    explanationResolver.resolve(choice, node.getNodeType(), entry.isWasTimeout());
             normReferences.addAll(explanation.normReferences());
 
             List<RoleStep> completed = ExplanationResolver.completedSteps(choice.getRoleSteps());
@@ -116,12 +123,12 @@ public class DebriefService {
                     completed.stream().map(RoleStep::label).toList(),
                     skipped.stream().map(RoleStep::label).toList(),
                     scaleConflict,
-                    explanation.text()));
+                    explanation.text(),
+                    hiddenCommunicationEffect));
 
             // Ключевая развилка: сравниваем фактический выбор со всеми альтернативами в том же
             // узле по суммарному эффекту на обе шкалы (равный вес) — где разрыв с лучшей
             // альтернативой максимален, там и была решающая ошибка.
-            List<ScenarioChoice> alternatives = scenarioChoiceRepository.findByNodeIdOrderBySortOrder(node.getId());
             int chosenScore = choice.getLoyaltyDelta() + choice.getSafetyDelta();
             ScenarioChoice best = choice;
             int bestScore = chosenScore;
@@ -136,6 +143,7 @@ public class DebriefService {
             if (gap > bestGap) {
                 bestGap = gap;
                 String advice = buildAdvice(node, choice, best);
+                String betterExplanation = explanationResolver.resolve(best, node.getNodeType(), false).text();
                 keyMoment = new KeyMomentDto(
                         entry.getSequenceIndex(),
                         node.getText(),
@@ -145,7 +153,8 @@ public class DebriefService {
                         best.getText(),
                         best.getLoyaltyDelta(),
                         best.getSafetyDelta(),
-                        advice);
+                        advice,
+                        betterExplanation);
             }
         }
 
@@ -172,6 +181,26 @@ public class DebriefService {
                 keyMoment,
                 summary,
                 normReferences.stream().toList());
+    }
+
+    /**
+     * Распознаёт узел со скрытой механикой закадровой коммуникации (например, разговор по
+     * служебной рации, который сам пассажир не слышит) без привязки к конкретному сценарию/узлу:
+     * узел эскалации, где у всех альтернатив одна и та же дельта лояльности (пассажир не видит
+     * разницы), но дельта безопасности различается (формулировка всё равно на неё влияет — риск
+     * случайно быть услышанным, нарушение протокола переговоров и т.п.). Ключевая деталь для
+     * разбора: решение здесь совсем не отражается на реакции пассажира, только на безопасности.
+     */
+    private boolean isHiddenCommunicationEffect(ScenarioNode node, List<ScenarioChoice> alternatives) {
+        if (node.getNodeType() != NodeType.ESCALATION || alternatives.size() < 2) {
+            return false;
+        }
+        int firstLoyalty = alternatives.get(0).getLoyaltyDelta();
+        boolean sameLoyaltyAcrossAlternatives =
+                alternatives.stream().allMatch(c -> c.getLoyaltyDelta() == firstLoyalty);
+        boolean safetyDiffersAcrossAlternatives =
+                alternatives.stream().map(ScenarioChoice::getSafetyDelta).distinct().count() > 1;
+        return sameLoyaltyAcrossAlternatives && safetyDiffersAcrossAlternatives;
     }
 
     private String buildAdvice(ScenarioNode node, ScenarioChoice chosen, ScenarioChoice better) {
