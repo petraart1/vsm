@@ -1,3 +1,4 @@
+import NotificationBell from "./NotificationBell.jsx";
 import styles from "./Nav.module.css";
 
 const LINKS = [
@@ -29,6 +30,7 @@ export default function Nav({ activeScreen }) {
           );
         })}
       </nav>
+      <NotificationBell />
     </header>
   );
 }

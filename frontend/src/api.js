@@ -290,6 +290,24 @@ function realGetAchievements(playerId) {
   return apiFetch(`/api/gamification/achievements${qs}`, { method: "GET" });
 }
 
+function realGetNotifications(playerId, unreadOnly) {
+  const qs = `?playerId=${encodeURIComponent(playerId)}&unreadOnly=${unreadOnly ? "true" : "false"}`;
+  return apiFetch(`/api/gamification/notifications${qs}`, { method: "GET" });
+}
+
+function realMarkNotificationRead(id) {
+  return apiFetch(`/api/gamification/notifications/${id}/read`, { method: "POST" });
+}
+
+function realMarkAllNotificationsRead(playerId) {
+  const qs = `?playerId=${encodeURIComponent(playerId)}`;
+  return apiFetch(`/api/gamification/notifications/read-all${qs}`, { method: "POST" });
+}
+
+function realGetCompetencyAnalytics(playerId) {
+  return apiFetch(`/api/feedback/competencies/${playerId}`, { method: "GET" });
+}
+
 function realGetDebrief(progressId) {
   const playerId = getPlayerId();
   return apiFetch(`/api/feedback/debrief/${progressId}`, { method: "GET" }).then(
@@ -413,6 +431,33 @@ function buildGenericGraph(situation) {
       "g2-bad": { id: "g2-bad", avatarInitials: "ПС", contextNote: null, situationText: "Пассажир жалуется на обслуживание, инцидент зафиксирован.", timer: null, choices: [{ id: "g2-bad-end", text: "Приношу извинения за неудобства.", effects: { loyalty: 1, safety: 0 }, escalation: false, roleModelSteps: ["acknowledge"], reactionText: "Пассажир немного смягчается, но осадок остался.", next: null }] }
     }
   };
+}
+
+// Мок-хранилище уведомлений (localStorage) — та же роль аварийного переключателя, что и у
+// PROGRESS_KEY выше: наполняется из mockGetDebrief (новая ачивка), читается mockGetNotifications.
+const NOTIFICATIONS_KEY = "vsm.notifications.v1";
+let mockNotificationCounter = 0;
+
+function readNotifications() {
+  try { return JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY)) || []; } catch (e) { return []; }
+}
+
+function writeNotifications(list) {
+  try { localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(list.slice(0, 50))); } catch (e) { /* ignore */ }
+}
+
+function pushMockNotification(type, title, body) {
+  mockNotificationCounter += 1;
+  const list = readNotifications();
+  list.unshift({
+    id: `mock-notif-${Date.now()}-${mockNotificationCounter}`,
+    type,
+    title,
+    body,
+    createdAt: new Date().toISOString(),
+    readAt: null
+  });
+  writeNotifications(list);
 }
 
 const mockSessions = {};
@@ -601,6 +646,7 @@ function mockGetDebrief(sessionId) {
   const achievements = [];
   if (finalScales.safety >= 90) achievements.push({ code: "safety-master", title: "Страж безопасности", earned: true });
   if (finalScales.loyalty >= 90) achievements.push({ code: "loyalty-master", title: "Любимец пассажиров", earned: true });
+  achievements.forEach((a) => pushMockNotification("ACHIEVEMENT_UNLOCKED", "Новая ачивка", `«${a.title}» — поздравляем!`));
 
   const debrief = {
     progressId: sessionId,
@@ -653,6 +699,83 @@ function mockGetAchievements() {
   return delay(MOCK_ACHIEVEMENT_CATALOG.map((a) => ({ ...a, earned: a.code === "FIRST_SCENARIO" && completed > 0, earnedAt: null })));
 }
 
+function mockGetNotifications(unreadOnly) {
+  const list = readNotifications();
+  return delay(unreadOnly ? list.filter((n) => !n.readAt) : list);
+}
+
+function mockMarkNotificationRead(id) {
+  const list = readNotifications();
+  const found = list.filter((n) => n.id === id)[0];
+  if (found) found.readAt = new Date().toISOString();
+  writeNotifications(list);
+  return delay(found || null);
+}
+
+function mockMarkAllNotificationsRead() {
+  const list = readNotifications();
+  const now = new Date().toISOString();
+  let markedCount = 0;
+  list.forEach((n) => { if (!n.readAt) { n.readAt = now; markedCount += 1; } });
+  writeNotifications(list);
+  return delay({ markedCount });
+}
+
+/**
+ * Мок-аналитика компетенций — приблизительный аналог CompetencyAnalyticsService на клиентских
+ * данных (readProgress хранит только итоговые шкалы и вердикт, без деталей по шагам ролевой
+ * модели/нормам, поэтому roleStepCompliance/frequentNormViolations/recommendations в моке пустые
+ * или упрощены). Аварийный переключатель ради демо, не претендует на точность формулы backend.
+ */
+function mockGetCompetencyAnalytics() {
+  const progress = readProgress();
+  const entries = Object.keys(progress).map((id) => ({ id, ...progress[id] }));
+  return loadCatalog().then((catalog) => {
+    const byBlock = {};
+    entries.forEach((e) => {
+      const situation = (catalog.situations || []).filter((s) => String(s.id) === e.id)[0];
+      const block = situation ? situation.block : "unknown";
+      if (!byBlock[block]) byBlock[block] = { block, playthroughs: 0, loyaltySum: 0, safetySum: 0, success: 0, failure: 0 };
+      const agg = byBlock[block];
+      agg.playthroughs += 1;
+      agg.loyaltySum += e.loyalty;
+      agg.safetySum += e.safety;
+      if (e.safety < 40) agg.failure += 1;
+      else if (e.loyalty >= 60 && e.safety >= 60) agg.success += 1;
+    });
+    const blockStats = Object.keys(byBlock).map((key) => {
+      const agg = byBlock[key];
+      const successRate = agg.success / agg.playthroughs;
+      const failureRate = agg.failure / agg.playthroughs;
+      return {
+        block: key,
+        playthroughs: agg.playthroughs,
+        avgLoyaltyScore: agg.loyaltySum / agg.playthroughs,
+        avgSafetyScore: agg.safetySum / agg.playthroughs,
+        successRate,
+        failureRate,
+        weak: successRate - failureRate < 0.5
+      };
+    });
+    const weakCompetencies = blockStats.filter((b) => b.weak).map((b) => b.block).slice(0, 3);
+    return delay({
+      playerId: getPlayerId(),
+      totalPlaythroughs: entries.length,
+      blockStats,
+      roleStepCompliance: ALL_ROLE_STEP_KEYS.map((k) => ({
+        step: k.toUpperCase(),
+        stepLabel: ROLE_STEP_LABELS[k],
+        timesFollowed: 0,
+        timesSkipped: 0,
+        complianceRate: 0
+      })),
+      frequentNormViolations: [],
+      weakCompetencies,
+      recommendations: []
+    });
+  });
+}
+
 // =======================================================================================
 // ================================  ПУБЛИЧНОЕ API  ========================================
 // =======================================================================================
@@ -665,6 +788,18 @@ export function getDebrief(sessionId) { return USE_MOCKS ? mockGetDebrief(sessio
 export function getProfile(playerId) { return USE_MOCKS ? mockGetProfile() : realGetProfile(playerId || getPlayerId()); }
 export function getLeaderboard(opts) { return USE_MOCKS ? mockGetLeaderboard() : realGetLeaderboard(opts); }
 export function getAchievements(playerId) { return USE_MOCKS ? mockGetAchievements() : realGetAchievements(playerId || getPlayerId()); }
+export function getNotifications(playerId, unreadOnly) {
+  return USE_MOCKS ? mockGetNotifications(unreadOnly) : realGetNotifications(playerId || getPlayerId(), unreadOnly);
+}
+export function markNotificationRead(id) {
+  return USE_MOCKS ? mockMarkNotificationRead(id) : realMarkNotificationRead(id);
+}
+export function markAllNotificationsRead(playerId) {
+  return USE_MOCKS ? mockMarkAllNotificationsRead() : realMarkAllNotificationsRead(playerId || getPlayerId());
+}
+export function getCompetencyAnalytics(playerId) {
+  return USE_MOCKS ? mockGetCompetencyAnalytics() : realGetCompetencyAnalytics(playerId || getPlayerId());
+}
 
 export const api = {
   USE_MOCKS,
@@ -676,7 +811,11 @@ export const api = {
   getDebrief,
   getProfile,
   getLeaderboard,
-  getAchievements
+  getAchievements,
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  getCompetencyAnalytics
 };
 
 export default api;

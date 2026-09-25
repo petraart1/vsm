@@ -1,0 +1,18 @@
+.row { display: flex; flex-direction: column; gap: var(--spacing-1); min-width: 0; }
+
+.head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--spacing-2); }
+
+.label { font-size: var(--font-size-small); }
+
+.value { font-size: var(--font-size-small); font-weight: var(--font-weight-body-strong); font-variant-numeric: tabular-nums; }
+
+.track { height: 8px; border-radius: var(--radius-pill); background: var(--color-background-surface-sunken); overflow: hidden; }
+
+.fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-brass);
+  transition: width var(--motion-duration-slow) var(--motion-easing-emphasized);
+}
+
+.fillWarning { background: var(--color-feedback-warning); }

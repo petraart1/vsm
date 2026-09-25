@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import * as api from "../api.js";
 import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
@@ -8,6 +8,8 @@ import ScalesPanel from "../components/ui/ScalesPanel.jsx";
 import DeltaBadges from "../components/ui/DeltaBadges.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
+import Toast from "../components/ui/Toast.jsx";
+import { notifyNotificationsChanged } from "../notificationsBus.js";
 import styles from "./Debrief.module.css";
 
 function TimelineStep({ step, index, expanded, onToggle }) {
@@ -68,6 +70,11 @@ export default function Debrief({ route }) {
   const progressId = route.segments[1];
   const [s, setS] = useState({ phase: "loading" });
   const [expanded, setExpanded] = useState({});
+  const [toasts, setToasts] = useState([]);
+
+  const dismissToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   useEffect(() => {
     setS({ phase: "loading" });
@@ -77,6 +84,18 @@ export default function Debrief({ route }) {
         return;
       }
       setS({ phase: "ready", debrief: res });
+      // Завершение сценария могло начислить уведомления (новая ачивка/личный рекорд/рост в
+      // лидерборде) — обновляем колокольчик в шапке и, если есть новая ачивка, показываем тост
+      // прямо здесь (непрочитанные ACHIEVEMENT_UNLOCKED почти наверняка от этого прохождения,
+      // т.к. уведомление создаётся синхронно с начислением очков).
+      notifyNotificationsChanged();
+      api.getNotifications(undefined, true).then((list) => {
+        const achievementToasts = (list || [])
+          .filter((n) => n.type === "ACHIEVEMENT_UNLOCKED")
+          .slice(0, 3)
+          .map((n) => ({ id: n.id, title: n.title, body: n.body }));
+        if (achievementToasts.length > 0) setToasts(achievementToasts);
+      }).catch(() => { /* тост необязателен, разбор всё равно показан */ });
     });
   }, [progressId]);
 
@@ -103,6 +122,7 @@ export default function Debrief({ route }) {
 
   return (
     <div className={styles.shell}>
+      <Toast toasts={toasts} onDismiss={dismissToast} />
       <div className={styles.verdictBanner}>
         <h1 className={styles.verdictTitle}>{d.verdict}</h1>
         <p className={styles.verdictSubtitle}>{d.scenario.title} · {d.scenario.blockLabel}</p>

@@ -7,6 +7,7 @@ import Avatar from "../components/ui/Avatar.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
+import ProgressBar from "../components/ui/ProgressBar.jsx";
 import styles from "./Profile.module.css";
 
 function initialsFor(name) {
@@ -16,6 +17,101 @@ function initialsFor(name) {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
+const RECOMMENDATION_REASON_LABELS = {
+  NOT_PLAYED: "ещё не пройден",
+  FAILED: "в прошлый раз не удалось",
+  PARTIAL: "пройден частично"
+};
+
+/** Блок «Компетенции»: успешность по блокам ситуаций, соблюдение 4 шагов ролевой модели,
+ * просевшие компетенции и рекомендованные сценарии. props: competencies (CompetencyAnalyticsResponse
+ * либо null при ошибке загрузки), blockLabelOf(code) — подписи блоков из профиля (тот же каталог,
+ * что и в «Прогресс по блокам» выше на странице, без повторного похода за каталогом). */
+function CompetenciesSection({ competencies, blockLabelOf }) {
+  if (!competencies) {
+    return (
+      <Card as="section" className={styles.section}>
+        <h2 className={styles.sectionTitle}>Компетенции</h2>
+        <p className={styles.noData}>Не удалось загрузить аналитику компетенций.</p>
+      </Card>
+    );
+  }
+
+  if (competencies.totalPlaythroughs === 0) {
+    return (
+      <Card as="section" className={styles.section}>
+        <h2 className={styles.sectionTitle}>Компетенции</h2>
+        <p className={styles.noData}>Пока недостаточно данных — пройдите несколько сценариев, чтобы увидеть разбор по компетенциям.</p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card as="section" className={styles.section}>
+      <h2 className={styles.sectionTitle}>Компетенции</h2>
+
+      {competencies.blockStats.length > 0 && (
+        <div className={styles.competencyBlocks}>
+          {competencies.blockStats.map((b) => (
+            <div key={b.block} className={styles.competencyBlock}>
+              <ProgressBar
+                label={blockLabelOf(b.block)}
+                value={b.successRate * 100}
+                valueLabel={`${Math.round(b.successRate * 100)}%`}
+                tone={b.weak ? "warning" : "default"}
+              />
+              <p className={styles.blockMeta}>
+                Пройдено: {b.playthroughs} · лояльность {Math.round(b.avgLoyaltyScore)} · безопасность {Math.round(b.avgSafetyScore)}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {competencies.roleStepCompliance.length > 0 && (
+        <>
+          <h3 className={styles.subTitle}>Ролевая модель ответа</h3>
+          <div className={styles.roleSteps}>
+            {competencies.roleStepCompliance.map((r) => (
+              <ProgressBar
+                key={r.step}
+                label={r.stepLabel}
+                value={r.complianceRate * 100}
+                valueLabel={`${Math.round(r.complianceRate * 100)}%`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {competencies.weakCompetencies.length > 0 && (
+        <div className={styles.weakBlock}>
+          <h3 className={styles.subTitle}>Просевшие компетенции</h3>
+          <div className={styles.weakTags}>
+            {competencies.weakCompetencies.map((code) => (
+              <Badge key={code} variant="escalation">{blockLabelOf(code)}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {competencies.recommendations.length > 0 && (
+        <div className={styles.recommendBlock}>
+          <h3 className={styles.subTitle}>Рекомендуем пройти</h3>
+          <ul className={styles.recommendList}>
+            {competencies.recommendations.map((r) => (
+              <li key={r.scenarioId} className={styles.recommendItem}>
+                <a href={`#/scenarios/${r.scenarioId}/play`}>{r.title}</a>
+                <span className={styles.recommendReason}> — {RECOMMENDATION_REASON_LABELS[r.reason] || r.reason}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 /** Профиль проводника — карточка личности, сводные метрики по блокам, витрина ачивок.
  * См. design/screens/profile.md. Данные — ru.vsm.backend.gamification (ProfileResponse). */
 export default function Profile() {
@@ -23,8 +119,13 @@ export default function Profile() {
 
   function load() {
     setS({ phase: "loading" });
-    api.getProfile().then(
-      (data) => setS({ phase: "ready", data }),
+    Promise.all([
+      api.getProfile(),
+      // Компетенции — отдельный агрегат (см. api.js), не должен блокировать остальной профиль,
+      // если аналитика недоступна: CompetenciesSection сама покажет "не удалось загрузить".
+      api.getCompetencyAnalytics().catch(() => null)
+    ]).then(
+      ([data, competencies]) => setS({ phase: "ready", data, competencies }),
       () => setS({ phase: "error" })
     );
   }
@@ -47,6 +148,9 @@ export default function Profile() {
 
   const p = s.data;
   const hasProgress = p.scenariosCompleted > 0;
+  const blockLabelMap = {};
+  (p.blockProgress || []).forEach((bp) => { blockLabelMap[bp.block] = bp.blockLabel || bp.block; });
+  const blockLabelOf = (code) => blockLabelMap[code] || code;
 
   return (
     <div>
@@ -81,6 +185,10 @@ export default function Profile() {
             ))}
           </div>
         </Card>
+      )}
+
+      {hasProgress && (
+        <CompetenciesSection competencies={s.competencies} blockLabelOf={blockLabelOf} />
       )}
 
       <Card as="section" className={styles.section}>

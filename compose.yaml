@@ -19,10 +19,8 @@ services:
 
   backend:
     build:
-      # Repo root, not backend/ — the build needs both backend/ and frontend/ in its context
-      # (see backend/Dockerfile header comment: frontend/ is bundled as static resources).
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
       postgres:
@@ -41,6 +39,14 @@ services:
       # override BACKEND_HOST_PORT if 8080 is already taken on the host (e.g. by an unrelated
       # `python -m http.server`) — no need to touch SERVER_PORT for that.
       - "${BACKEND_HOST_PORT:-8080}:8080"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_HOST_PORT:-3000}:80"
 
 volumes:
   vsm-postgres-data:

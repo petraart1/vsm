@@ -10,7 +10,7 @@
 
 ## Запуск
 
-### Вариант 1: всё через Docker Compose (backend + Postgres + фронт на одном origin)
+### Вариант 1: всё через Docker Compose (backend + Postgres + nginx frontend)
 
 ```bash
 docker compose -f compose.yaml up --build
@@ -18,45 +18,43 @@ docker compose -f compose.yaml up --build
 
 (на машине с `DOCKER_DEFAULT_PLATFORM` в окружении — обычно `env -u DOCKER_DEFAULT_PLATFORM docker compose up --build`).
 
-Поднимает Postgres 17 и backend-контейнер; backend сам раздаёт статику `frontend/` — открывать
-`http://localhost:8080/`. Отдельно поднимать фронт не нужно.
+Поднимает Postgres 17, backend-контейнер (API) и frontend-контейнер (nginx) — открывать
+`http://localhost:3000/`. Backend доступен на `http://localhost:8080/api/**` и `http://localhost:8080/swagger-ui.html`.
 
-### Вариант 2: локально, backend через `bootRun`
-
-```bash
-docker compose -f compose.yaml up -d postgres   # только Postgres
-cd backend && ./gradlew bootRun                 # backend поднимет и раздаст frontend/ статикой
-```
-
-Открывать `http://localhost:8080/` — то же, что и в варианте 1, без пересборки Docker-образа при
-изменениях бэкенда.
-
-### Вариант 3: разработка фронта с live-reload (dev-сервер на 3000)
-
-Backend поднят одним из способов выше (порт 8080). Отдельно — любой статический dev-сервер для `frontend/`
-на порту 3000, например:
+### Вариант 2: локально, backend через `bootRun`, frontend через docker
 
 ```bash
-cd frontend && python3 -m http.server 3000
+docker compose -f compose.yaml up -d postgres frontend   # Postgres + nginx frontend
+cd backend && ./gradlew bootRun                          # backend на 8080
 ```
 
-Запросы к `/api/**` с `http://localhost:3000` разрешены через CORS (`backend/src/main/java/ru/vsm/backend/config/WebConfig.java`,
-свойство `app.cors.allowed-origins` в `backend/src/main/resources/application.properties`).
+Frontend на `http://localhost:3000/`, backend API на `http://localhost:8080/api/**`.
+
+### Вариант 3: разработка с Vite dev-сервером на фронте
+
+Backend поднят варианта 1 или 2 (порт 8080). Отдельно — Vite dev-сервер для `frontend/` на порту 3000:
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+Открывать адрес, который выведет `npm run dev` (обычно `http://localhost:5173` или `http://localhost:3000`).
+Запросы к `/api/**` проксируются на `http://localhost:8080` через конфиг Vite (`vite.config.ts`).
 
 ### Карта портов
 
 | Сервис | Порт по умолчанию | Как переопределить |
 |---|---|---|
+| frontend (nginx) | `3000` | `FRONTEND_HOST_PORT` (хост-порт в `compose.yaml`) |
 | backend (REST/Swagger) | `8080` | `SERVER_PORT` (внутри контейнера/JVM) / `BACKEND_HOST_PORT` (хост-порт в `compose.yaml`) |
-| frontend dev-сервер | `3000` | зависит от инструмента (например, `http.server <порт>`); при смене — добавить origin в `app.cors.allowed-origins` |
 | Postgres | `5432` | `POSTGRES_HOST_PORT` (хост-порт в `compose.yaml`) |
 
-Все три — только хост-порты (внутри Docker-сети контейнеры всегда слушают штатные 8080/5432); нужны,
+Все три — только хост-порты (внутри Docker-сети контейнеры всегда слушают штатные 3000/8080/5432); нужны,
 только если порт уже занят на хост-машине.
 
 ### Адреса
 
-- Приложение / фронт: `http://localhost:8080/`
+- Приложение (Docker): `http://localhost:3000/` (nginx frontend)
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
 - REST API: `http://localhost:8080/api/**` (см. Swagger UI для контрактов)
@@ -79,6 +77,7 @@ cd backend && ./gradlew test
 ```mermaid
 graph LR
     Browser["🌐 Браузер<br/>(React 18)"]
+    Nginx["🌐 Nginx<br/>(Frontend)"]
     Backend["🚀 Spring Boot 4.1<br/>Java 25"]
     Scenario["Scenario<br/>(граф, API)"]
     Gamification["Gamification<br/>(очки, ачивки)"]
@@ -88,6 +87,8 @@ graph LR
     Seed["📄 JSON seed<br/>(scenarios/)"]
     Event["📡 ScenarioCompletedEvent<br/>(in-process event)"]
     
+    Browser -->|GET /| Nginx
+    Nginx -->|fetch /api/**<br/>X-Player-Id| Backend
     Browser -->|REST, X-Player-Id| Backend
     Backend --> Config
     Backend --> Scenario
@@ -100,10 +101,9 @@ graph LR
     Event -->|слушает| Feedback
     Gamification -->|читает| DB
     Feedback -->|читает| DB
-    Backend -->|Swagger UI| Browser
 ```
 
-**Описание**: фронтенд отправляет запросы на REST API Backend через общий origin; каждый запрос включает заголовок `X-Player-Id` для простой идентификации игрока (без Spring Security). Backend раздаёт и фронтенд-статику (React компоненты в браузер) и API. Сценарный движок управляет графом узлов и выборов, загружая их из JSON-файлов при старте; при завершении сценария публикует доменное событие `ScenarioCompletedEvent` в памяти (in-process), на которое отписаны gamification и feedback. Gamification начисляет очки и ачивки, feedback строит разбор решений по истории выборов. Все данные в PostgreSQL, миграции через Liquibase.
+**Описание**: браузер открывает фронтенд на nginx (порт 3000), который статические файлы приложения (React, HTML, CSS). Фронтенд отправляет запросы к REST API Backend (порт 8080) с заголовком `X-Player-Id` для идентификации игрока (без Spring Security). Backend экспортирует API и свою диагностику (Swagger, Actuator). Сценарный движок управляет графом узлов и выборов, загружая их из JSON-файлов при старте; при завершении сценария публикует доменное событие `ScenarioCompletedEvent` в памяти (in-process), на которое отписаны gamification и feedback. Gamification начисляет очки и ачивки, feedback строит разбор решений по истории выборов. Все данные в PostgreSQL, миграции через Liquibase.
 
 ### Сценарий прохождения
 
@@ -207,7 +207,7 @@ curl -s "$API_URL/api/gamification/profile/$PLAYER_ID" | jq '.totalScore'
 
 - **Аутентификация**: отсутствует. Идентификация игрока — простой заголовок `X-Player-Id` (UUID). Применимо только для дружественной сессии в одном браузере; при публичном доступе нужна реальная аутентификация и авторизация через Spring Security.
 - **Таймер**: синхронизирован через серверный дедлайн (`node_deadline_at` в REST-ответе), а не через WebSocket-пуш. Клиент пересчитывает остаток каждую секунду от `Date.now()`. Это работает, но требует синхронизации часов браузер↔сервер; при большом расхождении может привести к срыву таймаута.
-- **Сложность сценариев**: реализованы 8 флагманских сценариев (3–4 уровня ветвления) и 26 простых (1 развилка, 3 варианта). 17 сценариев из 51 ещё не добавлены.
+- **Сложность сценариев**: реализованы все 51 сценарий — 8 флагманских (3–4 уровня ветвления) + 43 простых (1 развилка, 3 варианта).
 - **Уведомления**: отсутствуют. Игрок не получает напоминаний о новых сценариях или персональных челленджах.
 - **Аналитика компетенций**: нет глубокого анализа пробелов в знаниях. Профиль показывает raw очки по блокам, но не выделяет, какие типы ситуаций проходят плохо (например, "медицина: успешность 60%").
 - **Мобильное приложение**: разрабатывается отдельно (Android, Kotlin + Compose). Web и мобильное приложение используют один backend.
