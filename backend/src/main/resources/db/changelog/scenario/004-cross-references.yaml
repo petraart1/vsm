@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-004-cross-references
+      author: vsm
+      comment: >
+        Отложенные FK для полей с циклической зависимостью между таблицами
+        (scenario -> node -> choice -> node), добавляются после того как все три
+        таблицы уже существуют.
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: scenarios
+            baseColumnNames: entry_node_id
+            referencedTableName: scenario_nodes
+            referencedColumnNames: id
+            constraintName: fk_scenarios_entry_node
+        - addForeignKeyConstraint:
+            baseTableName: scenario_nodes
+            baseColumnNames: default_choice_id
+            referencedTableName: scenario_choices
+            referencedColumnNames: id
+            constraintName: fk_scenario_nodes_default_choice

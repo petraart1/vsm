@@ -1,0 +1,112 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-003-create-scenario-choices
+      author: vsm
+      comment: >
+        Варианты ответа в узле: дельты шкал, целевой узел (null = конец без отдельного
+        терминального узла), пометки шагов универсальной ролевой модели
+        (признать/обозначить правило/предложить решение/заверить), опц. ключ пояснения для разбора.
+      changes:
+        - createTable:
+            tableName: scenario_choices
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: node_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_scenario_choices_node
+                    references: scenario_nodes(id)
+                    deleteCascade: true
+              - column:
+                  name: code
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: text
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: loyalty_delta
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: safety_delta
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target_node_id
+                  type: uuid
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_scenario_choices_target_node
+                    references: scenario_nodes(id)
+                  remarks: null = конец сценария сразу после этого выбора (без отдельного терминального узла)
+              - column:
+                  name: role_step_acknowledge
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role_step_rule
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role_step_solution
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role_step_reassure
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: explanation_key
+                  type: varchar(150)
+                  remarks: ключ пояснения для экрана разбора, не сам текст
+              - column:
+                  name: sort_order
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: scenario_choices
+            columnNames: node_id, code
+            constraintName: uq_scenario_choices_node_code
+        - createIndex:
+            tableName: scenario_choices
+            indexName: idx_scenario_choices_node_id
+            columns:
+              - column:
+                  name: node_id
+        - createIndex:
+            tableName: scenario_choices
+            indexName: idx_scenario_choices_target_node_id
+            columns:
+              - column:
+                  name: target_node_id

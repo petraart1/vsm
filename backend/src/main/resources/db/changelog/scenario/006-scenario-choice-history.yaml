@@ -1,0 +1,72 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-006-create-scenario-choice-history
+      author: vsm
+      comment: >
+        История сделанных выборов в рамках одного прохождения —
+        для разбора решений (что выбрано на каждом узле, был ли это выбор по таймауту).
+      changes:
+        - createTable:
+            tableName: scenario_choice_history
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_progress_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_choice_history_progress
+                    references: user_progress(id)
+                    deleteCascade: true
+              - column:
+                  name: node_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_choice_history_node
+                    references: scenario_nodes(id)
+              - column:
+                  name: choice_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_choice_history_choice
+                    references: scenario_choices(id)
+              - column:
+                  name: sequence_index
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: was_timeout
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: loyalty_delta_applied
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: safety_delta_applied
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: chosen_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: scenario_choice_history
+            indexName: idx_choice_history_progress_id
+            columns:
+              - column:
+                  name: user_progress_id

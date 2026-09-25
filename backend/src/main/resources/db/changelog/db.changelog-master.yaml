@@ -1,0 +1,20 @@
+databaseChangeLog:
+  # Порядок важен: common (общие справочники/таблицы) -> домены.
+  # Пути — относительно каталога этого файла (db/changelog/), т.к. relativeToChangelogFile: true.
+  # errorIfMissingOrEmpty: false — пока домен не положил свои changeset'ы, каталог может быть пустым.
+  - includeAll:
+      path: common/
+      relativeToChangelogFile: true
+      errorIfMissingOrEmpty: false
+  - includeAll:
+      path: scenario/
+      relativeToChangelogFile: true
+      errorIfMissingOrEmpty: false
+  - includeAll:
+      path: gamification/
+      relativeToChangelogFile: true
+      errorIfMissingOrEmpty: false
+  - includeAll:
+      path: feedback/
+      relativeToChangelogFile: true
+      errorIfMissingOrEmpty: false

@@ -1,0 +1,236 @@
+{
+  "code": "medical-passenger-unwell",
+  "situationRef": 19,
+  "block": "medical",
+  "title": "Пассажиру стало плохо",
+  "description": "Экстренная медицинская ситуация: промедление и паника реалистично имеют цену, поэтому первые узлы сценария ограничены по времени. Эскалация к начальнику поезда здесь всегда обязательна и немедленна (см. dataset/scenarios/situations-onboard.md, блок G).",
+  "flagship": true,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир в соседнем кресле внезапно побледнел, жалуется на головокружение и просит воды. Речь путаная, дыхание частое. Нужно действовать быстро.",
+      "timerSeconds": 30,
+      "defaultChoice": "freeze-and-wait",
+      "choices": [
+        {
+          "code": "calm-and-call-chief",
+          "text": "Сохранять спокойствие, успокоить пассажира и окружающих, сразу связаться с начальником поезда.",
+          "loyaltyDelta": 5,
+          "safetyDelta": 10,
+          "target": "call-chief",
+          "roleSteps": {"acknowledge": true, "solution": true},
+          "explanationKey": "medical-unwell.start.calm-and-call-chief",
+          "sortOrder": 0
+        },
+        {
+          "code": "ask-doctor-and-call-chief",
+          "text": "Одновременно спросить у соседних пассажиров, нет ли среди них врача, и связаться с начальником поезда.",
+          "loyaltyDelta": 8,
+          "safetyDelta": 12,
+          "target": "call-chief-and-doctor",
+          "roleSteps": {"acknowledge": true, "solution": true, "reassure": true},
+          "explanationKey": "medical-unwell.start.ask-doctor-and-call-chief",
+          "sortOrder": 1
+        },
+        {
+          "code": "freeze-and-wait",
+          "text": "Растеряться, ничего не предпринимать сразу, подождать — возможно, пассажиру станет легче самому.",
+          "loyaltyDelta": -15,
+          "safetyDelta": -20,
+          "target": "failure-panic-delay",
+          "roleSteps": {},
+          "explanationKey": "medical-unwell.start.freeze-and-wait",
+          "sortOrder": 2
+        },
+        {
+          "code": "give-own-medication",
+          "text": "Сразу дать пассажиру своё личное успокоительное/лекарство, чтобы облегчить состояние.",
+          "loyaltyDelta": -5,
+          "safetyDelta": -25,
+          "target": "failure-medication",
+          "roleSteps": {},
+          "explanationKey": "medical-unwell.start.give-own-medication",
+          "sortOrder": 3
+        }
+      ]
+    },
+    {
+      "code": "call-chief",
+      "type": "ESCALATION",
+      "text": "Вы связались с начальником поезда — он уже направляется к вам. Пассажиру нужна помощь прямо сейчас: усадить, дать воды, контролировать состояние.",
+      "timerSeconds": 20,
+      "defaultChoice": "leave-alone",
+      "choices": [
+        {
+          "code": "stay-and-support",
+          "text": "Усадить пассажира удобно, дать воды, оставаться рядом и говорить спокойно до прибытия начальника поезда.",
+          "loyaltyDelta": 8,
+          "safetyDelta": 8,
+          "target": "chief-arrives",
+          "roleSteps": {"solution": true, "reassure": true},
+          "explanationKey": "medical-unwell.call-chief.stay-and-support",
+          "sortOrder": 0
+        },
+        {
+          "code": "ask-doctor-while-waiting",
+          "text": "Пока ждёте начальника поезда, спросить у пассажиров вокруг, нет ли среди них врача.",
+          "loyaltyDelta": 6,
+          "safetyDelta": 8,
+          "target": "doctor-found",
+          "roleSteps": {"solution": true},
+          "explanationKey": "medical-unwell.call-chief.ask-doctor-while-waiting",
+          "sortOrder": 1
+        },
+        {
+          "code": "leave-alone",
+          "text": "Оставить пассажира одного, отойти по другим делам в ожидании начальника поезда.",
+          "loyaltyDelta": -20,
+          "safetyDelta": -15,
+          "target": "failure-left-alone",
+          "roleSteps": {},
+          "explanationKey": "medical-unwell.call-chief.leave-alone",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "code": "call-chief-and-doctor",
+      "type": "ESCALATION",
+      "text": "Начальник поезда уже в пути. Среди пассажиров нашёлся человек с медицинским образованием, готовый помочь.",
+      "choices": [
+        {
+          "code": "coordinate",
+          "text": "Обеспечить врачу-добровольцу доступ к пассажиру, оставаться на связи с начальником поезда, фиксировать обстановку.",
+          "loyaltyDelta": 15,
+          "safetyDelta": 20,
+          "target": "resolved-best",
+          "roleSteps": {"acknowledge": true, "rule": true, "solution": true, "reassure": true},
+          "explanationKey": "medical-unwell.call-chief-and-doctor.coordinate",
+          "sortOrder": 0
+        },
+        {
+          "code": "fully-delegate",
+          "text": "Полностью передать ситуацию добровольцу-врачу и отойти от пассажира по другим делам.",
+          "loyaltyDelta": -5,
+          "safetyDelta": 5,
+          "target": "resolved-partial-detached",
+          "roleSteps": {},
+          "explanationKey": "medical-unwell.call-chief-and-doctor.fully-delegate",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "code": "doctor-found",
+      "type": "DIALOGUE",
+      "text": "Среди пассажиров нашёлся человек с медицинским образованием. Начальник поезда ещё не прибыл.",
+      "choices": [
+        {
+          "code": "invite-and-stay",
+          "text": "Пригласить добровольца к пассажиру и продолжать сопровождать ситуацию до прибытия начальника поезда.",
+          "loyaltyDelta": 10,
+          "safetyDelta": 12,
+          "target": "chief-arrives",
+          "roleSteps": {"solution": true, "reassure": true},
+          "explanationKey": "medical-unwell.doctor-found.invite-and-stay",
+          "sortOrder": 0
+        },
+        {
+          "code": "step-away",
+          "text": "Полностью самоустраниться, оставить добровольца одного разбираться с ситуацией.",
+          "loyaltyDelta": -8,
+          "safetyDelta": 0,
+          "target": "resolved-partial-detached",
+          "roleSteps": {},
+          "explanationKey": "medical-unwell.doctor-found.step-away",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "code": "chief-arrives",
+      "type": "ESCALATION",
+      "text": "Начальник поезда на месте, оценивает ситуацию и решает, нужна ли скорая помощь на ближайшей станции.",
+      "choices": [
+        {
+          "code": "brief-and-continue",
+          "text": "Кратко и чётко доложить обстановку начальнику поезда, продолжать поддерживать пассажира.",
+          "loyaltyDelta": 12,
+          "safetyDelta": 15,
+          "target": "resolved-best2",
+          "roleSteps": {"acknowledge": true, "rule": true, "solution": true, "reassure": true},
+          "explanationKey": "medical-unwell.chief-arrives.brief-and-continue",
+          "sortOrder": 0
+        },
+        {
+          "code": "leave-without-briefing",
+          "text": "Уйти сразу, как только начальник поезда появился, не передав информацию о состоянии пассажира.",
+          "loyaltyDelta": -3,
+          "safetyDelta": 5,
+          "target": "resolved-partial-nohandoff",
+          "roleSteps": {},
+          "explanationKey": "medical-unwell.chief-arrives.leave-without-briefing",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "code": "failure-panic-delay",
+      "type": "TERMINAL",
+      "text": "Промедление привело к тому, что состояние пассажира ухудшилось на глазах у соседей, началась паника в вагоне. Помощь пришла с опозданием.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Провал по обеим шкалам: экстренная ситуация требует немедленной, а не отложенной реакции. Промедление и бездействие — типичная ошибка блока «Медицинские и экстренные ситуации»."
+    },
+    {
+      "code": "failure-medication",
+      "type": "TERMINAL",
+      "text": "После приёма чужого препарата пассажиру стало хуже — возможна аллергическая реакция или несовместимость с уже принятыми лекарствами.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Грубое нарушение: проводник не имеет права выдавать личные медикаменты пассажирам — ответственность за реакцию организма недопустима. Рейтинг безопасности не может расти за подобное решение."
+    },
+    {
+      "code": "failure-left-alone",
+      "type": "TERMINAL",
+      "text": "Пассажир остался один и запаниковал сильнее, пока проводник отсутствовал — вокруг начали собираться встревоженные пассажиры.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Нельзя оставлять пассажира без внимания в экстренной ситуации, даже дожидаясь начальника поезда — это типичный провал сценариев паники и недомогания."
+    },
+    {
+      "code": "resolved-best",
+      "type": "TERMINAL",
+      "text": "Врач-доброволец оказал помощь, проводник координировал ситуацию и держал связь с начальником поезда — пассажиру стало значительно лучше.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Эталонный исход: быстрая реакция, поиск медицинской помощи среди пассажиров и обязательная эскалация к начальнику поезда выполнены одновременно и без промедления."
+    },
+    {
+      "code": "resolved-best2",
+      "type": "TERMINAL",
+      "text": "Начальник поезда получил чёткую информацию о состоянии пассажира и принял обоснованное решение о дальнейших действиях.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Полная ролевая модель соблюдена: признание ситуации, поддержка пассажира, чёткая передача информации начальнику поезда и заверение — образцовая экстренная коммуникация."
+    },
+    {
+      "code": "resolved-partial-detached",
+      "type": "TERMINAL",
+      "text": "Пассажиру помогли, но проводник рано отстранился от ситуации, оставив всё на добровольца без дальнейшей поддержки.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Пример конфликта шкал: безопасность формально соблюдена (помощь оказана), но лояльность и качество сервиса просели — проводник отвечает за пассажира, даже когда есть доброволец-врач."
+    },
+    {
+      "code": "resolved-partial-nohandoff",
+      "type": "TERMINAL",
+      "text": "Начальник поезда разобрался в ситуации самостоятельно, но потерял время на выяснение деталей, которые проводник мог сообщить сразу.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Безопасность соблюдена благодаря протоколу эскалации, но отсутствие чёткой передачи информации снижает качество реагирования — важная часть ролевой модели («обозначить правило/предложить решение») пропущена."
+    }
+  ]
+}

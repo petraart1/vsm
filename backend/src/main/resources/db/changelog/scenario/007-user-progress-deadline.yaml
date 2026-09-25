@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-007-user-progress-node-deadline
+      author: vsm
+      comment: >
+        Дедлайн решения по текущему узлу (server-side источник истины для таймера).
+        Проставляется при входе в узел с timer_seconds, сбрасывается (null) при переходе
+        в узел без таймера или при завершении прохождения. WebSocket-пуш обратного отсчёта —
+        отдельная задача, здесь только серверная проверка "выбор после дедлайна = timeout".
+      changes:
+        - addColumn:
+            tableName: user_progress
+            columns:
+              - column:
+                  name: node_deadline_at
+                  type: timestamp
+                  remarks: null = текущий узел без таймера или прохождение завершено

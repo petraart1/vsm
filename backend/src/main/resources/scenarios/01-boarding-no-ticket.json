@@ -1,0 +1,224 @@
+{
+  "code": "boarding-no-ticket",
+  "situationRef": 1,
+  "block": "boarding",
+  "title": "Пассажир без действительного билета",
+  "description": "У двери вагона пассажир без билета (или с недействительным билетом) просит пропустить его на посадку. Правило жёсткое: без действительного проездного документа посадка не осуществляется — но то, как проводник это сообщает, определяет и лояльность, и итоговую оценку по безопасности.",
+  "flagship": true,
+  "entryNode": "start",
+  "nodes": [
+    {
+      "code": "start",
+      "type": "DIALOGUE",
+      "text": "Пассажир у двери вагона взволнованно говорит: «У меня нет с собой билета, но я точно покупал(а)! Пожалуйста, пропустите, я опаздываю на важную встречу».",
+      "choices": [
+        {
+          "code": "acknowledge-and-explain",
+          "text": "Признать неудобство ситуации, твёрдо и вежливо объяснить правило: без действительного билета посадка невозможна, предложить обратиться в кассу/контактный центр.",
+          "loyaltyDelta": -2,
+          "safetyDelta": 5,
+          "target": "explain-rule",
+          "roleSteps": {"acknowledge": true, "rule": true, "solution": true},
+          "explanationKey": "boarding-no-ticket.start.acknowledge-and-explain",
+          "sortOrder": 0
+        },
+        {
+          "code": "curt-refusal",
+          "text": "Сразу резко отказать: «Без билета не пущу», развернуться и уйти.",
+          "loyaltyDelta": -15,
+          "safetyDelta": 5,
+          "target": "passenger-upset",
+          "roleSteps": {},
+          "explanationKey": "boarding-no-ticket.start.curt-refusal",
+          "sortOrder": 1
+        },
+        {
+          "code": "let-through-friendly",
+          "text": "Пропустить «по-доброте», попросив решить вопрос с билетом позже в пути.",
+          "loyaltyDelta": 10,
+          "safetyDelta": -20,
+          "target": "failure-doubt",
+          "roleSteps": {},
+          "explanationKey": "boarding-no-ticket.start.let-through-friendly",
+          "sortOrder": 2
+        },
+        {
+          "code": "offer-to-check",
+          "text": "Признать ситуацию, предложить вместе проверить бронирование через систему контролёра — вдруг билет есть, но не при себе.",
+          "loyaltyDelta": 3,
+          "safetyDelta": 2,
+          "target": "check-app",
+          "roleSteps": {"acknowledge": true, "solution": true},
+          "explanationKey": "boarding-no-ticket.start.offer-to-check",
+          "sortOrder": 3
+        }
+      ]
+    },
+    {
+      "code": "check-app",
+      "type": "DIALOGUE",
+      "text": "Вы проверяете бронирование пассажира через терминал контролёра по паспортным данным.",
+      "choices": [
+        {
+          "code": "found-in-system",
+          "text": "Билет найден в системе (опечатка в ФИО при покупке) — оформить посадку после уточнения данных, без нарушения правил.",
+          "loyaltyDelta": 15,
+          "safetyDelta": 10,
+          "target": "resolved-found",
+          "roleSteps": {"acknowledge": true, "rule": true, "solution": true, "reassure": true},
+          "explanationKey": "boarding-no-ticket.check-app.found-in-system",
+          "sortOrder": 0
+        },
+        {
+          "code": "not-found",
+          "text": "Билет не найден — вежливо объяснить дальнейшие шаги (касса, контактный центр, возврат/переоформление).",
+          "loyaltyDelta": 2,
+          "safetyDelta": 3,
+          "target": "explain-rule",
+          "roleSteps": {"acknowledge": true, "solution": true},
+          "explanationKey": "boarding-no-ticket.check-app.not-found",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "code": "explain-rule",
+      "type": "DIALOGUE",
+      "text": "Пассажир раздражается: «Это возмутительно! Я требую позвать вашего начальника!»",
+      "choices": [
+        {
+          "code": "offer-escalation",
+          "text": "Сохранять спокойствие, предложить пригласить начальника поезда для окончательного решения.",
+          "loyaltyDelta": 5,
+          "safetyDelta": 3,
+          "target": "esc-train-chief",
+          "roleSteps": {"solution": true, "reassure": true},
+          "explanationKey": "boarding-no-ticket.explain-rule.offer-escalation",
+          "sortOrder": 0
+        },
+        {
+          "code": "argue-back",
+          "text": "Настаивать на своём без предложения альтернатив, вступить в перепалку у всех на виду.",
+          "loyaltyDelta": -10,
+          "safetyDelta": 0,
+          "target": "passenger-upset",
+          "roleSteps": {},
+          "explanationKey": "boarding-no-ticket.explain-rule.argue-back",
+          "sortOrder": 1
+        },
+        {
+          "code": "polite-firm-close",
+          "text": "Заверить пассажира в сочувствии, чётко указать, куда обратиться (касса/приложение/контактный центр), пожелать хорошего дня.",
+          "loyaltyDelta": 8,
+          "safetyDelta": 5,
+          "target": "resolved-declined-politely",
+          "roleSteps": {"acknowledge": true, "rule": true, "solution": true, "reassure": true},
+          "explanationKey": "boarding-no-ticket.explain-rule.polite-firm-close",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "code": "passenger-upset",
+      "type": "DIALOGUE",
+      "text": "Пассажир повышает голос, привлекает внимание соседних пассажиров, отказывается отходить от двери.",
+      "choices": [
+        {
+          "code": "call-chief-now",
+          "text": "Позвать начальника поезда, чтобы деэскалировать ситуацию по протоколу.",
+          "loyaltyDelta": -2,
+          "safetyDelta": 5,
+          "target": "esc-train-chief",
+          "roleSteps": {"solution": true},
+          "explanationKey": "boarding-no-ticket.passenger-upset.call-chief-now",
+          "sortOrder": 0
+        },
+        {
+          "code": "keep-arguing",
+          "text": "Продолжать спорить самостоятельно, повышая тон в ответ.",
+          "loyaltyDelta": -20,
+          "safetyDelta": -10,
+          "target": "failure-conflict",
+          "roleSteps": {},
+          "explanationKey": "boarding-no-ticket.passenger-upset.keep-arguing",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "code": "esc-train-chief",
+      "type": "ESCALATION",
+      "text": "Начальник поезда подходит, оценивает ситуацию и подтверждает: без действительного билета посадка невозможна, предлагает пассажиру помощь через кассу или контактный центр на ближайшей станции.",
+      "choices": [
+        {
+          "code": "support-decision",
+          "text": "Поддержать решение начальника поезда, вежливо попрощаться с пассажиром, пожелать хорошей дороги в другой раз.",
+          "loyaltyDelta": 5,
+          "safetyDelta": 8,
+          "target": "resolved-escalated",
+          "roleSteps": {"reassure": true},
+          "explanationKey": "boarding-no-ticket.esc-train-chief.support-decision",
+          "sortOrder": 0
+        },
+        {
+          "code": "stay-silent",
+          "text": "Промолчать, оставить общение с пассажиром полностью на начальника поезда.",
+          "loyaltyDelta": -5,
+          "safetyDelta": 8,
+          "target": "resolved-escalated-cold",
+          "roleSteps": {},
+          "explanationKey": "boarding-no-ticket.esc-train-chief.stay-silent",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "code": "resolved-found",
+      "type": "TERMINAL",
+      "text": "Билет пассажира находится в системе бронирования (при покупке была допущена опечатка в фамилии). Данные уточнены, посадка оформлена корректно.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Лучший исход: правило не нарушено (билет реально существовал и был подтверждён через систему, а не принят на веру), при этом пассажир не потерял время и остался доволен — конфликта шкал не возникло."
+    },
+    {
+      "code": "failure-doubt",
+      "type": "TERMINAL",
+      "text": "Пассажир прошёл в вагон без билета. На маршруте это выявляется при контроле — прямое нарушение регламента посадки, ответственность ложится на проводника.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Нарушение регламента посадки: пассажир допущен в вагон без действительного проездного документа. Рейтинг безопасности не может расти за подобное решение, даже если пассажир доволен в моменте."
+    },
+    {
+      "code": "failure-conflict",
+      "type": "TERMINAL",
+      "text": "Спор перерос в открытый конфликт на глазах у других пассажиров. Пришлось вмешиваться начальнику поезда уже в разгар скандала, пассажир написал жалобу.",
+      "terminal": true,
+      "terminalOutcome": "FAILURE",
+      "outcomeSummary": "Эскалация конфликта вместо своевременного вызова начальника поезда. Формально билет не выдан (безопасность частично соблюдена), но потеряна лояльность и репутация бригады."
+    },
+    {
+      "code": "resolved-declined-politely",
+      "type": "TERMINAL",
+      "text": "Пассажир, хоть и расстроен, уходит к кассе с пониманием ситуации — проводник объяснил всё спокойно и по существу.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Регламент соблюдён полностью (посадка без билета не допущена), при этом проведена вся ролевая модель общения — лояльность просела минимально несмотря на отказ."
+    },
+    {
+      "code": "resolved-escalated",
+      "type": "TERMINAL",
+      "text": "Начальник поезда закрывает ситуацию, проводник поддерживает его решение и доброжелательно прощается с пассажиром.",
+      "terminal": true,
+      "terminalOutcome": "SUCCESS",
+      "outcomeSummary": "Эскалация проведена по протоколу, проводник остался вовлечён в коммуникацию — итог соблюдает оба норматива без лишнего конфликта."
+    },
+    {
+      "code": "resolved-escalated-cold",
+      "type": "TERMINAL",
+      "text": "Начальник поезда решает вопрос, но проводник не участвует в разговоре с пассажиром — тот уходит недовольным, хотя формально всё по правилам.",
+      "terminal": true,
+      "terminalOutcome": "PARTIAL",
+      "outcomeSummary": "Пример конфликта шкал: рейтинг безопасности высокий (правило соблюдено, эскалация состоялась), но лояльность просела — проводник устранился от коммуникации вместо того, чтобы довести её до конца."
+    }
+  ]
+}

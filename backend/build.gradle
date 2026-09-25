@@ -1,0 +1,71 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.1.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'ru.vsm'
+version = '0.0.1-SNAPSHOT'
+description = 'backend'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // --- MVP-стек: REST на виртуальных потоках (WebMVC) + WebSocket (таймеры/live-шкалы на Reactor Sinks/Flux) ---
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-liquibase'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'io.projectreactor:reactor-core'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
+    // Spring Boot 4 по умолчанию настраивает только Jackson 3 (tools.jackson); springdoc-openapi (и код доменов,
+    // где может понадобиться classic ObjectMapper) всё ещё на Jackson 2 (com.fasterxml.jackson) — включаем
+    // депрекейтед, но официально поддерживаемый auto-config совместимости.
+    implementation 'org.springframework.boot:spring-boot-jackson2'
+    compileOnly 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+    runtimeOnly 'org.postgresql:postgresql'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-liquibase-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+    testImplementation 'org.testcontainers:testcontainers-postgresql'
+    testCompileOnly 'org.projectlombok:lombok'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// Demo/single-origin setup: bundle the (build-less, no-npm) React frontend as Spring static
+// resources, so `bootRun`/`bootJar`/the Docker image serve it from `/` on the same origin as
+// `/api/**` — no CORS needed for that path (CORS in config/WebConfig.java is only for the :3000
+// dev frontend server). Works identically for `bootRun` (build/resources/main/static ends up on
+// the runtime classpath) and for `bootJar`/Docker (packaged into the jar by processResources).
+// `../frontend` resolves relative to this project dir (`backend/`), i.e. the repo's `frontend/`
+// — must exist as a sibling checkout, which it always is in this monorepo and in the Docker
+// build context (see backend/Dockerfile, which COPYs both `backend/` and `frontend/`).
+// `scripts/` (design-tokens generator, a dev-time Python script) is excluded, it's not runtime
+// frontend content.
+tasks.named('processResources') {
+    from('../frontend') {
+        into 'static'
+        exclude 'scripts/**'
+    }
+}

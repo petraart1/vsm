@@ -1,0 +1,95 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-005-create-user-progress
+      author: vsm
+      comment: >
+        Прохождение сценария игроком. user_id — без FK: пользователь принадлежит домену
+        gamification, между доменами связь только по id (событийная, не через БД).
+      changes:
+        - createTable:
+            tableName: user_progress
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: scenario_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_user_progress_scenario
+                    references: scenarios(id)
+              - column:
+                  name: current_node_id
+                  type: uuid
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_user_progress_current_node
+                    references: scenario_nodes(id)
+              - column:
+                  name: status
+                  type: varchar(16)
+                  defaultValue: IN_PROGRESS
+                  constraints:
+                    nullable: false
+              - column:
+                  name: loyalty_score
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: safety_score
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: final_outcome
+                  type: varchar(16)
+                  remarks: SUCCESS | PARTIAL | FAILURE, заполняется при завершении
+              - column:
+                  name: started_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: completed_at
+                  type: timestamp
+        - createIndex:
+            tableName: user_progress
+            indexName: idx_user_progress_user_id
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            tableName: user_progress
+            indexName: idx_user_progress_scenario_id
+            columns:
+              - column:
+                  name: scenario_id
+        - sql:
+            comment: status — допустимые значения
+            sql: >-
+              ALTER TABLE user_progress ADD CONSTRAINT chk_user_progress_status
+              CHECK (status IN ('IN_PROGRESS', 'COMPLETED', 'ABANDONED'))
+        - sql:
+            comment: final_outcome — допустимые значения
+            sql: >-
+              ALTER TABLE user_progress ADD CONSTRAINT chk_user_progress_outcome
+              CHECK (final_outcome IS NULL OR final_outcome IN ('SUCCESS', 'PARTIAL', 'FAILURE'))

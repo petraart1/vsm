@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Тренажёр проводника ВСМ</title>
+
+<!-- Токены (design/tokens.json → CSS custom properties, см. frontend/scripts/generate-tokens-css.py) -->
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/app.css" />
+
+<!--
+  React 18 UMD + Babel standalone с CDN — без npm/сборки.
+  Development-сборки React выбраны намеренно ради читаемых ошибок в консоли во время
+  хакатона; перед финальной сдачей/демо стоит переключить на *.production.min.js.
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js" crossorigin></script>
+</head>
+<body>
+<div id="root">
+  <!-- Пока React не смонтировался (или если скрипты не загрузились) — минимальный fallback. -->
+  <p style="padding: 24px; font-family: system-ui, sans-serif;">Загрузка тренажёра…</p>
+</div>
+
+<!-- Слой данных (единственная точка работы с API/моками) -->
+<script type="text/babel" data-presets="react" src="js/api.js"></script>
+<script type="text/babel" data-presets="react" src="js/router.js"></script>
+
+<!-- Компоненты общего назначения -->
+<script type="text/babel" data-presets="react" src="js/components/Avatar.jsx"></script>
+<script type="text/babel" data-presets="react" src="js/components/ScaleBar.jsx"></script>
+<script type="text/babel" data-presets="react" src="js/components/Timer.jsx"></script>
+<script type="text/babel" data-presets="react" src="js/components/Nav.jsx"></script>
+
+<!-- Экраны -->
+<script type="text/babel" data-presets="react" src="js/screens/ScenarioList.jsx"></script>
+<script type="text/babel" data-presets="react" src="js/screens/ScenarioPlay.jsx"></script>
+<script type="text/babel" data-presets="react" src="js/screens/Debrief.jsx"></script>
+<script type="text/babel" data-presets="react" src="js/screens/Profile.jsx"></script>
+<script type="text/babel" data-presets="react" src="js/screens/Leaderboard.jsx"></script>
+<script type="text/babel" data-presets="react" src="js/screens/Achievements.jsx"></script>
+
+<!-- Корневой компонент + монтирование -->
+<script type="text/babel" data-presets="react" src="js/App.jsx"></script>
+</body>
+</html>

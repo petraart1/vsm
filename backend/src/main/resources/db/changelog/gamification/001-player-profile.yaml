@@ -1,0 +1,55 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-001-create-player-profile
+      author: vsm
+      comment: >
+        Профиль игрока. id = userId из ScenarioCompletedEvent, без FK на таблицу scenario —
+        связь между доменами только по id и событиям.
+        Строка создаётся лениво при первом начислении (первое завершённое прохождение).
+      changes:
+        - createTable:
+            tableName: gamification_player_profile
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: display_name
+                  type: varchar(100)
+                  remarks: >
+                    Опционально; домена аутентификации в MVP нет, при null фронт/бэк
+                    показывают сгенерированное имя по id.
+              - column:
+                  name: total_score
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: scenarios_completed
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: gamification_player_profile
+            indexName: idx_player_profile_total_score
+            columns:
+              - column:
+                  name: total_score
+                  descending: true

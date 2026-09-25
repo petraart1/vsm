@@ -1,0 +1,100 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-002-create-scenario-nodes
+      author: vsm
+      comment: >
+        Узлы графа сценария: реплика/ситуация, опц. таймер (сек), опц. терминальный исход.
+        default_choice_id (выбор по умолчанию при истечении таймера) без FK здесь —
+        scenario_choices ещё не существует; FK добавляется в 004-cross-references.yaml.
+      changes:
+        - createTable:
+            tableName: scenario_nodes
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: scenario_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_scenario_nodes_scenario
+                    references: scenarios(id)
+                    deleteCascade: true
+              - column:
+                  name: code
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: node_type
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: text
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timer_seconds
+                  type: integer
+                  remarks: NULL = без таймера (реакция не ограничена по времени)
+              - column:
+                  name: default_choice_id
+                  type: uuid
+                  remarks: выбор, применяемый при истечении timer_seconds; FK добавляется в 004
+              - column:
+                  name: is_terminal
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: terminal_outcome
+                  type: varchar(16)
+                  remarks: SUCCESS | PARTIAL | FAILURE, заполняется только если is_terminal = true
+              - column:
+                  name: outcome_summary
+                  type: text
+                  remarks: краткое резюме исхода для экрана разбора (только терминальные узлы)
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: scenario_nodes
+            columnNames: scenario_id, code
+            constraintName: uq_scenario_nodes_scenario_code
+        - createIndex:
+            tableName: scenario_nodes
+            indexName: idx_scenario_nodes_scenario_id
+            columns:
+              - column:
+                  name: scenario_id
+        - sql:
+            comment: node_type — допустимые значения
+            sql: >-
+              ALTER TABLE scenario_nodes ADD CONSTRAINT chk_scenario_nodes_type
+              CHECK (node_type IN ('DIALOGUE', 'ESCALATION', 'TERMINAL'))
+        - sql:
+            comment: terminal_outcome — допустимые значения
+            sql: >-
+              ALTER TABLE scenario_nodes ADD CONSTRAINT chk_scenario_nodes_outcome
+              CHECK (terminal_outcome IS NULL OR terminal_outcome IN ('SUCCESS', 'PARTIAL', 'FAILURE'))
+        - sql:
+            comment: положительный таймер, если задан
+            sql: >-
+              ALTER TABLE scenario_nodes ADD CONSTRAINT chk_scenario_nodes_timer
+              CHECK (timer_seconds IS NULL OR timer_seconds > 0)

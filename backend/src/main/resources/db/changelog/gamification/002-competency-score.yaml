@@ -1,0 +1,61 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-002-create-competency-score
+      author: vsm
+      comment: >
+        Очки компетенций по блокам ситуаций (boarding/baggage/safety/.../misc) и по двум
+        шкалам (лояльность/безопасность) — накопительно, одна строка на пару (player, block).
+      changes:
+        - createTable:
+            tableName: gamification_competency_score
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: player_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_competency_score_player
+                    references: gamification_player_profile(id)
+                    deleteCascade: true
+              - column:
+                  name: block
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: loyalty_points
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: safety_points
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: scenarios_completed
+                  type: integer
+                  defaultValueNumeric: 0
+                  remarks: >
+                    Счётчик прохождений этого блока — для мини-прогресса по блокам на
+                    экране profile.md (design/screens/profile.md).
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: gamification_competency_score
+            columnNames: player_id, block
+            constraintName: uq_competency_score_player_block

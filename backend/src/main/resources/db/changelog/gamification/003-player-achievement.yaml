@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-003-create-player-achievement
+      author: vsm
+      comment: >
+        Полученные ачивки игрока. Каталог всех ачивок (описания/условия) — статический список
+        в коде (ru.vsm.backend.gamification.domain.AchievementCode), эта таблица хранит только
+        факты получения.
+      changes:
+        - createTable:
+            tableName: gamification_player_achievement
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: player_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_player_achievement_player
+                    references: gamification_player_profile(id)
+                    deleteCascade: true
+              - column:
+                  name: achievement_code
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: earned_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: gamification_player_achievement
+            columnNames: player_id, achievement_code
+            constraintName: uq_player_achievement_player_code

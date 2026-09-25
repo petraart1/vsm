@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: vsm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-vsm}
+      POSTGRES_USER: ${DB_USER:-vsm}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-vsm}
+    ports:
+      # Host port only, container always listens on 5432. Override if 5432 is taken on the host.
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - vsm-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-vsm} -d ${DB_NAME:-vsm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      # Repo root, not backend/ — the build needs both backend/ and frontend/ in its context
+      # (see backend/Dockerfile header comment: frontend/ is bundled as static resources).
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: vsm-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-vsm}
+      DB_USER: ${DB_USER:-vsm}
+      DB_PASSWORD: ${DB_PASSWORD:-vsm}
+      # Spring Boot binds SERVER_PORT to server.port automatically; container always listens on
+      # this port internally regardless of the host-side mapping below.
+      SERVER_PORT: 8080
+    ports:
+      # Host port only. Default host port is 8080 (matches the app's own default server.port);
+      # override BACKEND_HOST_PORT if 8080 is already taken on the host (e.g. by an unrelated
+      # `python -m http.server`) — no need to touch SERVER_PORT for that.
+      - "${BACKEND_HOST_PORT:-8080}:8080"
+
+volumes:
+  vsm-postgres-data:

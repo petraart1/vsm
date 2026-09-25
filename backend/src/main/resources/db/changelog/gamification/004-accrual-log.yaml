@@ -1,0 +1,85 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-004-create-accrual-log
+      author: vsm
+      comment: >
+        Журнал начислений по ScenarioCompletedEvent. Уникальность user_progress_id — механизм
+        идемпотентности: повторное событие с тем же прохождением не начисляет очки дважды.
+        user_progress_id — без FK на таблицу user_progress, междоменная связь только по id.
+      changes:
+        - createTable:
+            tableName: gamification_accrual_log
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_progress_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uq_accrual_log_user_progress
+              - column:
+                  name: player_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_accrual_log_player
+                    references: gamification_player_profile(id)
+                    deleteCascade: true
+              - column:
+                  name: scenario_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: scenario_code
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: block
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: outcome
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: loyalty_points_awarded
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: safety_points_awarded
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_points_awarded
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: had_timeout
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - sql:
+            comment: outcome — допустимые значения (согласовано с scenario.ScenarioOutcome)
+            sql: >-
+              ALTER TABLE gamification_accrual_log ADD CONSTRAINT chk_accrual_log_outcome
+              CHECK (outcome IN ('SUCCESS', 'PARTIAL', 'FAILURE'))

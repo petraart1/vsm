@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-001-create-scenarios
+      author: vsm
+      comment: >
+        Таблица сценариев (шапка графа). entry_node_id намеренно без FK здесь —
+        scenario_nodes ещё не существует; FK добавляется в 004-cross-references.yaml.
+      changes:
+        - createTable:
+            tableName: scenarios
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: code
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uq_scenarios_code
+              - column:
+                  name: situation_ref_id
+                  type: integer
+                  remarks: id ситуации из dataset/scenarios/situations-index.json (для трассируемости, без FK)
+              - column:
+                  name: block
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+              - column:
+                  name: is_flagship
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: entry_node_id
+                  type: uuid
+                  remarks: FK на scenario_nodes.id добавляется отдельным changeset'ом (004)
+              - column:
+                  name: active
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: scenarios
+            indexName: idx_scenarios_block
+            columns:
+              - column:
+                  name: block
