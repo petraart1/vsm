@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Разрешает открытый HTTP (без TLS) только для адреса эмулятора Android, за которым стоит
+    localhost хост-машины (10.0.2.2) — там backend поднят по http:// в dev-режиме.
+    Остальной трафик приложения по умолчанию идёт только по HTTPS.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
