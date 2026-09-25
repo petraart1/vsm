@@ -1,12 +1,13 @@
 import styles from "./EmptyState.module.css";
 
-/** props: message, action (опц. React-узел — кнопка/ссылка), className. */
-export default function EmptyState({ message, action, className }) {
-  const cls = [styles.emptyState, className].filter(Boolean).join(" ");
+/** Пустое/ошибочное состояние: заголовок, пояснение, действие. props: title, message, action, className. */
+export default function EmptyState({ title, message, action, className }) {
+  const cls = [styles.emptyState, "rv", className].filter(Boolean).join(" ");
   return (
     <div className={cls}>
-      <p>{message}</p>
-      {action}
+      {title && <h2 className={styles.title}>{title}</h2>}
+      {message && <p className={styles.message}>{message}</p>}
+      {action && <div className={styles.action}>{action}</div>}
     </div>
   );
 }

@@ -1,54 +1,88 @@
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--chrome-bg);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-4);
-  padding: var(--spacing-3) var(--spacing-6);
-  background: var(--color-background-surface);
-  border-bottom: 1px solid var(--color-border-default);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  gap: var(--s-4);
+  height: 60px;
+  padding: 0 var(--s-6);
 }
 
-.brand {
+.brand { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
+
+.slash { color: var(--line-strong); font-size: 1.375rem; font-weight: 300; }
+
+.space {
+  font-weight: 600;
+  font-size: var(--t-base);
+  color: var(--fg-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tools { display: flex; align-items: center; gap: var(--s-2); }
+
+.tabs {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-weight: var(--font-weight-h3);
-  font-size: var(--font-size-h3);
-  color: var(--color-text-primary);
+  gap: 0;
+  padding: 0 var(--s-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  position: relative;
+  padding: 10px var(--s-3) 14px;
+  font-size: var(--t-base);
+  font-weight: 500;
+  color: var(--fg-3);
   text-decoration: none;
+  white-space: nowrap;
+  isolation: isolate;
+  transition: color var(--dur-fast) ease;
 }
 
-.brandMark {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--color-brand-wood), var(--color-brand-brass));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-on-accent);
-  font-weight: 700;
+/* Подложка при наведении — как у вкладок Vercel. */
+.tab::before {
+  content: "";
+  position: absolute;
+  inset: 4px 2px 8px;
+  border-radius: var(--r-sm);
+  background: var(--bg-hover);
+  opacity: 0;
+  transition: opacity var(--dur-fast) ease;
+  z-index: -1;
 }
 
-.nav { display: flex; gap: var(--spacing-1); flex-wrap: wrap; }
+.tab:hover { color: var(--fg); }
+.tab:hover::before { opacity: 1; }
+.tab[aria-current="page"] { color: var(--fg); }
 
-.link {
-  padding: var(--spacing-2) var(--spacing-4);
-  border-radius: var(--radius-pill);
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  font-weight: var(--font-weight-body-strong);
-  font-size: var(--font-size-small);
-  transition: background var(--motion-duration-fast) var(--motion-easing-standard),
-              color var(--motion-duration-fast) var(--motion-easing-standard);
+.indicator {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--fg);
+  border-radius: 2px;
+  transition: transform 450ms var(--ease-out), width 450ms var(--ease-out);
 }
 
-.link:hover { background: var(--color-background-surface-raised); }
-
-.active {
-  background: var(--color-action-primary);
-  color: var(--color-action-primary-text);
+@media (max-width: 600px) {
+  .top { padding: 0 var(--s-4); height: 56px; }
+  .tabs { padding: 0 var(--s-1); }
+  .space { display: none; }
+  .slash { display: none; }
 }

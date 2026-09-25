@@ -1,0 +1,38 @@
+.seal { flex: none; display: block; }
+
+.outer { fill: var(--ink); stroke: none; }
+.inner { fill: none; stroke: var(--ink-fg); stroke-width: 0.8; opacity: 0.5; }
+.arc { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 900ms var(--ease-out); }
+
+.ring {
+  fill: var(--ink-fg);
+  font-size: 6.4px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.mark {
+  fill: var(--ink-fg);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.caption { fill: var(--ink-fg); font-size: 6px; font-weight: 600; opacity: 0.75; }
+
+/* В обучении: контур с дугой прогресса. */
+.seal[data-state="in_training"] .outer { fill: var(--panel-bg); stroke: var(--line-strong); stroke-width: 1; }
+.seal[data-state="in_training"] .inner { stroke: var(--line-strong); opacity: 1; }
+.seal[data-state="in_training"] .ring,
+.seal[data-state="in_training"] .mark,
+.seal[data-state="in_training"] .caption { fill: var(--fg); }
+.seal[data-state="in_training"] .ring { opacity: 0.55; }
+
+/* Не начат: пунктир, приглушённый текст. */
+.seal[data-state="not_started"] .outer { fill: transparent; stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 2 3; }
+.seal[data-state="not_started"] .inner { stroke: var(--line); opacity: 1; }
+.seal[data-state="not_started"] .ring,
+.seal[data-state="not_started"] .mark,
+.seal[data-state="not_started"] .caption { fill: var(--fg-3); }
+.seal[data-state="not_started"] .ring { opacity: 0.6; }

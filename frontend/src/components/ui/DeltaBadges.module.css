@@ -1,11 +1,21 @@
-.row { display: flex; gap: var(--spacing-4); flex-wrap: wrap; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .delta {
-  font-weight: var(--font-weight-body-strong);
-  font-variant-numeric: tabular-nums;
-  padding: var(--spacing-1) var(--spacing-3);
-  border-radius: var(--radius-pill);
+  --tone: var(--fg-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: var(--chip-radius);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone) 24%, transparent);
 }
 
-.positive { color: var(--color-feedback-success); background: var(--color-feedback-success-bg); }
-.negative { color: var(--color-feedback-danger); background: var(--color-feedback-danger-bg); }
+.num { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.delta[data-tone="up"] { --tone: var(--green); }
+.delta[data-tone="down"] { --tone: var(--red); }

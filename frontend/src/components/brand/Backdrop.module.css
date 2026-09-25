@@ -1,0 +1,58 @@
+.speed {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(180deg, #0a0c11 0%, #0c1018 60%, #0a0d14 100%);
+}
+
+/* Линии ярче по краям и почти гаснут под колонкой контента, чтобы не мешать тексту. */
+.streakLayer {
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.18) 22%, rgba(0, 0, 0, 0.18) 78%, #000 100%);
+  mask-image: linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.18) 22%, rgba(0, 0, 0, 0.18) 78%, #000 100%);
+}
+
+/* Холодное свечение снизу — как подсветка путей на фото. */
+.glow {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -30vh;
+  height: 70vh;
+  background: radial-gradient(60% 50% at 60% 40%, rgba(64, 150, 255, 0.22), rgba(64, 150, 255, 0) 70%);
+}
+
+/* Две еле заметные «рельсы» в перспективе. */
+.rails {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(172deg, transparent 0 78%, rgba(120, 170, 255, 0.10) 78.1% 78.25%, transparent 78.35%),
+    linear-gradient(176deg, transparent 0 86%, rgba(120, 170, 255, 0.07) 86.1% 86.2%, transparent 86.3%);
+}
+
+.streak {
+  position: absolute;
+  left: 0;
+  top: var(--top);
+  width: var(--len);
+  height: var(--thick);
+  border-radius: 1px;
+  opacity: var(--op);
+  background: linear-gradient(90deg, rgba(82, 168, 255, 0) 0%, rgba(120, 190, 255, 0.95) 70%, rgba(220, 240, 255, 1) 100%);
+  transform: translate3d(110vw, 0, 0);
+  animation: streak var(--dur) linear var(--delay) infinite;
+  will-change: transform;
+}
+
+@keyframes streak {
+  from { transform: translate3d(110vw, 0, 0) scaleX(-1); }
+  to { transform: translate3d(calc(-1 * var(--len) - 10vw), 0, 0) scaleX(-1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak { animation: none; transform: translate3d(calc(var(--top) * 1vw), 0, 0) scaleX(-1); }
+}

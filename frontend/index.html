@@ -3,13 +3,24 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Тренажёр проводника ВСМ</title>
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<title>ReactLab — тренажёр проводника ВСМ</title>
+<script>
+  // Тема до первого рендера — без вспышки светлого фона у тех, кто выбрал тёмную.
+  try {
+    var t = localStorage.getItem("reactlab.theme");
+    if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+    var st = localStorage.getItem("reactlab.style");
+    document.documentElement.setAttribute("data-style", st || "mono");
+  } catch (e) {
+    document.documentElement.setAttribute("data-style", "mono");
+  }
+</script>
 </head>
 <body>
-<div id="root">
-  <!-- Пока React не смонтировался — минимальный fallback. -->
-  <p style="padding: 24px; font-family: system-ui, sans-serif;">Загрузка тренажёра…</p>
-</div>
+<div id="root"></div>
 <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

@@ -2,47 +2,53 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-2);
-  border-radius: var(--radius-pill);
-  padding: var(--spacing-3) var(--spacing-5);
-  font-size: var(--font-size-body);
-  font-weight: var(--font-weight-body-strong);
+  gap: var(--s-2);
+  height: 36px;
+  padding: 0 var(--s-4);
+  border-radius: var(--btn-radius);
   border: 1px solid transparent;
-  cursor: pointer;
+  font-size: var(--t-base);
+  font-weight: 600;
+  letter-spacing: -0.01em;
   text-decoration: none;
-  transition: background var(--motion-duration-fast) var(--motion-easing-standard),
-              transform var(--motion-duration-fast) var(--motion-easing-standard);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease,
+              color var(--dur-fast) ease, transform var(--dur-fast) ease;
 }
 
 .btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-.primary { background: var(--color-action-primary); color: var(--color-action-primary-text); }
-.primary:hover { background: var(--color-action-primary-hover); }
+.sm { height: 30px; padding: 0 var(--s-3); font-size: var(--t-sm); }
+.lg { height: 44px; padding: 0 var(--s-5); font-size: var(--t-md); }
 
-.secondary {
-  background: var(--color-action-secondary);
-  color: var(--color-action-secondary-text);
-  border-color: var(--color-action-secondary-border);
-}
-.secondary:hover { background: var(--color-background-surface-raised); }
+.primary { background: var(--btn-bg); color: var(--btn-fg); }
+.primary:hover { background: color-mix(in srgb, var(--btn-bg) 85%, var(--btn-fg)); }
 
-.btn:disabled {
-  background: var(--color-action-disabled-bg);
-  color: var(--color-action-disabled-text);
-  cursor: not-allowed;
-}
+.secondary { background: var(--panel-bg); color: var(--fg); border-color: var(--line-strong); backdrop-filter: var(--panel-blur); -webkit-backdrop-filter: var(--panel-blur); }
+.secondary:hover { background: var(--bg-hover); border-color: var(--fg-3); }
 
-/* Вариант для кнопок-вариантов ответа в прохождении сценария: полноширинная, текст слева. */
+.ghost { background: transparent; color: var(--fg-2); }
+.ghost:hover { background: var(--bg-hover); color: var(--fg); }
+
+/* Вариант ответа в сценарии: крупная строка во всю ширину, текст слева. */
 .choice {
+  width: 100%;
+  height: auto;
+  min-height: 56px;
+  padding: var(--s-4) var(--s-5);
   justify-content: flex-start;
   text-align: left;
-  border-radius: var(--radius-md);
-  border-color: var(--color-border-default);
-  background: var(--color-background-surface);
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-body);
-  width: 100%;
-  padding: var(--spacing-4);
+  white-space: normal;
+  font-weight: 500;
+  font-size: var(--t-md);
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  background: var(--panel-bg);
+  color: var(--fg);
+  border-color: var(--panel-border);
+  border-radius: var(--panel-radius);
 }
-.choice:hover:not(:disabled) { border-color: var(--color-border-strong); background: var(--color-background-surface-raised); }
-.choice:disabled { cursor: not-allowed; opacity: 0.6; background: var(--color-background-surface); }
+
+.choice:hover { border-color: var(--fg); background: var(--bg-subtle); }

@@ -1,33 +1,28 @@
+import Icon from "./Icon.jsx";
+import { CountUp } from "../motion/Motion.jsx";
 import styles from "./ScaleBar.module.css";
 
-const LABELS = { loyalty: "Лояльность пассажира", safety: "Рейтинг безопасности" };
+const META = {
+  loyalty: { label: "Лояльность пассажира", short: "Лояльность", icon: "smile" },
+  safety: { label: "Рейтинг безопасности", short: "Безопасность", icon: "shield" }
+};
 
-function fillLevelClass(value) {
-  if (value < 35) return styles.fillLow;
-  if (value < 70) return styles.fillMid;
-  return styles.fillHigh;
-}
-
-/** props: type ('loyalty'|'safety'), value (0-100). Ширина заполнения — реально динамическое
- * значение конкретного прохождения, остаётся инлайн-стилем; цвет заполнения — модификатор
- * класса (зависит и от типа шкалы, и от порога значения, задан в ScaleBar.module.css). */
-export default function ScaleBar({ type, value }) {
+/** Шкала прохождения: подпись, крупное число (досчитывается при изменении) и тонкая полоса 0–100.
+ * props: type ('loyalty'|'safety'), value, compact (для шапки прохождения). */
+export default function ScaleBar({ type, value, compact = false }) {
+  const meta = META[type];
   const clamped = Math.max(0, Math.min(100, value));
   return (
-    <div className={`${styles.row} ${styles[type]}`}>
+    <div className={styles.row} data-type={type} data-compact={compact || undefined}>
       <div className={styles.head}>
-        <span className={styles.label}>{LABELS[type]}</span>
-        <span className={styles.value}>{Math.round(clamped)}</span>
+        <span className={styles.label}>
+          <Icon name={meta.icon} size={compact ? 14 : 16} />
+          {compact ? meta.short : meta.label}
+        </span>
+        <CountUp className={styles.value} value={Math.round(value)} duration={900} />
       </div>
-      <div
-        className={styles.track}
-        role="progressbar"
-        aria-valuenow={Math.round(clamped)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={LABELS[type]}
-      >
-        <div className={`${styles.fill} ${fillLevelClass(clamped)}`} style={{ width: `${clamped}%` }} />
+      <div className={styles.track} role="progressbar" aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={100} aria-label={meta.label}>
+        <div className={styles.fill} style={{ width: `${clamped}%` }} />
       </div>
     </div>
   );

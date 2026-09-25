@@ -1,0 +1,99 @@
+.figure {
+  margin: 0;
+  --cell: 13px;
+  --gap: 3px;
+  /* Монохромная шкала: от пустой клетки к цвету текста. */
+  --lvl-0: var(--bg-muted);
+  --lvl-1: color-mix(in srgb, var(--ink) 22%, var(--bg-muted));
+  --lvl-2: color-mix(in srgb, var(--ink) 45%, var(--bg-muted));
+  --lvl-3: color-mix(in srgb, var(--ink) 70%, var(--bg-muted));
+  --lvl-4: var(--ink);
+}
+
+.scroller { overflow-x: auto; padding-bottom: var(--s-1); scrollbar-width: thin; }
+
+.frame {
+  display: grid;
+  grid-template-columns: auto max-content;
+  grid-template-areas:
+    ".        months"
+    "weekdays grid";
+  column-gap: var(--s-2);
+  row-gap: 6px;
+  width: max-content;
+}
+
+.months,
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--weeks), var(--cell));
+  column-gap: var(--gap);
+}
+
+.months { grid-area: months; font-size: var(--t-xs); color: var(--fg-3); height: 1rem; }
+.months span { white-space: nowrap; }
+
+.grid {
+  grid-area: grid;
+  grid-template-rows: repeat(7, var(--cell));
+  grid-auto-flow: column;
+  row-gap: var(--gap);
+}
+
+.weekdays {
+  grid-area: weekdays;
+  display: grid;
+  grid-template-rows: repeat(7, var(--cell));
+  row-gap: var(--gap);
+  font-size: 0.6875rem;
+  line-height: var(--cell);
+  color: var(--fg-3);
+}
+
+.cell,
+.swatch {
+  display: block;
+  width: var(--cell);
+  height: var(--cell);
+  border-radius: 3px;
+  background: var(--lvl-0);
+}
+
+/* Волна слева направо: неделя за неделей клетки проявляются и «встают» на место. */
+.cell {
+  animation: cell-in 700ms var(--ease-out) both;
+  animation-delay: calc(250ms + var(--c) * 16ms + var(--r) * 10ms);
+}
+
+@keyframes cell-in {
+  from { opacity: 0; transform: scale(0.2); }
+  to { opacity: 1; transform: none; }
+}
+
+.cell[data-level="1"], .swatch[data-level="1"] { background: var(--lvl-1); }
+.cell[data-level="2"], .swatch[data-level="2"] { background: var(--lvl-2); }
+.cell[data-level="3"], .swatch[data-level="3"] { background: var(--lvl-3); }
+.cell[data-level="4"], .swatch[data-level="4"] { background: var(--lvl-4); }
+.cell[data-level="future"] { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+
+.grid .cell:hover { outline: 1.5px solid var(--blue); outline-offset: 1px; }
+
+.caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  margin-top: var(--s-4);
+  font-size: var(--t-sm);
+  color: var(--fg-2);
+}
+
+.readout { font-variant-numeric: tabular-nums; min-height: 1.4em; }
+
+.legend { display: inline-flex; align-items: center; gap: var(--gap); font-size: var(--t-xs); color: var(--fg-3); }
+.legend .swatch { margin: 0 1px; width: 11px; height: 11px; }
+
+@media (max-width: 480px) {
+  .figure { --cell: 11px; --gap: 2px; }
+}

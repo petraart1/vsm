@@ -1,10 +1,12 @@
 .avatar {
   flex: none;
-  border-radius: var(--radius-circle);
-  background: linear-gradient(135deg, var(--color-brand-wood), var(--color-brand-brass));
-  color: var(--color-text-on-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
   font-weight: 700;
+  letter-spacing: -0.02em;
+  user-select: none;
 }
+
+.soft { background: var(--bg-muted); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
+.solid { background: var(--ink); color: var(--ink-fg); }

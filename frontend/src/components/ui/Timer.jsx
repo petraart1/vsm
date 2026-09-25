@@ -71,12 +71,27 @@ export default function Timer({ timerSeconds, deadlineAt, onExpire, remainingOve
   else if (ratio <= 0.1) status = "critical";
   else if (ratio <= 0.3) status = "urgent";
 
-  const label = displayRemaining > 0 ? `${displayRemaining} с` : "Время вышло";
+  const radius = 20;
+  const circumference = 2 * Math.PI * radius;
+  const progress = Math.max(0, Math.min(1, ratio));
+  const label = displayRemaining > 0 ? `Осталось ${displayRemaining} секунд` : "Время вышло";
 
   return (
-    <div className={`${styles.timer} ${styles[status]}`} role="timer" aria-live="polite">
-      <span aria-hidden="true">⏱</span>
-      <span>{label}</span>
+    <div className={styles.timer} data-status={status} role="timer" aria-live="polite" aria-label={label}>
+      <svg className={styles.ring} width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+        <circle className={styles.track} cx="24" cy="24" r={radius} />
+        <circle
+          className={styles.arc}
+          cx="24"
+          cy="24"
+          r={radius}
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - progress)}
+          transform="rotate(-90 24 24)"
+        />
+      </svg>
+      <span className={styles.digits} aria-hidden="true">{Math.max(0, displayRemaining)}</span>
+      <span className={styles.caption} aria-hidden="true">{displayRemaining > 0 ? "секунд на решение" : "время вышло"}</span>
     </div>
   );
 }

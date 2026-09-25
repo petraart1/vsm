@@ -2,6 +2,8 @@ import { Fragment } from "react";
 import Nav from "./components/ui/Nav.jsx";
 import Button from "./components/ui/Button.jsx";
 import EmptyState from "./components/ui/EmptyState.jsx";
+import Splash from "./components/brand/Splash.jsx";
+import Backdrop from "./components/brand/Backdrop.jsx";
 import { useHashRoute } from "./router.js";
 import ScenarioList from "./screens/ScenarioList.jsx";
 import ScenarioPlay from "./screens/ScenarioPlay.jsx";
@@ -14,12 +16,11 @@ export default function App() {
   const route = useHashRoute();
   const screen = route.screen;
 
-  // scenario-play не имеет общего хедера сайта (см. design/screens/scenario-play.md —
-  // «модальный/полноэкранный режим в потоке»).
+  // Прохождение сценария — полноэкранный режим без общей шапки (design/screens/scenario-play.md).
   const isFullscreenPlay = screen === "scenarios" && route.segments[2] === "play";
 
   let body;
-  if (screen === "scenarios" && route.segments[2] === "play") {
+  if (isFullscreenPlay) {
     body = <ScenarioPlay route={route} />;
   } else if (screen === "scenarios") {
     body = <ScenarioList route={route} />;
@@ -34,16 +35,20 @@ export default function App() {
   } else {
     body = (
       <EmptyState
-        message="Страница не найдена."
-        action={<Button as="a" variant="primary" href="#/scenarios">К списку сценариев</Button>}
+        title="Страница не найдена"
+        message="Такого адреса в тренажёре нет."
+        action={<Button as="a" href="#/scenarios">Открыть сценарии</Button>}
       />
     );
   }
 
   return (
     <Fragment>
+      <Backdrop />
+      <Splash />
       {!isFullscreenPlay && <Nav activeScreen={screen} />}
-      <main className="app-main">{body}</main>
+      {/* key по пути: при переходе экран монтируется заново и проигрывает свой вход. */}
+      <main key={route.path} className={isFullscreenPlay ? "app-play" : "app-main"}>{body}</main>
     </Fragment>
   );
 }

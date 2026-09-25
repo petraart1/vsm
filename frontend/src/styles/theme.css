@@ -1,0 +1,166 @@
+/*
+ * ReactLab — визуальная система тренажёра.
+ * Монохром по логотипу: чистый белый/чёрный, серые линии 1px, цвет только у данных
+ * (безопасность — синий, дельты — зелёный/красный). Шрифт — Manrope, геометрический гротеск,
+ * близкий к вордмарку ReactLab и с полной кириллицей.
+ */
+
+:root {
+  color-scheme: light;
+
+  --font-sans: "Manrope Variable", "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Поверхности */
+  --bg: #ffffff;
+  --bg-subtle: #fafafa;
+  --bg-muted: #f1f1f1;
+  --bg-hover: #f5f5f5;
+  --bg-inverse: #000000;
+
+  /* Текст */
+  --fg: #000000;
+  --fg-2: #4a4a4a;
+  --fg-3: #8a8a8a;
+  --fg-inverse: #ffffff;
+
+  /* Линии */
+  --line: #ebebeb;
+  --line-strong: #d4d4d4;
+
+  /* Данные и статусы */
+  --blue: #0062d1;
+  --blue-soft: #ebf3ff;
+  --green: #117a3e;
+  --green-soft: #eaf7ef;
+  --red: #c9252d;
+  --red-soft: #fdeeee;
+  --amber: #a05000;
+  --amber-soft: #fff5e0;
+
+  --safety: var(--blue);
+  --loyalty: var(--fg);
+
+  --focus: var(--blue);
+  --overlay: rgba(0, 0, 0, 0.32);
+  --shadow-pop: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 16px 40px -8px rgba(0, 0, 0, 0.14);
+
+  /* Геометрия: чем крупнее контейнер, тем больше радиус */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-full: 999px;
+
+  /* Шкала отступов (4px) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+
+  /* Типографическая шкала */
+  --t-xs: 0.75rem;     /* 12 */
+  --t-sm: 0.8125rem;   /* 13 */
+  --t-base: 0.875rem;  /* 14 */
+  --t-md: 1rem;        /* 16 */
+  --t-lg: 1.25rem;     /* 20 */
+  --t-xl: 1.5rem;      /* 24 */
+  --t-2xl: 2rem;       /* 32 */
+  --t-3xl: 2.75rem;    /* 44 */
+
+  /* Движение */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 150ms;
+  --dur: 240ms;
+  --dur-slow: 700ms;
+
+  --page-max: 1120px;
+
+  /* Семантика оформления — эти токены переопределяют стили из variants.css. */
+  --page-bg: var(--bg);
+  --chrome-bg: color-mix(in srgb, var(--bg) 86%, transparent);
+  --panel-bg: var(--bg);
+  --panel-bg-subtle: var(--bg-subtle);
+  --panel-border: var(--line);
+  --panel-radius: var(--r-lg);
+  --panel-shadow: none;
+  --panel-blur: none;
+  --pop-bg: var(--bg);
+  --ink: var(--fg);
+  --ink-fg: var(--bg);
+  --btn-bg: var(--fg);
+  --btn-fg: var(--bg);
+  --btn-radius: var(--r-sm);
+  --chip-radius: 6px;
+  --display-weight: 800;
+  --display-tracking: -0.045em;
+  --title-weight: 800;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #000000;
+  --bg-subtle: #0a0a0a;
+  --bg-muted: #1c1c1c;
+  --bg-hover: #141414;
+  --bg-inverse: #ffffff;
+
+  --fg: #ededed;
+  --fg-2: #a3a3a3;
+  --fg-3: #6f6f6f;
+  --fg-inverse: #000000;
+
+  --line: #242424;
+  --line-strong: #363636;
+
+  --blue: #52a8ff;
+  --blue-soft: #0b1d33;
+  --green: #4cc38a;
+  --green-soft: #0d2418;
+  --red: #ff6166;
+  --red-soft: #2e1113;
+  --amber: #f1a10d;
+  --amber-soft: #2b1d05;
+
+  --overlay: rgba(0, 0, 0, 0.66);
+  --shadow-pop: 0 0 0 1px #2a2a2a, 0 16px 40px -8px rgba(0, 0, 0, 0.8);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #000000;
+    --bg-subtle: #0a0a0a;
+    --bg-muted: #1c1c1c;
+    --bg-hover: #141414;
+    --bg-inverse: #ffffff;
+
+    --fg: #ededed;
+    --fg-2: #a3a3a3;
+    --fg-3: #6f6f6f;
+    --fg-inverse: #000000;
+
+    --line: #242424;
+    --line-strong: #363636;
+
+    --blue: #52a8ff;
+    --blue-soft: #0b1d33;
+    --green: #4cc38a;
+    --green-soft: #0d2418;
+    --red: #ff6166;
+    --red-soft: #2e1113;
+    --amber: #f1a10d;
+    --amber-soft: #2b1d05;
+
+    --overlay: rgba(0, 0, 0, 0.66);
+    --shadow-pop: 0 0 0 1px #2a2a2a, 0 16px 40px -8px rgba(0, 0, 0, 0.8);
+  }
+}

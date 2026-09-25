@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import * as api from "../../api.js";
 import { subscribeNotificationsChanged } from "../../notificationsBus.js";
+import Icon from "./Icon.jsx";
 import styles from "./NotificationBell.module.css";
 
 const POLL_MS = 30000;
@@ -95,8 +96,8 @@ export default function NotificationBell() {
         aria-expanded={open}
         aria-label={unreadCount > 0 ? `Уведомления, непрочитанных: ${unreadCount}` : "Уведомления"}
       >
-        <span className={styles.icon} aria-hidden="true">🔔</span>
-        {unreadCount > 0 && <span className={styles.badge}>{unreadCount > 9 ? "9+" : unreadCount}</span>}
+        <Icon name="bell" size={16} />
+        {unreadCount > 0 && <span className={styles.badge} aria-hidden="true" />}
       </button>
       {open && (
         <div className={styles.dropdown} role="menu">
@@ -104,7 +105,7 @@ export default function NotificationBell() {
             <span className={styles.dropdownTitle}>Уведомления</span>
             {unreadCount > 0 && (
               <button type="button" className={styles.markAll} onClick={handleMarkAll}>
-                Отметить все прочитанными
+                Прочитать все
               </button>
             )}
           </div>

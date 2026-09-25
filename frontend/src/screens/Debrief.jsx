@@ -1,68 +1,66 @@
 import { useState, useEffect, useCallback } from "react";
 import * as api from "../api.js";
-import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
 import Badge from "../components/ui/Badge.jsx";
-import ScaleBar from "../components/ui/ScaleBar.jsx";
-import ScalesPanel from "../components/ui/ScalesPanel.jsx";
+import Icon from "../components/ui/Icon.jsx";
 import DeltaBadges from "../components/ui/DeltaBadges.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import Toast from "../components/ui/Toast.jsx";
+import { SplitText, CountUp } from "../components/motion/Motion.jsx";
 import { notifyNotificationsChanged } from "../notificationsBus.js";
+import { toDistinction, BLOCK_ICON } from "../progress.js";
 import styles from "./Debrief.module.css";
+
+const VERDICT_TONE = {
+  "Хорошо справились": "green",
+  "Есть над чем поработать": "amber",
+  "Критическая ошибка безопасности": "red"
+};
 
 function TimelineStep({ step, index, expanded, onToggle }) {
   const text = step.choiceText;
-  const isLong = text.length > 90;
-  const shown = expanded || !isLong ? text : text.slice(0, 90) + "…";
+  const isLong = text.length > 140;
+  const shown = expanded || !isLong ? text : text.slice(0, 140) + "…";
 
   return (
-    <div className={styles.timelineStep}>
-      <div className={styles.marker}>{index + 1}</div>
-      <div
-        className={styles.stepBody}
-        onClick={isLong ? onToggle : undefined}
-        role={isLong ? "button" : undefined}
-        tabIndex={isLong ? 0 : undefined}
-      >
-        <p className={styles.stepNodeText}>{step.nodeText}</p>
-        <p className={styles.stepChoiceText}>{shown}</p>
-        {isLong && (
-          <button type="button" className={styles.expandToggle} onClick={onToggle}>
-            {expanded ? "Свернуть" : "Показать полностью"}
-          </button>
-        )}
-        <DeltaBadges deltas={step.deltas} className={styles.stepDeltas} />
-        {step.escalation && <Badge variant="escalation" className={styles.stepTag}>☎ Эскалация</Badge>}
-        {step.scaleConflict && (
-          <Badge variant="escalation" className={styles.stepTagSpaced}>Конфликт шкал — осознанный компромисс</Badge>
-        )}
+    <li className={styles.step} style={{ "--i": index }}>
+      <span className={styles.marker} data-timeout={step.wasTimeout || undefined}>{index + 1}</span>
+      <div className={styles.stepBody}>
+        <p className={styles.stepNode}>{step.nodeText}</p>
+        <p className={styles.stepChoice}>
+          {shown}
+          {isLong && (
+            <button type="button" className={styles.more} onClick={onToggle}>
+              {expanded ? "Свернуть" : "Показать полностью"}
+            </button>
+          )}
+        </p>
+        <div className={styles.stepMeta}>
+          <DeltaBadges deltas={step.deltas} />
+          {step.escalation && <Badge><Icon name="phone" size={11} />Эскалация</Badge>}
+          {step.scaleConflict && <Badge tone="amber">Конфликт шкал</Badge>}
+        </div>
         {(step.roleStepsCompleted.length > 0 || step.roleStepsSkipped.length > 0) && (
-          <div className={styles.roleStepTags}>
+          <ul className={styles.roleSteps} aria-label="Шаги ролевой модели">
             {step.roleStepsCompleted.map((label) => (
-              <span key={`c-${label}`} className={styles.roleStepTag}>{label}</span>
+              <li key={`c-${label}`} data-ok="true"><Icon name="check" size={12} strokeWidth={2.5} />{label}</li>
             ))}
             {step.roleStepsSkipped.map((label) => (
-              <span key={`s-${label}`} className={`${styles.roleStepTag} ${styles.roleStepTagSkipped}`}>пропущено: {label}</span>
+              <li key={`s-${label}`}><Icon name="x" size={12} strokeWidth={2.5} />{label}</li>
             ))}
-          </div>
+          </ul>
         )}
-        {step.explanation && <p className={styles.stepExplanation}>{step.explanation}</p>}
+        {step.explanation && <p className={styles.explanation}>{step.explanation}</p>}
         {step.hiddenCommunicationEffect && (
-          <div className={styles.hiddenEffect}>
-            <span className={styles.hiddenEffectIcon} aria-hidden="true">☎</span>
-            <div>
-              <span className={styles.hiddenEffectLabel}>За кадром</span>
-              <span className={styles.hiddenEffectText}>
-                Решение принято в переговорах, которые пассажир не слышит (например, по служебной рации) — на его отношении к Вам оно не сказалось, но повлияло на безопасность.
-              </span>
-            </div>
-          </div>
+          <p className={styles.offstage}>
+            <Icon name="radio" size={14} />
+            Решение принято в служебных переговорах, которые пассажир не слышит: на лояльность не повлияло, на безопасность — да.
+          </p>
         )}
       </div>
-    </div>
+    </li>
   );
 }
 
@@ -107,9 +105,10 @@ export default function Debrief({ route }) {
 
   if (s.phase === "loading") {
     return (
-      <div className={styles.skeletonStack}>
+      <div className={styles.skeletons}>
+        <Skeleton height="96px" />
         <Skeleton height="120px" />
-        <Skeleton height="260px" />
+        <Skeleton height="320px" />
       </div>
     );
   }
@@ -117,96 +116,122 @@ export default function Debrief({ route }) {
   if (s.phase === "unavailable") {
     return (
       <EmptyState
-        message="Разбор недоступен."
-        action={<Button as="a" variant="primary" href="#/profile">В профиль</Button>}
+        title="Разбор недоступен"
+        message="Прохождение не найдено или ещё не завершено."
+        action={<Button as="a" href="#/profile">Открыть профиль</Button>}
       />
     );
   }
 
   if (s.phase === "error") {
-    return <ErrorState message="Не удалось загрузить разбор прохождения." onRetry={load} />;
+    return <ErrorState message="Сервер тренажёра не вернул разбор прохождения." onRetry={load} />;
   }
 
   const d = s.debrief;
   const a = d.accrual;
+  const tone = VERDICT_TONE[d.verdict] || "neutral";
 
   return (
     <div className={styles.shell}>
       <Toast toasts={toasts} onDismiss={dismissToast} />
-      <div className={styles.verdictBanner}>
-        <h1 className={styles.verdictTitle}>{d.verdict}</h1>
-        <p className={styles.verdictSubtitle}>{d.scenario.title} · {d.scenario.blockLabel}</p>
-        {d.interrupted && <Badge variant="escalation">Прохождение не было завершено обычным образом</Badge>}
+
+      <header className={styles.hero}>
+        <p className={`${styles.scenario} rv`} style={{ "--i": 0, "--rv-base": "0ms" }}>
+          <Badge icon={BLOCK_ICON[d.scenario.block] || "help"}>{d.scenario.blockLabel}</Badge>
+          <span>{d.scenario.title}</span>
+        </p>
+        <SplitText as="h1" text={d.verdict} className={styles.verdict} data-tone={tone} delay={150} />
+        {d.interrupted && (
+          <p className={`${styles.interrupted} rv`} style={{ "--i": 2 }}>
+            <Icon name="alert" size={14} />Прохождение завершено автоматически, а не последним решением.
+          </p>
+        )}
+      </header>
+
+      <dl className={`${styles.scores} rv`} style={{ "--i": 3 }}>
+        <div>
+          <dt><Icon name="shield" size={14} />Рейтинг безопасности</dt>
+          <dd data-scale="safety"><CountUp value={d.finalScales.safety} delay={500} /></dd>
+        </div>
+        <div>
+          <dt><Icon name="smile" size={14} />Лояльность пассажира</dt>
+          <dd><CountUp value={d.finalScales.loyalty} delay={600} /></dd>
+        </div>
+        <div>
+          <dt>Очки компетенций</dt>
+          <dd>{a.totalScore === null ? "—" : <CountUp value={a.totalScore} delay={700} />}</dd>
+        </div>
+        <div>
+          <dt>Сценариев пройдено</dt>
+          <dd>{a.scenariosCompleted === null ? "—" : <CountUp value={a.scenariosCompleted} delay={800} />}</dd>
+        </div>
+      </dl>
+
+      <div className={styles.columns}>
+        <section className={`${styles.path} rv`} style={{ "--i": 4 }} aria-labelledby="path-title">
+          <h2 className={styles.sectionTitle} id="path-title">Ваши решения</h2>
+          <ol className={styles.timeline}>
+            {d.timeline.map((step, i) => (
+              <TimelineStep
+                key={i}
+                index={i}
+                step={step}
+                expanded={!!expanded[i]}
+                onToggle={() => setExpanded((prev) => ({ ...prev, [i]: !prev[i] }))}
+              />
+            ))}
+          </ol>
+        </section>
+
+        <aside className={`${styles.side} rv`} style={{ "--i": 5 }}>
+          <section aria-labelledby="lesson-title">
+            <h2 className={styles.sectionTitle} id="lesson-title">Что усилить</h2>
+            <p className={styles.summary}>{d.summary}</p>
+          </section>
+
+          {d.keyMoment && (
+            <section className={styles.compare} aria-label="Ключевая развилка">
+              <p className={styles.compareNode}>{d.keyMoment.nodeText}</p>
+              <div className={styles.option}>
+                <p className={styles.optionLabel}>Ваш ответ</p>
+                <p className={styles.optionText}>{d.keyMoment.chosenChoiceText}</p>
+                <DeltaBadges deltas={d.keyMoment.chosenDeltas} />
+              </div>
+              <div className={styles.option} data-better="true">
+                <p className={styles.optionLabel}>Сильнее</p>
+                <p className={styles.optionText}>{d.keyMoment.betterChoiceText}</p>
+                <DeltaBadges deltas={d.keyMoment.betterDeltas} />
+                {d.keyMoment.betterExplanation && <p className={styles.optionWhy}>{d.keyMoment.betterExplanation}</p>}
+              </div>
+            </section>
+          )}
+
+          {d.normReferences && d.normReferences.length > 0 && (
+            <section aria-labelledby="norm-title">
+              <h3 className={styles.smallTitle} id="norm-title">Нормы регламента</h3>
+              <ul className={styles.norms}>
+                {d.normReferences.map((ref) => <li key={ref}>{ref}</li>)}
+              </ul>
+            </section>
+          )}
+
+          {a.recentAchievements.length > 0 && (
+            <section aria-labelledby="dist-title">
+              <h3 className={styles.smallTitle} id="dist-title">Получены отличия</h3>
+              <div className={styles.distinctions}>
+                {a.recentAchievements.map((ach) => (
+                  <Badge key={ach.code} as="a" tone="inverse" href={`#/achievements?highlight=${ach.code}`}>{toDistinction(ach).title}</Badge>
+                ))}
+              </div>
+            </section>
+          )}
+        </aside>
       </div>
 
-      <ScalesPanel>
-        <ScaleBar type="loyalty" value={d.finalScales.loyalty} />
-        <ScaleBar type="safety" value={d.finalScales.safety} />
-      </ScalesPanel>
-
-      <Card as="section">
-        <h2 className={styles.sectionTitle}>Пройденный путь</h2>
-        <div className={styles.timeline}>
-          {d.timeline.map((step, i) => (
-            <TimelineStep
-              key={i}
-              index={i}
-              step={step}
-              expanded={!!expanded[i]}
-              onToggle={() => setExpanded((prev) => ({ ...prev, [i]: !prev[i] }))}
-            />
-          ))}
-        </div>
-      </Card>
-
-      <Card as="section">
-        <h2 className={styles.sectionTitle}>Что можно было сделать иначе</h2>
-        <p>{d.summary}</p>
-        {d.keyMoment && (
-          <div className={styles.keyMoment}>
-            <p className={styles.keyMomentNodeText}>{d.keyMoment.nodeText}</p>
-            <p><strong>Вы выбрали: </strong>{d.keyMoment.chosenChoiceText}</p>
-            <DeltaBadges deltas={d.keyMoment.chosenDeltas} />
-            <p className={styles.keyMomentBetter}><strong>Сильнее было бы: </strong>{d.keyMoment.betterChoiceText}</p>
-            <DeltaBadges deltas={d.keyMoment.betterDeltas} />
-            {d.keyMoment.betterExplanation && (
-              <p className={styles.keyMomentBetterExplanation}>
-                <strong>Лучше было бы: </strong>{d.keyMoment.betterExplanation}
-              </p>
-            )}
-          </div>
-        )}
-        {d.normReferences && d.normReferences.length > 0 && (
-          <div className={styles.normTags}>
-            {d.normReferences.map((ref) => (
-              <span key={ref} className={styles.normTag}>Норма: {ref}</span>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <Card as="section">
-        <h2 className={styles.sectionTitle}>Начисления</h2>
-        {a.totalScore === null ? (
-          <p className={styles.accrualSummary}>Начисления временно недоступны.</p>
-        ) : (
-          <p>Общий счёт: {a.totalScore} очков · пройдено сценариев: {a.scenariosCompleted}</p>
-        )}
-        {a.recentAchievements.length > 0 ? (
-          <div className={styles.achievementRow}>
-            {a.recentAchievements.map((ach) => (
-              <Badge key={ach.code} as="a" variant="done" href={`#/achievements?highlight=${ach.code}`}>★ {ach.title}</Badge>
-            ))}
-          </div>
-        ) : (
-          <p className={styles.accrualSummary}>Новых ачивок пока нет.</p>
-        )}
-      </Card>
-
-      <div className={styles.actions}>
-        <Button as="a" variant="primary" href={`#/scenarios/${d.scenario.id}/play`}>Пройти ещё раз</Button>
-        <Button as="a" variant="secondary" href="#/scenarios">К списку сценариев</Button>
-        <Button as="a" variant="secondary" href="#/profile">В профиль</Button>
+      <div className={`${styles.actions} rv`} style={{ "--i": 6 }}>
+        <Button as="a" size="lg" href={`#/scenarios/${d.scenario.id}/play`}><Icon name="rotate" size={16} />Пройти ещё раз</Button>
+        <Button as="a" size="lg" variant="secondary" href="#/scenarios">Другие сценарии</Button>
+        <Button as="a" size="lg" variant="ghost" href="#/profile">Профиль</Button>
       </div>
     </div>
   );

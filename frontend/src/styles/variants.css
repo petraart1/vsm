@@ -1,0 +1,271 @@
+/*
+ * Стили оформления ReactLab. Базовый «Монохром» задан в theme.css; здесь — остальные четыре.
+ * Каждый стиль переопределяет только токены (цвета, радиусы, стекло, фон страницы), разметка
+ * экранов одна и та же. Переключается атрибутом data-style на <html>.
+ */
+
+/* =====================================================================
+   Apple — по гайду apple-ui-design: фон #f5f5f7, белые матовые панели
+   с радиусом 18px, синие кнопки-пилюли, заголовки полужирные, не тяжёлые.
+   ===================================================================== */
+
+:root[data-style="apple"] {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Manrope Variable", ui-sans-serif, sans-serif;
+
+  --bg: #ffffff;
+  --bg-subtle: #f5f5f7;
+  --bg-muted: #e8e8ed;
+  --bg-hover: #f0f0f3;
+  --fg: #1d1d1f;
+  --fg-2: #515154;
+  --fg-3: #86868b;
+  --line: rgba(0, 0, 0, 0.08);
+  --line-strong: rgba(0, 0, 0, 0.16);
+  --blue: #0071e3;
+  --blue-soft: #e8f2fd;
+
+  --page-bg: #f5f5f7;
+  --chrome-bg: rgba(245, 245, 247, 0.8);
+  --panel-bg: rgba(255, 255, 255, 0.8);
+  --panel-bg-subtle: rgba(245, 245, 247, 0.7);
+  --panel-border: rgba(0, 0, 0, 0.05);
+  --panel-radius: 18px;
+  --panel-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --panel-blur: saturate(180%) blur(20px);
+  --pop-bg: #ffffff;
+  --ink: #0071e3;
+  --ink-fg: #ffffff;
+  --btn-bg: #0071e3;
+  --btn-fg: #ffffff;
+  --btn-radius: 980px;
+  --chip-radius: 980px;
+  --display-weight: 600;
+  --display-tracking: -0.025em;
+  --title-weight: 600;
+  --t-base: 0.9375rem;
+}
+
+:root[data-style="apple"][data-theme="dark"] {
+  --bg: #1d1d1f;
+  --bg-subtle: #161617;
+  --bg-muted: #2c2c2e;
+  --bg-hover: #242426;
+  --fg: #f5f5f7;
+  --fg-2: #a1a1a6;
+  --fg-3: #86868b;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.2);
+  --blue: #2997ff;
+  --blue-soft: #0a2440;
+
+  --page-bg: #000000;
+  --chrome-bg: rgba(0, 0, 0, 0.72);
+  --panel-bg: rgba(29, 29, 31, 0.72);
+  --panel-bg-subtle: rgba(44, 44, 46, 0.5);
+  --panel-border: rgba(255, 255, 255, 0.06);
+  --panel-shadow: none;
+  --pop-bg: #1d1d1f;
+  --ink: #2997ff;
+  --ink-fg: #000000;
+  --btn-bg: #0071e3;
+  --btn-fg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-style="apple"]:not([data-theme="light"]) {
+    --bg: #1d1d1f;
+    --bg-subtle: #161617;
+    --bg-muted: #2c2c2e;
+    --bg-hover: #242426;
+    --fg: #f5f5f7;
+    --fg-2: #a1a1a6;
+    --fg-3: #86868b;
+    --line: rgba(255, 255, 255, 0.1);
+    --line-strong: rgba(255, 255, 255, 0.2);
+    --blue: #2997ff;
+    --blue-soft: #0a2440;
+
+    --page-bg: #000000;
+    --chrome-bg: rgba(0, 0, 0, 0.72);
+    --panel-bg: rgba(29, 29, 31, 0.72);
+    --panel-bg-subtle: rgba(44, 44, 46, 0.5);
+    --panel-border: rgba(255, 255, 255, 0.06);
+    --panel-shadow: none;
+    --pop-bg: #1d1d1f;
+    --ink: #2997ff;
+    --ink-fg: #000000;
+    --btn-bg: #0071e3;
+    --btn-fg: #ffffff;
+  }
+}
+
+/* =====================================================================
+   Скорость — графитовый фон с тонкими световыми линиями (см. SpeedLines).
+   Всегда тёмный. Акцент — голубой шлейф с фото поезда.
+   ===================================================================== */
+
+:root[data-style="speed"] {
+  color-scheme: dark;
+
+  --bg: #10131a;
+  --bg-subtle: #151923;
+  --bg-muted: #1f2430;
+  --bg-hover: #1a1f2a;
+  --fg: #eef2f8;
+  --fg-2: #a5afbf;
+  --fg-3: #6c7688;
+  --fg-inverse: #0a0c11;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --blue: #52a8ff;
+  --blue-soft: rgba(82, 168, 255, 0.12);
+  --green: #4cc38a;
+  --green-soft: rgba(76, 195, 138, 0.12);
+  --red: #ff6166;
+  --red-soft: rgba(255, 97, 102, 0.12);
+  --amber: #f1a10d;
+  --amber-soft: rgba(241, 161, 13, 0.12);
+  --overlay: rgba(4, 6, 10, 0.7);
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 20px 50px -10px rgba(0, 0, 0, 0.8);
+
+  --page-bg: #0a0c11;
+  --chrome-bg: rgba(10, 12, 17, 0.72);
+  --panel-bg: rgba(16, 19, 26, 0.82);
+  --panel-bg-subtle: rgba(255, 255, 255, 0.025);
+  --panel-border: rgba(255, 255, 255, 0.07);
+  --panel-radius: 12px;
+  --panel-blur: blur(8px);
+  --pop-bg: #151923;
+  --ink: #52a8ff;
+  --ink-fg: #06121f;
+  --btn-bg: #eef2f8;
+  --btn-fg: #0a0c11;
+  --btn-radius: 8px;
+  --chip-radius: 4px;
+}
+
+/* =====================================================================
+   Экспресс — ночной экстерьер ВСМ на фоне страницы. Фото видно в шапке
+   экрана, ниже уходит в темноту; панели — тёмное матовое стекло.
+   ===================================================================== */
+
+:root[data-style="express"] {
+  color-scheme: dark;
+
+  --bg: #0d1016;
+  --bg-subtle: #131720;
+  --bg-muted: #1e2330;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --fg: #f3f6fa;
+  --fg-2: #b3bdcb;
+  --fg-3: #7a8596;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.2);
+  --blue: #5cb0ff;
+  --blue-soft: rgba(92, 176, 255, 0.14);
+  --green: #52d49a;
+  --green-soft: rgba(82, 212, 154, 0.14);
+  --red: #ff6b70;
+  --red-soft: rgba(255, 107, 112, 0.14);
+  --amber: #f5b13d;
+  --amber-soft: rgba(245, 177, 61, 0.14);
+  --overlay: rgba(3, 5, 9, 0.6);
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 24px 60px -12px rgba(0, 0, 0, 0.85);
+
+  --page-bg: #05070b;
+  --chrome-bg: rgba(8, 11, 17, 0.55);
+  --panel-bg: rgba(14, 18, 26, 0.58);
+  --panel-bg-subtle: rgba(255, 255, 255, 0.04);
+  --panel-border: rgba(255, 255, 255, 0.09);
+  --panel-radius: 16px;
+  --panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --panel-blur: saturate(140%) blur(18px);
+  --pop-bg: rgba(18, 22, 31, 0.96);
+  --ink: #5cb0ff;
+  --ink-fg: #041220;
+  --btn-bg: #ffffff;
+  --btn-fg: #05070b;
+  --btn-radius: 999px;
+  --chip-radius: 999px;
+}
+
+:root[data-style="express"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(5, 7, 11, 0.35) 0%, rgba(5, 7, 11, 0.7) 38%, rgba(5, 7, 11, 0.94) 70%, #05070b 100%),
+    linear-gradient(90deg, rgba(5, 7, 11, 0.55) 0%, rgba(5, 7, 11, 0) 60%),
+    url("/backgrounds/express.jpg") 60% 35% / cover no-repeat;
+}
+
+/* =====================================================================
+   Салон — размытый интерьер вагона за светлой вуалью; панели — белое
+   стекло. Всегда светлый.
+   ===================================================================== */
+
+:root[data-style="salon"] {
+  color-scheme: light;
+
+  --bg: #ffffff;
+  --bg-subtle: rgba(255, 255, 255, 0.55);
+  --bg-muted: rgba(40, 32, 22, 0.08);
+  --bg-hover: rgba(255, 255, 255, 0.6);
+  --fg: #1b1814;
+  --fg-2: #4f4940;
+  --fg-3: #847b6f;
+  --line: rgba(40, 32, 22, 0.1);
+  --line-strong: rgba(40, 32, 22, 0.2);
+  --blue: #1f5fc4;
+  --blue-soft: rgba(31, 95, 196, 0.1);
+  --overlay: rgba(40, 32, 22, 0.28);
+  --shadow-pop: 0 0 0 1px rgba(40, 32, 22, 0.06), 0 24px 60px -16px rgba(60, 40, 20, 0.35);
+
+  --green: #117a3e;
+  --green-soft: rgba(17, 122, 62, 0.1);
+  --red: #c9252d;
+  --red-soft: rgba(201, 37, 45, 0.1);
+  --amber: #9a4d00;
+  --amber-soft: rgba(154, 77, 0, 0.1);
+
+  --page-bg: #efebe5;
+  --chrome-bg: rgba(255, 255, 255, 0.55);
+  --panel-bg: rgba(255, 255, 255, 0.66);
+  --panel-bg-subtle: rgba(255, 255, 255, 0.4);
+  --panel-border: rgba(255, 255, 255, 0.75);
+  --panel-radius: 20px;
+  --panel-shadow: 0 1px 2px rgba(60, 40, 20, 0.05), 0 12px 32px -12px rgba(60, 40, 20, 0.18);
+  --panel-blur: saturate(160%) blur(24px);
+  --pop-bg: rgba(255, 255, 255, 0.94);
+  --ink: #1b1814;
+  --ink-fg: #ffffff;
+  --btn-bg: #1b1814;
+  --btn-fg: #ffffff;
+  --btn-radius: 12px;
+  --chip-radius: 8px;
+}
+
+:root[data-style="salon"] body::before {
+  content: "";
+  position: fixed;
+  inset: -40px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(246, 243, 238, 0.55) 0%, rgba(246, 243, 238, 0.78) 50%, rgba(246, 243, 238, 0.9) 100%),
+    url("/backgrounds/salon-blur.jpg") center / cover no-repeat;
+}
+
+/* Фиксированные схемы: тёмные стили игнорируют выбранную светлую тему и наоборот. */
+:root[data-style="speed"],
+:root[data-style="express"] { color-scheme: dark; }
+:root[data-style="salon"] { color-scheme: light; }
+
+/* Плавная смена стиля (View Transitions): растворение с лёгким размытием. */
+::view-transition-old(root) { animation: vt-out 420ms var(--ease-in-out) both; }
+::view-transition-new(root) { animation: vt-in 520ms var(--ease-out) both; }
+
+@keyframes vt-out { to { opacity: 0; filter: blur(8px); } }
+@keyframes vt-in { from { opacity: 0; filter: blur(8px); } }

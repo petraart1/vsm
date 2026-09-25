@@ -1,30 +1,45 @@
 import { useState, useEffect } from "react";
 import * as api from "../api.js";
-import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
 import Avatar from "../components/ui/Avatar.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
+import { CountUp } from "../components/motion/Motion.jsx";
+import { gradeFor, pluralRu } from "../progress.js";
 import styles from "./Leaderboard.module.css";
 
-function Row({ entry, isMe }) {
+function initials(name) {
+  const parts = String(name || "??").split(/[\s-]+/).filter(Boolean);
+  return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : String(name || "??").slice(0, 2).toUpperCase();
+}
+
+function Row({ entry, isMe, max, index }) {
+  const share = max ? entry.totalScore / max : 0;
   return (
-    <Card className={`${styles.row}${isMe ? ` ${styles.rowMine}` : ""}`}>
-      <strong className={styles.rank}>#{entry.rank}</strong>
-      <Avatar initials={(entry.displayName || "??").slice(0, 2).toUpperCase()} size={40} />
-      <div className={styles.rowBody}>
-        <p>{entry.displayName}{isMe ? " (Вы)" : ""}</p>
-        <p className={styles.rowMeta}>{entry.scenariosCompleted} сценариев пройдено</p>
-      </div>
-      <strong>{entry.totalScore}</strong>
-    </Card>
+    <li className={`${styles.row} rv`} data-me={isMe || undefined} style={{ "--i": Math.min(index, 10) + 2 }}>
+      <span className={styles.rank}>{entry.rank}</span>
+      <span className={styles.person}>
+        <Avatar initials={initials(entry.displayName)} size={32} tone={isMe ? "solid" : "soft"} />
+        <span className={styles.name}>
+          {entry.displayName}
+          {isMe && <span className={styles.you}>вы</span>}
+        </span>
+      </span>
+      <span className={styles.grade}>{gradeFor(entry.totalScore).current.title}</span>
+      <span className={styles.count}>
+        {entry.scenariosCompleted} {pluralRu(entry.scenariosCompleted, "сценарий", "сценария", "сценариев")}
+      </span>
+      <span className={styles.score}>
+        <span className={styles.scoreBar} aria-hidden="true"><span style={{ width: `${share * 100}%` }} /></span>
+        <CountUp value={entry.totalScore} delay={200 + index * 40} />
+      </span>
+    </li>
   );
 }
 
-/** Лидерборд — топ игроков + закреплённая карточка "Ваше место". См. design/screens/leaderboard.md.
- * Данные — ru.vsm.backend.gamification (LeaderboardResponse). */
+/** Рейтинг проводников: топ-20 и закреплённая строка «вы», если игрок не в топе. */
 export default function Leaderboard() {
   const [s, setS] = useState({ phase: "loading" });
 
@@ -41,49 +56,53 @@ export default function Leaderboard() {
   if (s.phase === "loading") {
     return (
       <div>
-        <PageHeader title="Лидерборд" />
-        <Skeleton height="60px" className={styles.skeletonRow} />
-        <Skeleton height="60px" className={styles.skeletonRow} />
-        <Skeleton height="60px" className={styles.skeletonRow} />
+        <PageHeader title="Рейтинг" />
+        <div className={styles.skeletons}>{[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} height="56px" />)}</div>
       </div>
     );
   }
 
   if (s.phase === "error") {
-    return <ErrorState message="Не удалось загрузить лидерборд." onRetry={load} />;
+    return <ErrorState message="Сервер тренажёра не вернул рейтинг." onRetry={load} />;
   }
 
   const d = s.data;
   const meInTop = d.me && d.top.some((t) => t.playerId === d.me.playerId);
+  const max = d.top.length ? d.top[0].totalScore : 0;
 
   return (
     <div>
-      <PageHeader title="Лидерборд" />
-      {d.top.length === 0 && (
+      <PageHeader
+        title="Рейтинг"
+        description="Проводники по сумме очков компетенций. Очки начисляются за каждое завершённое прохождение: больше за решения без ошибок безопасности."
+      />
+
+      {d.top.length === 0 ? (
         <EmptyState
-          className={styles.noMe}
-          message="Станьте первым в рейтинге."
-          action={<Button as="a" variant="primary" href="#/scenarios">К списку сценариев</Button>}
+          title="Рейтинг пока пуст"
+          message="Пройдите первый сценарий — и вы откроете таблицу."
+          action={<Button as="a" href="#/scenarios">Открыть сценарии</Button>}
         />
-      )}
-      {d.top.length > 0 && (
-        <div className={styles.list}>
-          {d.top.map((entry) => (
-            <Row key={entry.playerId} entry={entry} isMe={d.me && entry.playerId === d.me.playerId} />
-          ))}
+      ) : (
+        <div className={styles.table}>
+          <div className={styles.head} aria-hidden="true">
+            <span>Место</span>
+            <span>Проводник</span>
+            <span className={styles.grade}>Разряд</span>
+            <span className={styles.count}>Пройдено</span>
+            <span className={styles.headScore}>Очки</span>
+          </div>
+          <ol className={styles.list}>
+            {d.top.map((entry, i) => (
+              <Row key={entry.playerId} entry={entry} index={i} max={max} isMe={d.me && entry.playerId === d.me.playerId} />
+            ))}
+          </ol>
+          {d.me && !meInTop && (
+            <ol className={`${styles.list} ${styles.meList}`} start={d.me.rank}>
+              <Row entry={d.me} index={d.top.length} max={max} isMe />
+            </ol>
+          )}
         </div>
-      )}
-      {d.me && !meInTop && (
-        <div className={styles.meLabel}>
-          <p className={styles.meCaption}>Ваше место:</p>
-          <Row entry={d.me} isMe />
-        </div>
-      )}
-      {!d.me && (
-        <Card className={styles.noMe}>
-          <p>Пройдите первый сценарий, чтобы попасть в рейтинг.</p>
-          <Button as="a" variant="primary" className={styles.emptyAction} href="#/scenarios">К списку сценариев</Button>
-        </Card>
       )}
     </div>
   );

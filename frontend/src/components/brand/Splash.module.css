@@ -1,0 +1,63 @@
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-6);
+  background: var(--bg);
+  cursor: pointer;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 700ms var(--ease-in-out), opacity 700ms var(--ease-in-out);
+}
+
+.splash[data-phase="exit"] { clip-path: inset(0 0 100% 0); }
+
+.lockup { display: flex; align-items: center; gap: 18px; }
+
+.mark {
+  animation: mark-in 900ms var(--ease-out) both;
+}
+
+@keyframes mark-in {
+  from { opacity: 0; transform: scale(0.82); filter: blur(8px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+/* Вордмарк выезжает из-за знака: обёртка обрезает, текст едет слева. */
+.wordClip { display: inline-block; overflow: hidden; padding: 0.08em 0.1em 0.12em 0; }
+
+.word {
+  display: inline-block;
+  font-size: clamp(2.25rem, 6vw, 3.5rem);
+  letter-spacing: -0.045em;
+  line-height: 1;
+  animation: word-slide 1100ms var(--ease-out) 700ms both;
+}
+
+.react { font-weight: 800; }
+.lab { font-weight: 400; }
+
+@keyframes word-slide {
+  from { transform: translate3d(-105%, 0, 0); }
+  to { transform: none; }
+}
+
+.tagline {
+  font-size: var(--t-md);
+  color: var(--fg-2);
+  letter-spacing: 0.02em;
+  animation: tag-in 900ms var(--ease-out) 1400ms both;
+}
+
+@keyframes tag-in {
+  from { opacity: 0; filter: blur(6px); transform: translateY(6px); }
+  to { opacity: 1; filter: none; transform: none; }
+}
+
+@media (max-width: 480px) {
+  .lockup { gap: 12px; }
+  .mark { width: 48px; height: 48px; }
+}

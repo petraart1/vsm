@@ -1,18 +1,19 @@
+import Icon from "./Icon.jsx";
 import styles from "./Badge.module.css";
 
-const VARIANT_CLASS = {
-  neutral: styles.neutral,
-  flagship: styles.flagship,
-  escalation: styles.escalation,
-  done: styles.done
-};
+const LEGACY = { flagship: "inverse", escalation: "amber", done: "green", neutral: "neutral" };
 
-/** props: variant ('neutral'|'flagship'|'escalation'|'done'), children, className, as (тег,
- * по умолчанию 'span' — иногда бейдж нужен как <a>, например ссылка на ачивку). */
-export default function Badge({ variant = "neutral", as: As = "span", className, children, ...rest }) {
-  const cls = [styles.badge, VARIANT_CLASS[variant] || VARIANT_CLASS.neutral, className].filter(Boolean).join(" ");
+/**
+ * Плашка-тег: тонкая рамка и лёгкая заливка в цвет тона, без точки-индикатора.
+ * props: tone ('neutral'|'blue'|'green'|'red'|'amber'|'inverse'), icon (имя иконки), as (тег),
+ * className. variant — совместимость со старыми вызовами.
+ */
+export default function Badge({ tone = "neutral", variant, icon, dot, as: As = "span", className, children, ...rest }) {
+  const t = variant ? LEGACY[variant] || "neutral" : tone;
+  const cls = [styles.badge, styles[t], className].filter(Boolean).join(" ");
   return (
     <As className={cls} {...rest}>
+      {icon && <Icon name={icon} size={12} strokeWidth={2} />}
       {children}
     </As>
   );

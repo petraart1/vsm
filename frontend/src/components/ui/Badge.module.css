@@ -1,15 +1,36 @@
 .badge {
+  --tone: var(--fg-2);
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-1);
-  padding: 2px var(--spacing-2);
-  border-radius: var(--radius-pill);
-  font-size: var(--font-size-caption);
-  font-weight: var(--font-weight-caption);
+  gap: 5px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: var(--chip-radius);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  line-height: 1;
+  white-space: nowrap;
   text-decoration: none;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone) 24%, transparent);
+  transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease;
 }
 
-.neutral { background: var(--color-feedback-neutral-bg); color: var(--color-feedback-neutral); }
-.flagship { background: var(--color-brand-brass-light); color: var(--color-brand-wood-dark); }
-.escalation { background: var(--color-feedback-warning-bg); color: var(--color-feedback-warning); }
-.done { background: var(--color-feedback-success-bg); color: var(--color-feedback-success); }
+.badge svg { flex: none; opacity: 0.9; }
+
+.neutral { --tone: var(--fg-2); }
+.blue { --tone: var(--blue); }
+.green { --tone: var(--green); }
+.red { --tone: var(--red); }
+.amber { --tone: var(--amber); }
+
+.inverse {
+  color: var(--ink-fg);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+a.badge:hover { border-color: color-mix(in srgb, var(--tone) 60%, transparent); background: color-mix(in srgb, var(--tone) 12%, transparent); }
+a.inverse:hover { background: color-mix(in srgb, var(--ink) 85%, var(--ink-fg)); }

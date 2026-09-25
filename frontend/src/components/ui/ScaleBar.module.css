@@ -1,28 +1,32 @@
-.row { display: flex; flex-direction: column; gap: var(--spacing-1); min-width: 0; }
+.row { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
 
-.head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--spacing-2); }
+.head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); }
 
-.label { font-size: var(--font-size-small); font-weight: var(--font-weight-body-strong); }
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-sm);
+  color: var(--fg-2);
+  white-space: nowrap;
+}
 
-.value { font-size: var(--font-size-h3); font-weight: var(--font-weight-h3); font-variant-numeric: tabular-nums; }
+.value { font-size: var(--t-2xl); font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
 
-.track { height: 10px; border-radius: var(--radius-pill); overflow: hidden; }
+.track { height: 6px; background: var(--bg-muted); border-radius: var(--r-full); overflow: hidden; }
 
 .fill {
   height: 100%;
-  border-radius: var(--radius-pill);
-  transition: width var(--motion-duration-slow) var(--motion-easing-emphasized),
-              background var(--motion-duration-base) var(--motion-easing-standard);
+  border-radius: inherit;
+  transform-origin: left;
+  animation: grow-x 1100ms var(--ease-out) 200ms both;
+  transition: width 900ms var(--ease-out);
 }
 
-.loyalty .label { color: var(--color-loyalty-label); }
-.loyalty .track { background: var(--color-loyalty-track); }
-.loyalty .fillLow { background: var(--color-loyalty-fill-low); }
-.loyalty .fillMid { background: var(--color-loyalty-fill-mid); }
-.loyalty .fillHigh { background: var(--color-loyalty-fill-high); }
+.row[data-type="loyalty"] .fill { background: var(--loyalty); }
+.row[data-type="safety"] .fill { background: var(--safety); }
+.row[data-type="safety"] .label svg { color: var(--safety); }
 
-.safety .label { color: var(--color-safety-label); }
-.safety .track { background: var(--color-safety-track); }
-.safety .fillLow { background: var(--color-safety-fill-low); }
-.safety .fillMid { background: var(--color-safety-fill-mid); }
-.safety .fillHigh { background: var(--color-safety-fill-high); }
+.row[data-compact] .value { font-size: var(--t-lg); }
+.row[data-compact] .track { height: 4px; }
+.row[data-compact] .label { font-size: var(--t-xs); }

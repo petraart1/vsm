@@ -1,9 +1,14 @@
 .emptyState {
-  text-align: center;
-  padding: var(--spacing-10) var(--spacing-5);
-  color: var(--color-text-secondary);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-3);
+  text-align: center;
+  gap: var(--s-2);
+  padding: var(--s-16) var(--s-6);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-lg);
 }
+
+.title { font-size: var(--t-lg); font-weight: 700; }
+.message { color: var(--fg-2); max-width: 46ch; }
+.action { margin-top: var(--s-4); }

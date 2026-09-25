@@ -1,13 +1,16 @@
+import { SplitText } from "../motion/Motion.jsx";
 import styles from "./PageHeader.module.css";
 
-/** Заголовок страницы + опциональная строка метаданных справа (счётчик "N из M пройдено" и т.п.).
- * props: title, meta (опц. React-узел/строка), className. */
-export default function PageHeader({ title, meta, className }) {
-  const cls = [styles.header, className].filter(Boolean).join(" ");
+/** Заголовок экрана: крупный заголовок, проявляющийся по словам, подзаголовок и действия справа.
+ * props: title, description, actions (узел), className. */
+export default function PageHeader({ title, description, actions, className }) {
   return (
-    <div className={cls}>
-      <h1>{title}</h1>
-      {meta && <div className={styles.meta}>{meta}</div>}
-    </div>
+    <header className={[styles.header, className].filter(Boolean).join(" ")}>
+      <div className={styles.text}>
+        <SplitText as="h1" text={title} className={styles.title} />
+        {description && <p className={`${styles.description} rv`} style={{ "--i": 1 }}>{description}</p>}
+      </div>
+      {actions && <div className={`${styles.actions} rv`} style={{ "--i": 2 }}>{actions}</div>}
+    </header>
   );
 }

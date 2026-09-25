@@ -1,38 +1,50 @@
 .stack {
   position: fixed;
-  top: var(--spacing-6);
-  right: var(--spacing-6);
-  z-index: 30;
+  right: var(--s-6);
+  bottom: var(--s-6);
+  z-index: 60;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
-  max-width: min(360px, calc(100vw - var(--spacing-6) * 2));
+  gap: var(--s-2);
+  width: min(360px, calc(100vw - 32px));
 }
 
 .toast {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3) var(--spacing-4);
-  border-radius: var(--radius-md);
-  background: var(--color-background-surface);
-  border: 1px solid var(--color-border-default);
-  box-shadow: var(--shadow-3);
+  display: grid;
+  grid-template-columns: 24px 1fr 24px;
+  gap: var(--s-3);
+  align-items: start;
+  padding: var(--s-4);
+  background: var(--pop-bg);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  animation: toast-in 600ms var(--ease-out) both;
 }
 
-.toastIcon { color: var(--color-achievement-gold); font-size: 1.1rem; line-height: 1.4; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
 
-.toastTitle { font-weight: var(--font-weight-body-strong); font-size: var(--font-size-small); }
+.toastIcon {
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--ink-fg);
+}
 
-.toastBody { color: var(--color-text-secondary); font-size: var(--font-size-caption); margin-top: 2px; }
+.toastTitle { font-weight: 700; font-size: var(--t-base); }
+.toastBody { color: var(--fg-2); font-size: var(--t-sm); margin-top: 2px; }
 
 .toastClose {
-  margin-left: auto;
-  border: none;
-  background: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  font-size: 1rem;
-  line-height: 1;
-  padding: 0;
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  border: none; background: none; border-radius: var(--r-xs);
+  color: var(--fg-3); cursor: pointer;
+}
+.toastClose:hover { background: var(--bg-hover); color: var(--fg); }
+
+@media (max-width: 600px) {
+  .stack { right: var(--s-4); bottom: var(--s-4); }
 }

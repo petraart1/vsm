@@ -97,7 +97,7 @@
   --motion-duration-slow: 400ms;
   --motion-easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
-  --font-family-base: system-ui, 'Inter', 'Roboto', sans-serif;
+  --font-family-base: 'Onest', system-ui, 'Roboto', sans-serif;
   --font-family-mono: 'JetBrains Mono', 'Roboto Mono', monospace;
   --font-size-display: 2.25rem;
   --line-height-display: 1.15;

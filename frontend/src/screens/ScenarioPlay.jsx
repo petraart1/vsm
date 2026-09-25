@@ -2,20 +2,27 @@ import { useState, useEffect, useRef } from "react";
 import * as api from "../api.js";
 import { navigate } from "../router.js";
 import { connectProgressChannel } from "../ws.js";
-import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
-import Badge from "../components/ui/Badge.jsx";
+import Icon from "../components/ui/Icon.jsx";
 import Avatar from "../components/ui/Avatar.jsx";
 import Timer from "../components/ui/Timer.jsx";
 import ScaleBar from "../components/ui/ScaleBar.jsx";
-import ScalesPanel from "../components/ui/ScalesPanel.jsx";
 import DeltaBadges from "../components/ui/DeltaBadges.jsx";
+import { SplitText } from "../components/motion/Motion.jsx";
+import { LogoMark } from "../components/brand/Logo.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import styles from "./ScenarioPlay.module.css";
 
-const AUTO_ADVANCE_MS = 1800;
+// Сколько показывается реакция пассажира до автоперехода к следующему узлу (полоса внизу панели
+// показывает остаток; «Далее» или Enter переходят сразу).
+const AUTO_ADVANCE_MS = 4200;
+
+const SPEAKERS = {
+  "НП": "Начальник поезда",
+  "ПС": "Пассажир"
+};
 
 /** props: route (сегменты ["scenarios", id, "play"]) */
 export default function ScenarioPlay({ route }) {
@@ -167,52 +174,99 @@ export default function ScenarioPlay({ route }) {
     applyResult(api.timeout(s.sessionId));
   }
 
+  // Клавиатура: 1–9 — выбрать вариант, Enter — дальше после реакции.
+  const keyHandlerRef = useRef(null);
+  keyHandlerRef.current = function onKey(ev) {
+    if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
+    if (s.phase === "playing" && /^[1-9]$/.test(ev.key)) {
+      const choice = s.node.choices[Number(ev.key) - 1];
+      if (choice) { ev.preventDefault(); handleChoice(choice.id); }
+    } else if (s.phase === "reacting" && ev.key === "Enter") {
+      ev.preventDefault();
+      advance();
+    }
+  };
+  useEffect(() => {
+    function listener(ev) { keyHandlerRef.current && keyHandlerRef.current(ev); }
+    window.addEventListener("keydown", listener);
+    return () => window.removeEventListener("keydown", listener);
+  }, []);
+
   if (s.phase === "loading") {
     return (
-      <div className={styles.skeletonStack}>
-        <Skeleton height="60px" />
-        <Skeleton height="180px" />
-        <Skeleton height="200px" />
+      <div className={styles.loading}>
+        <Skeleton height="56px" />
+        <div className={styles.loadingStage}>
+          <Skeleton height="28px" />
+          <Skeleton height="120px" />
+          <Skeleton height="56px" />
+          <Skeleton height="56px" />
+        </div>
       </div>
     );
   }
 
   if (s.phase === "not_found") {
     return (
-      <EmptyState
-        message="Сценарий не найден или больше не доступен."
-        action={<Button as="a" variant="primary" href="#/scenarios">К списку сценариев</Button>}
-      />
+      <div className={styles.center}>
+        <EmptyState
+          title="Сценарий не найден"
+          message="Возможно, он удалён или ссылка устарела."
+          action={<Button as="a" href="#/scenarios">Открыть каталог</Button>}
+        />
+      </div>
     );
   }
 
   if (s.phase === "error") {
-    return <ErrorState message="Проблема с соединением. Попробуйте ещё раз." onRetry={load} />;
+    return (
+      <div className={styles.center}>
+        <ErrorState title="Связь с сервером потеряна" message="Решение не отправлено. Повторите — прохождение начнётся с текущего узла." onRetry={load} />
+      </div>
+    );
   }
 
   const node = s.node;
+  const speaker = SPEAKERS[node.avatarInitials] || "Пассажир";
 
   return (
     <div className={styles.shell}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>{s.scenario.title}</h1>
-          <p className={styles.subtitle}>{s.scenario.blockLabel} · шаг {s.stepIndex}</p>
+      <header className={styles.bar}>
+        <button type="button" className={styles.exit} onClick={handleExit}>
+          <Icon name="x" size={16} />
+          <span>Выйти</span>
+        </button>
+        <div className={styles.barTitle}>
+          <LogoMark size={20} />
+          <span className={styles.barName}>{s.scenario.title}</span>
+          <span className={styles.step}>Шаг {s.stepIndex}</span>
         </div>
-        <Button variant="secondary" onClick={handleExit}>Выйти</Button>
-      </div>
+        <div className={styles.barScales}>
+          <ScaleBar type="safety" value={s.scales.safety} compact />
+          <ScaleBar type="loyalty" value={s.scales.loyalty} compact />
+        </div>
+      </header>
 
-      <ScalesPanel>
-        <ScaleBar type="loyalty" value={s.scales.loyalty} />
-        <ScaleBar type="safety" value={s.scales.safety} />
-      </ScalesPanel>
+      <div className={styles.stage}>
+        <div className={styles.speaker} key={`sp-${node.id}`}>
+          <Avatar initials={node.avatarInitials} size={36} tone={node.avatarInitials === "НП" ? "solid" : "soft"} />
+          <div>
+            <p className={styles.speakerName}>{speaker}</p>
+            {node.contextNote && <p className={styles.context}>{node.contextNote}</p>}
+          </div>
+        </div>
 
-      <Card className={styles.situationCard}>
-        <Avatar initials={node.avatarInitials} />
-        <div>
-          {node.contextNote && <p className={styles.context}>{node.contextNote}</p>}
-          <p className={styles.replica}>{node.situationText}</p>
-          {node.deadlineAt && s.phase === "playing" && (
+        <SplitText
+          key={`t-${node.id}`}
+          as="p"
+          text={node.situationText}
+          className={styles.replica}
+          maxDuration={900}
+          delay={120}
+        />
+
+        {node.deadlineAt && s.phase === "playing" && (
+          <div className={`${styles.timerRow} rv`} style={{ "--i": 3 }}>
             <Timer
               key={node.id}
               timerSeconds={node.timerSeconds}
@@ -220,30 +274,43 @@ export default function ScenarioPlay({ route }) {
               onExpire={handleTimeout}
               remainingOverride={wsSecondsRemaining === null ? undefined : wsSecondsRemaining}
             />
-          )}
-        </div>
-      </Card>
+          </div>
+        )}
 
-      {s.phase === "playing" && (
-        <div className={styles.choiceList}>
-          {node.choices.map((choice) => (
-            <Button key={choice.id} variant="choice" onClick={() => handleChoice(choice.id)}>
-              {choice.text}
-            </Button>
-          ))}
-        </div>
-      )}
+        {s.phase === "playing" && (
+          <ol className={styles.choices} key={`c-${node.id}`} aria-label="Варианты ответа">
+            {node.choices.map((choice, i) => (
+              <li key={choice.id} className="rv" style={{ "--i": i + 4 }}>
+                <button type="button" className={styles.choice} onClick={() => handleChoice(choice.id)}>
+                  <kbd className={styles.key} aria-hidden="true">{i + 1}</kbd>
+                  <span>{choice.text}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        )}
 
-      {s.phase === "reacting" && (
-        <Card className={styles.reactionPanel}>
-          {s.reaction.wasTimeout && <Badge variant="escalation">Время вышло</Badge>}
-          <p>{s.reaction.text}</p>
-          <DeltaBadges deltas={s.reaction.deltas} />
-          {s.reaction.escalation && <Badge variant="escalation">☎ Эскалация: вызван начальник поезда</Badge>}
-          {s.reaction.hiddenPenalty && <p className={styles.hiddenPenalty}>{s.reaction.hiddenPenalty}</p>}
-          <Button variant="primary" onClick={advance}>{s.isFinal ? "К разбору" : "Далее"}</Button>
-        </Card>
-      )}
+        {s.phase === "reacting" && (
+          <section className={styles.reaction} aria-live="polite">
+            <div className={styles.reactionHead}>
+              {s.reaction.wasTimeout && (
+                <span className={styles.flag} data-tone="red"><Icon name="alert" size={14} />Время вышло</span>
+              )}
+              {s.reaction.escalation && (
+                <span className={styles.flag}><Icon name="phone" size={14} />Вызван начальник поезда</span>
+              )}
+            </div>
+            <p className={styles.reactionText}>{s.reaction.text}</p>
+            <DeltaBadges deltas={s.reaction.deltas} />
+            {s.reaction.hiddenPenalty && <p className={styles.hiddenPenalty}>{s.reaction.hiddenPenalty}</p>}
+            <div className={styles.reactionFoot}>
+              <span className={styles.hint}>Enter — продолжить</span>
+              <Button onClick={advance}>{s.isFinal ? "Открыть разбор" : "Далее"}</Button>
+            </div>
+            <span className={styles.autoBar} style={{ animationDuration: `${AUTO_ADVANCE_MS}ms` }} aria-hidden="true" />
+          </section>
+        )}
+      </div>
     </div>
   );
 }

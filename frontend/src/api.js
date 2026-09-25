@@ -9,6 +9,8 @@
  * если backend недоступен во время демо.
  */
 
+import { recordActivity } from "./progress.js";
+
 export const USE_MOCKS = false;
 const NETWORK_DELAY_MS = 220;
 
@@ -150,6 +152,20 @@ const ROLE_STEP_LABELS = {
 };
 const ALL_ROLE_STEP_KEYS = ["acknowledge", "rule", "solution", "reassure"];
 
+/** Запись в журнал тренировок (график активности в профиле). Незавершённые прохождения не пишутся. */
+function logActivity(debrief) {
+  if (debrief.verdict === "Прохождение ещё не завершено") return;
+  recordActivity({
+    progressId: debrief.progressId,
+    scenarioId: debrief.scenario.id,
+    title: debrief.scenario.title,
+    blockLabel: debrief.scenario.blockLabel,
+    loyalty: debrief.finalScales.loyalty,
+    safety: debrief.finalScales.safety,
+    verdict: debrief.verdict
+  });
+}
+
 // =======================================================================================
 // ==================================  РЕАЛЬНЫЙ РЕЖИМ  ====================================
 // =======================================================================================
@@ -225,7 +241,7 @@ function realListScenarios() {
         failurePattern: localMeta ? localMeta.failure_pattern : null,
         flagship: !!s.flagship,
         status: p ? "completed" : "not_started",
-        lastResult: p ? { loyalty: p.loyalty, safety: p.safety, verdict: p.verdict } : null
+        lastResult: p ? { loyalty: p.loyalty, safety: p.safety, verdict: p.verdict, completedAt: p.completedAt } : null
       };
     });
     const completedCount = situations.filter((s) => s.status === "completed").length;
@@ -327,7 +343,7 @@ function realGetDebrief(progressId) {
     ]).then(([profile, achievements]) => {
       const debrief = {
         progressId: d.userProgressId,
-        scenario: { id: d.scenarioId, title: d.scenarioTitle, blockLabel: blockLabelFor(catalog, d.scenarioBlock) },
+        scenario: { id: d.scenarioId, title: d.scenarioTitle, block: d.scenarioBlock, blockLabel: blockLabelFor(catalog, d.scenarioBlock) },
         verdict: d.verdict,
         interrupted: !!d.interrupted,
         finalScales: { loyalty: d.finalLoyaltyScore, safety: d.finalSafetyScore },
@@ -366,6 +382,7 @@ function realGetDebrief(progressId) {
           : { totalScore: null, scenariosCompleted: null, recentAchievements: [] }
       };
       recordCompletion(debrief.scenario.id, debrief.finalScales.loyalty, debrief.finalScales.safety, debrief.verdict);
+      logActivity(debrief);
       return debrief;
     })),
     () => ({ error: "debrief_unavailable" })
@@ -512,7 +529,7 @@ function mockListScenarios() {
         escalation: s.escalation, failurePattern: s.failure_pattern,
         flagship: FLAGSHIP_IDS_MOCK.indexOf(s.id) !== -1,
         status: p ? "completed" : "not_started",
-        lastResult: p ? { loyalty: p.loyalty, safety: p.safety, verdict: p.verdict } : null
+        lastResult: p ? { loyalty: p.loyalty, safety: p.safety, verdict: p.verdict, completedAt: p.completedAt } : null
       };
     });
     return delay({
@@ -532,7 +549,7 @@ function mockStartScenario(scenarioId) {
     mockSessionCounter += 1;
     const sessionId = `sess-${mockSessionCounter}-${Date.now()}`;
     mockSessions[sessionId] = {
-      scenarioId: situation.id, scenarioTitle: situation.title,
+      scenarioId: situation.id, scenarioTitle: situation.title, block: situation.block,
       blockLabel: blockLabelFor(catalog, situation.block), graph, history: [],
       currentNodeId: graph.startNode, scales: { loyalty: 60, safety: 60 }
     };
@@ -660,13 +677,14 @@ function mockGetDebrief(sessionId) {
 
   const debrief = {
     progressId: sessionId,
-    scenario: { id: session.scenarioId, title: session.scenarioTitle, blockLabel: session.blockLabel },
+    scenario: { id: session.scenarioId, title: session.scenarioTitle, block: session.block, blockLabel: session.blockLabel },
     verdict, interrupted: false, finalScales, timeline,
     keyMoment, summary, normReferences: [],
     accrual: { totalScore: awardedPoints, scenariosCompleted: Object.keys(readProgress()).length + 1, recentAchievements: achievements }
   };
   return delay(debrief).then((d) => {
     recordCompletion(session.scenarioId, finalScales.loyalty, finalScales.safety, verdict);
+    logActivity(d);
     return d;
   });
 }

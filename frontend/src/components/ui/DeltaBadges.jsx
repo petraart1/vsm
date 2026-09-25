@@ -1,17 +1,21 @@
 import styles from "./DeltaBadges.module.css";
 
-/** Пара бейджей "+N лояльность / +N безопасность" — используется и в проигрывании сценария
- * (реакция на выбор), и в разборе (таймлайн, ключевая развилка). props: deltas ({loyalty, safety}). */
-export default function DeltaBadges({ deltas, className }) {
-  const cls = [styles.row, className].filter(Boolean).join(" ");
+function Delta({ value, label }) {
+  const tone = value > 0 ? "up" : value < 0 ? "down" : "flat";
+  const sign = value > 0 ? "+" : value < 0 ? "−" : "±";
   return (
-    <div className={cls}>
-      <span className={`${styles.delta} ${deltas.loyalty >= 0 ? styles.positive : styles.negative}`}>
-        {(deltas.loyalty >= 0 ? "+" : "") + deltas.loyalty} лояльность
-      </span>
-      <span className={`${styles.delta} ${deltas.safety >= 0 ? styles.positive : styles.negative}`}>
-        {(deltas.safety >= 0 ? "+" : "") + deltas.safety} безопасность
-      </span>
+    <span className={styles.delta} data-tone={tone}>
+      <span className={styles.num}>{sign}{Math.abs(value)}</span> {label}
+    </span>
+  );
+}
+
+/** Изменения шкал после решения. props: deltas ({loyalty, safety}), className. */
+export default function DeltaBadges({ deltas, className }) {
+  return (
+    <div className={[styles.row, className].filter(Boolean).join(" ")}>
+      <Delta value={deltas.safety} label="безопасность" />
+      <Delta value={deltas.loyalty} label="лояльность" />
     </div>
   );
 }

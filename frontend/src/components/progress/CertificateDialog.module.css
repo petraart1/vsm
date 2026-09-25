@@ -1,0 +1,141 @@
+.dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  border: none;
+  border-radius: var(--r-lg);
+  background: transparent;
+  color: var(--fg);
+  overflow: auto;
+}
+
+.dialog::backdrop {
+  background: var(--overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fade-in 300ms ease both;
+}
+
+.dialog[open] { animation: sheet-in 560ms var(--ease-out) both; }
+
+@keyframes sheet-in {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+.paper {
+  position: relative;
+  padding: var(--s-8);
+  background: var(--pop-bg);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+.close {
+  position: absolute;
+  top: var(--s-4);
+  right: var(--s-4);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+}
+
+.close:hover { background: var(--bg-hover); color: var(--fg); }
+.close path { stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; fill: none; }
+
+.head { display: flex; gap: var(--s-5); align-items: center; padding-right: var(--s-8); }
+.head svg { animation: seal-in 900ms var(--ease-out) 150ms both; }
+
+@keyframes seal-in {
+  from { opacity: 0; transform: rotate(-40deg) scale(0.7); }
+  to { opacity: 1; transform: none; }
+}
+
+.headText { display: flex; flex-direction: column; gap: var(--s-2); }
+
+.docTitle {
+  font-size: var(--t-xl);
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.number { font-size: var(--t-sm); color: var(--fg-3); font-variant-numeric: tabular-nums; }
+
+.statement { color: var(--fg-2); max-width: 60ch; font-size: var(--t-base); line-height: 1.6; }
+.statement strong { color: var(--fg); }
+
+.sectionTitle { font-size: var(--t-base); font-weight: 700; margin-bottom: var(--s-2); }
+
+.requirements,
+.scenarios { list-style: none; margin: 0; padding: 0; }
+
+.requirement {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  font-size: var(--t-sm);
+}
+
+.requirement:last-child { border-bottom: 1px solid var(--line); }
+
+.reqDetail { color: var(--fg-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.checkIcon circle { fill: none; stroke: var(--line-strong); stroke-width: 1.2; }
+.checkIcon path { fill: none; stroke: var(--fg-3); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.checkIcon[data-met] circle { fill: var(--ink); stroke: var(--ink); }
+.checkIcon[data-met] path { stroke: var(--ink-fg); }
+
+.scenarios { counter-reset: sit; }
+
+.scenario {
+  counter-increment: sit;
+  display: grid;
+  grid-template-columns: 2ch 1fr auto;
+  gap: var(--s-3);
+  padding: 10px 0;
+  font-size: var(--t-sm);
+  border-top: 1px solid var(--line);
+}
+
+.scenario::before { content: counter(sit); color: var(--fg-3); font-variant-numeric: tabular-nums; }
+
+.scenarioLink { color: var(--fg); text-decoration: none; font-weight: 500; }
+.scenarioLink:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.scenarioResult { color: var(--fg-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.scenarioResult[data-done] { color: var(--fg); font-weight: 600; }
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--line);
+}
+
+.signature { font-size: var(--t-sm); color: var(--fg-2); }
+
+@media (max-width: 560px) {
+  .paper { padding: var(--s-6) var(--s-5); }
+  .head { flex-direction: column; align-items: flex-start; padding-right: 0; }
+  .requirement { grid-template-columns: 16px 1fr; }
+  .reqDetail { grid-column: 2; }
+}
+
+.scenarioResult { display: inline-flex; gap: var(--s-3); align-items: center; }
+.scenarioResult span { display: inline-flex; gap: 4px; align-items: center; }
