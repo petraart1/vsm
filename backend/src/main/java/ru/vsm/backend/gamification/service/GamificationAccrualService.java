@@ -2,6 +2,7 @@ package ru.vsm.backend.gamification.service;
 
 import java.time.Instant;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.vsm.backend.gamification.domain.AccrualLogEntry;
 import ru.vsm.backend.gamification.domain.AchievementCode;
 import ru.vsm.backend.gamification.domain.CompetencyScore;
+import ru.vsm.backend.gamification.domain.NotificationType;
 import ru.vsm.backend.gamification.domain.PlayerAchievement;
 import ru.vsm.backend.gamification.domain.PlayerProfile;
 import ru.vsm.backend.gamification.repository.AccrualLogRepository;
@@ -22,7 +24,10 @@ import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 import ru.vsm.backend.scenario.event.ScenarioCompletedEvent;
 
 /**
- * Начисление очков компетенций и ачивок по {@link ScenarioCompletedEvent}.
+ * Начисление очков компетенций и ачивок по {@link ScenarioCompletedEvent}. Тем же обработчиком
+ * создаются уведомления игрока (новая ачивка / личный рекорд по сценарию / рост в лидерборде)
+ * через {@link NotificationService} — см. {@link #evaluateAchievements},
+ * {@link #evaluatePersonalBest}, {@link #evaluateRankUp}.
  *
  * <p><b>Формула начисления</b> (простая и объяснимая):
  * <pre>
@@ -77,6 +82,7 @@ public class GamificationAccrualService {
     private final CompetencyScoreRepository competencyScoreRepository;
     private final PlayerAchievementRepository playerAchievementRepository;
     private final AccrualLogRepository accrualLogRepository;
+    private final NotificationService notificationService;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processEvent(ScenarioCompletedEvent event) {
@@ -91,7 +97,21 @@ public class GamificationAccrualService {
         int timeoutPenalty = event.hadTimeout() ? TIMEOUT_PENALTY : 0;
         int totalPoints = Math.max(0, basePoints + loyaltyGain + safetyGain - timeoutPenalty);
 
-        PlayerProfile profile = playerProfileRepository.findById(event.userId())
+        Optional<PlayerProfile> existingProfile = playerProfileRepository.findById(event.userId());
+        // Ранг ДО обновления очков — читаем, пока строка профиля в БД ещё содержит старый
+        // totalScore (запрос выполняется раньше любой мутации/save этого профиля в текущей
+        // транзакции). Для нового игрока (первое прохождение) "ранга до" не существует —
+        // сравнивать не с чем, поэтому LEADERBOARD_RANK_UP для первого прохождения не считается.
+        Long rankBefore = existingProfile.isPresent()
+                ? playerProfileRepository.findRankByPlayerId(event.userId())
+                : null;
+
+        // Лучший результат одного прохождения ЭТОГО сценария игроком ранее — до вставки текущей
+        // записи в журнал начислений.
+        Optional<Integer> previousBestForScenario = accrualLogRepository
+                .findMaxTotalPointsByPlayerIdAndScenarioCode(event.userId(), event.scenarioCode());
+
+        PlayerProfile profile = existingProfile
                 .orElseGet(() -> PlayerProfile.builder().id(event.userId()).build());
         profile.setTotalScore(profile.getTotalScore() + totalPoints);
         profile.setScenariosCompleted(profile.getScenariosCompleted() + 1);
@@ -124,6 +144,8 @@ public class GamificationAccrualService {
                 .build());
 
         evaluateAchievements(event, profile);
+        evaluatePersonalBest(event, totalPoints, previousBestForScenario);
+        evaluateRankUp(event, rankBefore);
 
         log.info("Начислено {} очков игроку {} за прохождение {} (userProgressId={})",
                 totalPoints, event.userId(), event.scenarioCode(), event.userProgressId());
@@ -165,7 +187,36 @@ public class GamificationAccrualService {
                         .achievementCode(code)
                         .build());
                 log.info("Ачивка {} выдана игроку {}", code, playerId);
+                notificationService.create(playerId, NotificationType.ACHIEVEMENT_UNLOCKED,
+                        "Новая ачивка: " + code.title(), code.description(), event.userProgressId());
             }
+        }
+    }
+
+    /** Личный рекорд — превышение лучшего результата ОДНОГО прохождения этого сценария ранее. */
+    private void evaluatePersonalBest(ScenarioCompletedEvent event, int totalPoints,
+            Optional<Integer> previousBestForScenario) {
+        if (previousBestForScenario.isEmpty() || totalPoints <= previousBestForScenario.get()) {
+            return;
+        }
+        notificationService.create(event.userId(), NotificationType.NEW_PERSONAL_BEST,
+                "Новый личный рекорд",
+                "Сценарий «%s»: %d очков (было %d)".formatted(
+                        event.scenarioCode(), totalPoints, previousBestForScenario.get()),
+                event.userProgressId());
+    }
+
+    /** Рост в лидерборде — позиция (меньше = выше) улучшилась по сравнению с позицией до этого события. */
+    private void evaluateRankUp(ScenarioCompletedEvent event, Long rankBefore) {
+        if (rankBefore == null) {
+            return;
+        }
+        long rankAfter = playerProfileRepository.findRankByPlayerId(event.userId());
+        if (rankAfter < rankBefore) {
+            notificationService.create(event.userId(), NotificationType.LEADERBOARD_RANK_UP,
+                    "Рост в лидерборде",
+                    "Вы поднялись с %d места на %d".formatted(rankBefore, rankAfter),
+                    event.userProgressId());
         }
     }
 }

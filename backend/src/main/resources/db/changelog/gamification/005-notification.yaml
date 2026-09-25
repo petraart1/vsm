@@ -1,0 +1,84 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-005-create-notification
+      author: vsm
+      comment: >
+        Уведомления игрока (новая ачивка / личный рекорд по сценарию / рост в лидерборде /
+        рекомендованный сценарий). Создаются в том же обработчике ScenarioCompletedEvent, что и
+        начисление очков (GamificationAccrualService) — идемпотентность обеспечивает та же
+        проверка по user_progress_id в gamification_accrual_log (повтор события не доходит до
+        создания уведомлений). source_user_progress_id — для трассировки, без уникального
+        ограничения: одно прохождение может породить несколько уведомлений разных типов
+        (например, ачивка + рост в лидерборде одновременно).
+      changes:
+        - createTable:
+            tableName: gamification_notification
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: player_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_notification_player
+                    references: gamification_player_profile(id)
+                    deleteCascade: true
+              - column:
+                  name: type
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: body
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_user_progress_id
+                  type: uuid
+                  remarks: >-
+                    Прохождение, вызвавшее уведомление; без FK на scenario.user_progress —
+                    междоменная связь только по id. Null для уведомлений без привязки к
+                    конкретному прохождению (например, RECOMMENDED_SCENARIO).
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: read_at
+                  type: timestamp
+        - createIndex:
+            tableName: gamification_notification
+            indexName: idx_notification_player_created
+            columns:
+              - column:
+                  name: player_id
+              - column:
+                  name: created_at
+                  descending: true
+        - createIndex:
+            tableName: gamification_notification
+            indexName: idx_notification_player_unread
+            columns:
+              - column:
+                  name: player_id
+              - column:
+                  name: read_at
+        - sql:
+            comment: type — допустимые значения (согласовано с gamification.domain.NotificationType)
+            sql: >-
+              ALTER TABLE gamification_notification ADD CONSTRAINT chk_notification_type
+              CHECK (type IN ('ACHIEVEMENT_UNLOCKED', 'NEW_PERSONAL_BEST', 'LEADERBOARD_RANK_UP',
+              'RECOMMENDED_SCENARIO'))
