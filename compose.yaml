@@ -1,7 +1,6 @@
 services:
   postgres:
     image: postgres:17
-    container_name: vsm-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-vsm}
@@ -24,7 +23,6 @@ services:
       # (see backend/Dockerfile header comment: frontend/ is bundled as static resources).
       context: .
       dockerfile: backend/Dockerfile
-    container_name: vsm-backend
     restart: unless-stopped
     depends_on:
       postgres:

@@ -1,0 +1,32 @@
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  margin-top: var(--spacing-5);
+}
+
+.name { font-size: var(--font-size-h3); }
+
+.score { color: var(--color-text-secondary); }
+
+.counts { color: var(--color-text-muted); font-size: var(--font-size-small); }
+
+.section { margin-top: var(--spacing-4); }
+
+.sectionTitle { font-size: var(--font-size-h3); margin-bottom: var(--spacing-3); }
+
+.emptyAction { margin-top: var(--spacing-3); display: inline-block; }
+
+.blockList { display: flex; flex-direction: column; gap: var(--spacing-3); }
+
+.blockMeta { color: var(--color-text-muted); font-size: var(--font-size-caption); }
+
+.sectionHead { display: flex; justify-content: space-between; align-items: baseline; }
+
+.sectionLink { color: var(--color-text-link); font-size: var(--font-size-small); }
+
+.achievementRow { display: flex; gap: var(--spacing-2); flex-wrap: wrap; margin-top: var(--spacing-3); }
+
+.noData { color: var(--color-text-muted); font-size: var(--font-size-small); margin-top: var(--spacing-2); }
+
+.leaderboardLink { margin-top: var(--spacing-4); display: inline-block; }

@@ -1,0 +1,32 @@
+/* Базовые стили каркаса. Значения — только через custom properties из tokens.css,
+   никаких хардкод-цветов/отступов здесь. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-background-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root { min-height: 100vh; display: flex; flex-direction: column; }
+
+a { color: var(--color-text-link); }
+
+button { font-family: inherit; }
+
+h1, h2, h3, p { margin: 0; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+.app-main { flex: 1; padding: var(--spacing-6); max-width: 1100px; width: 100%; margin: 0 auto; }
+
+.app-main--flush { max-width: none; padding: 0; }

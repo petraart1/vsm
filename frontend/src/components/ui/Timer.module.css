@@ -1,0 +1,23 @@
+.timer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-timer-digits);
+  font-weight: var(--font-weight-timer-digits);
+  color: var(--color-timer-normal);
+  background: var(--color-timer-normal-track);
+  transition: background var(--motion-duration-base) var(--motion-easing-standard),
+              color var(--motion-duration-base) var(--motion-easing-standard);
+}
+
+.urgent { color: var(--color-timer-urgent); background: var(--color-timer-urgent-track); }
+.critical { color: var(--color-timer-critical); background: var(--color-timer-critical-track); animation: timer-pulse 0.8s ease-in-out infinite; }
+.expired { color: var(--color-timer-expired); background: var(--color-timer-critical-track); }
+
+@keyframes timer-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}

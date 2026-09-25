@@ -1,0 +1,12 @@
+.panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-5);
+  padding: var(--spacing-4) var(--spacing-5);
+  background: var(--color-background-surface-raised);
+  border-radius: var(--radius-lg);
+}
+
+@media (max-width: 560px) {
+  .panel { grid-template-columns: 1fr; }
+}

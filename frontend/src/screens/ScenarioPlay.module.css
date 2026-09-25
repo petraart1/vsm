@@ -1,0 +1,26 @@
+.shell { display: flex; flex-direction: column; gap: var(--spacing-5); max-width: 720px; margin: 0 auto; }
+
+.header { display: flex; justify-content: space-between; align-items: center; gap: var(--spacing-3); }
+
+.title { font-size: var(--font-size-h2); }
+
+.subtitle { color: var(--color-text-secondary); font-size: var(--font-size-small); }
+
+.situationCard { display: flex; gap: var(--spacing-4); align-items: flex-start; }
+
+.replica {
+  font-size: var(--font-size-replica);
+  font-style: var(--font-style-replica);
+  line-height: var(--line-height-replica);
+  color: var(--color-text-primary);
+}
+
+.context { font-size: var(--font-size-small); color: var(--color-text-muted); margin-top: var(--spacing-1); }
+
+.choiceList { display: flex; flex-direction: column; gap: var(--spacing-3); }
+
+.reactionPanel { display: flex; flex-direction: column; gap: var(--spacing-3); }
+
+.hiddenPenalty { color: var(--color-feedback-danger); font-size: var(--font-size-small); }
+
+.skeletonStack { display: flex; flex-direction: column; gap: var(--spacing-5); max-width: 720px; margin: 0 auto; }

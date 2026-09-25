@@ -1,0 +1,10 @@
+.avatar {
+  flex: none;
+  border-radius: var(--radius-circle);
+  background: linear-gradient(135deg, var(--color-brand-wood), var(--color-brand-brass));
+  color: var(--color-text-on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}

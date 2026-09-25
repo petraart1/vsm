@@ -1,0 +1,34 @@
+.skeletonRow { margin-top: var(--spacing-4); }
+.skeletonRow + .skeletonRow { margin-top: var(--spacing-2); }
+
+.list { margin-top: var(--spacing-5); }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-2);
+}
+
+.rowMine {
+  border: 2px solid var(--color-border-focus);
+  background: var(--color-background-surface-raised);
+}
+
+.rank { min-width: 2ch; }
+
+.rowBody { flex: 1; }
+
+.rowMeta { color: var(--color-text-muted); font-size: var(--font-size-caption); }
+
+.meLabel { margin-top: var(--spacing-5); }
+
+.meCaption {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+  margin-bottom: var(--spacing-2);
+}
+
+.noMe { margin-top: var(--spacing-5); }
+
+.emptyAction { margin-top: var(--spacing-3); display: inline-block; }

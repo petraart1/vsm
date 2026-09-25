@@ -1,0 +1,32 @@
+.skeletonGrid,
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--spacing-4);
+}
+
+.skeletonGrid,
+.grid { margin-top: var(--spacing-5); }
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.cardLocked { opacity: 0.65; }
+
+.cardHighlighted { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+}
+
+.earnedAt { font-size: var(--font-size-caption); color: var(--color-text-muted); }
+
+.title { font-size: var(--font-size-h3); }
+
+.description { color: var(--color-text-secondary); font-size: var(--font-size-small); }

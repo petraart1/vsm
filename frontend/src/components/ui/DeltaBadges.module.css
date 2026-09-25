@@ -1,0 +1,11 @@
+.row { display: flex; gap: var(--spacing-4); flex-wrap: wrap; }
+
+.delta {
+  font-weight: var(--font-weight-body-strong);
+  font-variant-numeric: tabular-nums;
+  padding: var(--spacing-1) var(--spacing-3);
+  border-radius: var(--radius-pill);
+}
+
+.positive { color: var(--color-feedback-success); background: var(--color-feedback-success-bg); }
+.negative { color: var(--color-feedback-danger); background: var(--color-feedback-danger-bg); }

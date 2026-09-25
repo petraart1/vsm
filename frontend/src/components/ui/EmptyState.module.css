@@ -1,0 +1,9 @@
+.emptyState {
+  text-align: center;
+  padding: var(--spacing-10) var(--spacing-5);
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
+}

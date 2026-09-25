@@ -1,0 +1,54 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-6);
+  background: var(--color-background-surface);
+  border-bottom: 1px solid var(--color-border-default);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-weight: var(--font-weight-h3);
+  font-size: var(--font-size-h3);
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.brandMark {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-brand-wood), var(--color-brand-brass));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-on-accent);
+  font-weight: 700;
+}
+
+.nav { display: flex; gap: var(--spacing-1); flex-wrap: wrap; }
+
+.link {
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-weight: var(--font-weight-body-strong);
+  font-size: var(--font-size-small);
+  transition: background var(--motion-duration-fast) var(--motion-easing-standard),
+              color var(--motion-duration-fast) var(--motion-easing-standard);
+}
+
+.link:hover { background: var(--color-background-surface-raised); }
+
+.active {
+  background: var(--color-action-primary);
+  color: var(--color-action-primary-text);
+}
