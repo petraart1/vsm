@@ -4,11 +4,13 @@ import ru.vsm.mobile.data.remote.dto.ProgressWsMessageDto
 import ru.vsm.mobile.domain.model.LiveProgressEvent
 import ru.vsm.mobile.domain.model.LiveProgressState
 
+// loyaltyScore/safetyScore не requireNotNull — в режиме экзамена сервер не присылает их вовсе
+// (см. javadoc ProgressWsMessage.fromAppliedChoice на бэкенде), это не ошибка сообщения.
 private fun ProgressWsMessageDto.toState(): LiveProgressState = LiveProgressState(
     progressId = progressId,
     status = requireNotNull(status?.toDomain()) { "WS-сообщение type=$type без status: $this" },
-    loyaltyScore = requireNotNull(loyaltyScore) { "WS-сообщение type=$type без loyaltyScore: $this" },
-    safetyScore = requireNotNull(safetyScore) { "WS-сообщение type=$type без safetyScore: $this" },
+    loyaltyScore = loyaltyScore,
+    safetyScore = safetyScore,
     currentNode = currentNode?.toDomain(),
     appliedChoiceId = appliedChoiceId,
     appliedChoiceCode = appliedChoiceCode,

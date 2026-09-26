@@ -17,3 +17,12 @@ enum class RoleStepDto { ACKNOWLEDGE, RULE, SOLUTION, REASSURE }
 
 @Serializable
 enum class RecommendationReasonDto { NOT_PLAYED, FAILED, PARTIAL }
+
+@Serializable
+enum class CarClassDto { STANDARD, COMFORT, BUSINESS, FIRST }
+
+@Serializable
+enum class ExamStatusDto { IN_PROGRESS, COMPLETED }
+
+@Serializable
+enum class ExamGradeDto { EXCELLENT, GOOD, SATISFACTORY, UNSATISFACTORY }

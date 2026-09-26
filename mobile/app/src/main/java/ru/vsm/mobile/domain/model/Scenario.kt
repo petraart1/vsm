@@ -51,18 +51,23 @@ data class ScenarioProgress(
 
 /**
  * Результат применения выбора (через REST или через серверный таймаут): раскрываются дельты и
- * новые значения шкал. [nextNode] — `null`, если прохождение завершилось этим выбором.
- * [finalOutcome] заполнен только при `status == COMPLETED`.
+ * новые значения шкал — кроме как в режиме экзамена. [nextNode] — `null`, если прохождение
+ * завершилось этим выбором. [finalOutcome] заполнен только при `status == COMPLETED`.
+ *
+ * [loyaltyDelta]/[safetyDelta]/[loyaltyScore]/[safetyScore] — `null`, если это прохождение —
+ * пункт экзамена (см. [ru.vsm.mobile.domain.repository.ExamRepository]): экзамен не должен
+ * подсказывать игроку качество решения по ходу. Поля навигации (`status`/`finalOutcome`/
+ * `nextNode`) при этом заполняются как обычно.
  */
 data class ChoiceResult(
     val progressId: String,
     val appliedChoiceId: String,
     val appliedChoiceCode: String,
     val wasTimeout: Boolean,
-    val loyaltyDelta: Int,
-    val safetyDelta: Int,
-    val loyaltyScore: Int,
-    val safetyScore: Int,
+    val loyaltyDelta: Int?,
+    val safetyDelta: Int?,
+    val loyaltyScore: Int?,
+    val safetyScore: Int?,
     val status: ProgressStatus,
     val finalOutcome: ScenarioOutcome?,
     val nextNode: ScenarioNode?,

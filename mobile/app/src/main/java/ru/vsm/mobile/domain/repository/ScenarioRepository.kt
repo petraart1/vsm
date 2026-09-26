@@ -1,6 +1,7 @@
 package ru.vsm.mobile.domain.repository
 
 import kotlinx.coroutines.flow.Flow
+import ru.vsm.mobile.domain.model.ChoiceOutcome
 import ru.vsm.mobile.domain.model.ChoiceResult
 import ru.vsm.mobile.domain.model.LiveProgressEvent
 import ru.vsm.mobile.domain.model.ScenarioProgress
@@ -34,6 +35,32 @@ interface ScenarioRepository {
      * [choose]/[timeout]. Реализация переподключается самостоятельно при обрыве соединения
      * (см. [LiveProgressEvent.Disconnected]/[LiveProgressEvent.Reconnected]) и не бросает
      * исключение при сетевых сбоях — только эмитит события.
+     *
+     * @param token опциональный токен учётной записи ([AuthRepository]) — если задан, передаётся
+     *   на канал вместе с [playerId] (backend приоритезирует токен, откатывается на [playerId]
+     *   при невалидном/просроченном токене). `null` — обычный анонимный путь, как раньше.
      */
-    fun liveEvents(progressId: String, playerId: String): Flow<LiveProgressEvent>
+    fun liveEvents(progressId: String, playerId: String, token: String? = null): Flow<LiveProgressEvent>
+
+    /**
+     * Офлайн-устойчивый вариант [choose]: связь в поезде может пропадать в разгар прохождения.
+     * При сетевой ошибке ([ru.vsm.mobile.domain.error.DomainError.Network]) действие сохраняется в
+     * локальную очередь и отправляется по восстановлении сети (см. [pendingOfflineCount]) — метод
+     * при этом возвращает `Result.success` с [ChoiceOutcome.QueuedOffline], а не `Result.failure`.
+     * Любая другая ошибка (HTTP 4xx/5xx, разбор ответа) проксируется как обычно через
+     * `Result.failure`, поведение не отличается от [choose]. [choose] по-прежнему доступен для
+     * вызывающего кода, которому офлайн-очередь не нужна.
+     */
+    suspend fun chooseOrQueue(progressId: String, choiceId: String, playerId: String): Result<ChoiceOutcome>
+
+    /** Офлайн-устойчивый вариант [timeout] — см. [chooseOrQueue]. */
+    suspend fun timeoutOrQueue(progressId: String, playerId: String): Result<ChoiceOutcome>
+
+    /**
+     * Количество ещё не отправленных действий в локальной офлайн-очереди (для индикатора на
+     * экране прохождения — "N действий будет отправлено при восстановлении связи"). Эмитит `0`,
+     * если очередь пуста. Обновляется как при постановке в очередь ([chooseOrQueue]/[timeoutOrQueue]),
+     * так и при успешной/отброшенной отправке накопленных действий.
+     */
+    fun pendingOfflineCount(): Flow<Int>
 }

@@ -4,8 +4,10 @@ import java.util.UUID
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import ru.vsm.mobile.domain.error.DomainError
 import ru.vsm.mobile.domain.model.ChoiceOption
+import ru.vsm.mobile.domain.model.ChoiceOutcome
 import ru.vsm.mobile.domain.model.ChoiceResult
 import ru.vsm.mobile.domain.model.LiveProgressEvent
 import ru.vsm.mobile.domain.model.LiveProgressState
@@ -114,7 +116,7 @@ class FakeScenarioRepository : ScenarioRepository {
      * узла (если у него есть таймер), реального push от [choose]/[timeout] не делает — B опрашивает
      * [getProgress] после ответа REST, как и в реальном клиенте, когда WS недоступен.
      */
-    override fun liveEvents(progressId: String, playerId: String): Flow<LiveProgressEvent> = flow {
+    override fun liveEvents(progressId: String, playerId: String, token: String?): Flow<LiveProgressEvent> = flow {
         val active = progressById[progressId] ?: return@flow
         val timerSeconds = active.currentFakeNode.node.timerSeconds ?: return@flow
         var remaining = timerSeconds
@@ -158,6 +160,15 @@ class FakeScenarioRepository : ScenarioRepository {
             nextNode = nextNode,
         )
     }
+
+    // Фейк работает только "в сети" — очередь всегда пуста, choose/timeout никогда не откладываются.
+    override suspend fun chooseOrQueue(progressId: String, choiceId: String, playerId: String): Result<ChoiceOutcome> =
+        choose(progressId, choiceId, playerId).map { ChoiceOutcome.Applied(it) }
+
+    override suspend fun timeoutOrQueue(progressId: String, playerId: String): Result<ChoiceOutcome> =
+        timeout(progressId, playerId).map { ChoiceOutcome.Applied(it) }
+
+    override fun pendingOfflineCount(): Flow<Int> = flowOf(0)
 
     private fun <T> apiError(statusCode: Int, errorCode: String, message: String): Result<T> =
         Result.failure(DomainError.Api(statusCode, errorCode, message))

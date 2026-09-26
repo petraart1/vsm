@@ -4,12 +4,16 @@ package ru.vsm.mobile.domain.model
  * Снимок состояния прохождения, приходящий по живому каналу (после подключения, после
  * применённого выбора или после серверного таймаута). Поля, относящиеся только к применённому
  * выбору ([appliedChoiceId] и далее), `null` на начальном снимке при подключении.
+ *
+ * [loyaltyScore]/[safetyScore] — `null` только для событий, порождённых применённым выбором
+ * ([appliedChoiceId] != null) в рамках экзамена (см. [ru.vsm.mobile.domain.repository.ExamRepository]) —
+ * сам факт подключения (начальный снимок) шкалы всегда раскрывает.
  */
 data class LiveProgressState(
     val progressId: String,
     val status: ProgressStatus,
-    val loyaltyScore: Int,
-    val safetyScore: Int,
+    val loyaltyScore: Int?,
+    val safetyScore: Int?,
     val currentNode: ScenarioNode?,
     val appliedChoiceId: String?,
     val appliedChoiceCode: String?,

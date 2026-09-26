@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- ConnectivityManager.registerNetworkCallback в NetworkMonitor — триггер отправки офлайн-очереди
+         при восстановлении связи (соединение в поезде пропадает на перегонах). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"

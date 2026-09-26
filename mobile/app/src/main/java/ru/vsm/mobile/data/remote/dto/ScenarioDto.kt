@@ -49,17 +49,22 @@ data class ProgressStateDto(
     val currentNode: NodeStateDto? = null,
 )
 
-/** `ru.vsm.backend.scenario.web.dto.ChoiceAppliedResponse` */
+/**
+ * `ru.vsm.backend.scenario.web.dto.ChoiceAppliedResponse` — [loyaltyDelta]/[safetyDelta]/
+ * [loyaltyScore]/[safetyScore] сериализуются как явный JSON `null` (не отсутствуют в теле — Jackson
+ * не подавляет null для этого record'а), когда прохождение — пункт экзамена (см. `ExamService`);
+ * поэтому здесь они `Int?`, а не `Int`, иначе разбор ответа падал бы во время экзамена.
+ */
 @Serializable
 data class ChoiceAppliedDto(
     val progressId: String,
     val appliedChoiceId: String,
     val appliedChoiceCode: String,
     val wasTimeout: Boolean,
-    val loyaltyDelta: Int,
-    val safetyDelta: Int,
-    val loyaltyScore: Int,
-    val safetyScore: Int,
+    val loyaltyDelta: Int? = null,
+    val safetyDelta: Int? = null,
+    val loyaltyScore: Int? = null,
+    val safetyScore: Int? = null,
     val status: ProgressStatusDto,
     val finalOutcome: ScenarioOutcomeDto? = null,
     val nextNode: NodeStateDto? = null,

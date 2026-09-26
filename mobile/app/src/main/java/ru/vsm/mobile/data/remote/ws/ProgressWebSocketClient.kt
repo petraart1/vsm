@@ -27,10 +27,17 @@ class ProgressWebSocketClient(
     private val json: Json,
     private val baseUrl: String,
 ) {
-    fun observe(progressId: String, playerId: String): Flow<LiveProgressEvent> = callbackFlow {
+    /**
+     * @param token опциональный JWT учётной записи — если задан, отправляется как `?token=` вместе
+     *   с `playerId`; backend приоритезирует токен и откатывается на `playerId` сам при
+     *   невалидном/просроченном токене (см. `ProgressWebSocketHandler.extractPlayerId`), поэтому
+     *   отправлять оба параметра всегда безопасно.
+     */
+    fun observe(progressId: String, playerId: String, token: String? = null): Flow<LiveProgressEvent> = callbackFlow {
         val url = baseUrl.toHttpUrl().newBuilder()
             .addPathSegments("ws/progress/$progressId")
             .addQueryParameter("playerId", playerId)
+            .apply { if (!token.isNullOrBlank()) addQueryParameter("token", token) }
             .build()
         val request = Request.Builder().url(url).build()
 
