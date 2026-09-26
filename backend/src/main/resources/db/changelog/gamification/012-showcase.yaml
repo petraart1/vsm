@@ -1,0 +1,78 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-012-create-showcase-item
+      author: vsm
+      comment: >
+        Витрина наград игрока: до 6 наград, выбранных самим игроком для показа коллегам. Каждая
+        строка — самодостаточный снимок награды (название, форма, пиктограмма), чтобы витрину
+        можно было отрисовать без каталога. Чтение — по publicId (HMAC от playerId), реальный
+        playerId наружу не отдаётся.
+      changes:
+        - createTable:
+            tableName: gamification_showcase_item
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: player_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: public_id
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sort_order
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: award_id
+                  type: varchar(80)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(160)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: shape
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: glyph
+                  type: varchar(32)
+              - column:
+                  name: label
+                  type: varchar(8)
+              - column:
+                  name: finish
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: gamification_showcase_item
+            indexName: idx_showcase_item_public_id
+            columns:
+              - column:
+                  name: public_id
+        - createIndex:
+            tableName: gamification_showcase_item
+            indexName: idx_showcase_item_player_id
+            columns:
+              - column:
+                  name: player_id
