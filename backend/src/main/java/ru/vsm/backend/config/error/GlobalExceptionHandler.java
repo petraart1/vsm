@@ -82,6 +82,16 @@ public class GlobalExceptionHandler {
         return respond(HttpStatus.valueOf(statusCode.value()), defaultCodeFor(statusCode), message, null, request);
     }
 
+    /**
+     * Запрос к чужим игровым/личным данным без роли ADMIN (см. {@code PlayerAccessGuard}) — 403 с
+     * отдельным кодом {@code forbidden}, не {@code access_denied} (тот зарезервирован за отказом
+     * Spring Security по роли на {@code /api/admin/**}/{@code /api/editor/**}, см. {@code SecurityConfig}).
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiError> handleForbidden(ForbiddenException e, HttpServletRequest request) {
+        return respond(HttpStatus.FORBIDDEN, "forbidden", e.getMessage(), null, request);
+    }
+
     /** Путь не смэплен ни на один контроллер и ни на один статический ресурс. */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiError> handleNoResource(NoResourceFoundException e, HttpServletRequest request) {

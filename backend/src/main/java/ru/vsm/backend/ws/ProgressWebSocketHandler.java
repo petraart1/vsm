@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
@@ -28,6 +29,10 @@ import ru.vsm.backend.ws.dto.ProgressWsMessage;
  * токен, что выдаёт {@code POST /api/auth/login}): playerId берётся из токена, query-параметр
  * {@code playerId} в этом случае игнорируется. Невалидный/просроченный токен равносилен его
  * отсутствию — сервер откатывается на {@code playerId}, а если и его нет, закрывает соединение.
+ * Если включён {@code app.auth.require-token} (см. находку CRITICAL в аудите безопасности —
+ * {@code X-Player-Id}/{@code playerId} как самодостаточная личность становится небезопасен, когда
+ * playerId раскрывается на публичных эндпоинтах), откат на {@code playerId} отключается совсем —
+ * без валидного {@code token} соединение закрывается.
  *
  * <p>Клиент не обязан ничего слать — сообщения от клиента игнорируются (нет клиент→сервер
  * протокола); подключение только читает события. Формат событий — {@link ProgressWsMessage}.
@@ -45,12 +50,18 @@ public class ProgressWebSocketHandler extends TextWebSocketHandler {
     private final ProgressChannelRegistry registry;
     private final JwtService jwtService;
 
+    @Value("${app.auth.require-token:false}")
+    private boolean requireToken;
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         UUID progressId = extractProgressId(session);
         UUID playerId = extractPlayerId(session);
         if (progressId == null || playerId == null) {
-            closeQuietly(session, CloseStatus.BAD_DATA.withReason("progressId (путь) и playerId (query) обязательны"));
+            String reason = requireToken
+                    ? "progressId (путь) обязателен, playerId только через валидный ?token="
+                    : "progressId (путь) и playerId (query) обязательны";
+            closeQuietly(session, CloseStatus.BAD_DATA.withReason(reason));
             return;
         }
 
@@ -106,6 +117,9 @@ public class ProgressWebSocketHandler extends TextWebSocketHandler {
                 return playerIdFromToken;
             }
             log.debug("Невалидный/просроченный WS-токен, откатываемся на query-параметр {}", PLAYER_ID_QUERY_PARAM);
+        }
+        if (requireToken) {
+            return null;
         }
         return parseUuid(queryParams.getFirst(PLAYER_ID_QUERY_PARAM));
     }

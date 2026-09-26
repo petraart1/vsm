@@ -15,6 +15,7 @@ import ru.vsm.backend.gamification.domain.AchievementCode;
 import ru.vsm.backend.gamification.domain.CompetencyScore;
 import ru.vsm.backend.gamification.domain.PlayerAchievement;
 import ru.vsm.backend.gamification.domain.PlayerProfile;
+import ru.vsm.backend.auth.security.PlayerPublicIdService;
 import ru.vsm.backend.gamification.repository.CompetencyScoreRepository;
 import ru.vsm.backend.gamification.repository.PlayerAchievementRepository;
 import ru.vsm.backend.gamification.repository.PlayerProfileRepository;
@@ -39,6 +40,7 @@ public class GamificationQueryService {
     private final PlayerProfileRepository playerProfileRepository;
     private final CompetencyScoreRepository competencyScoreRepository;
     private final PlayerAchievementRepository playerAchievementRepository;
+    private final PlayerPublicIdService playerPublicIdService;
 
     public ProfileResponse getProfile(UUID playerId) {
         Optional<PlayerProfile> profileOpt = playerProfileRepository.findById(playerId);
@@ -68,7 +70,7 @@ public class GamificationQueryService {
         List<LeaderboardEntryDto> top = playerProfileRepository
                 .findByOrderByTotalScoreDesc(PageRequest.of(0, limit))
                 .stream()
-                .map(this::toLeaderboardEntry)
+                .map(profile -> toLeaderboardEntry(profile, requesterId))
                 .toList();
         // rank пересчитывается по позиции в уже отсортированном топе — дешевле лишнего запроса.
         top = withRanks(top);
@@ -78,9 +80,9 @@ public class GamificationQueryService {
             Optional<PlayerProfile> requester = playerProfileRepository.findById(requesterId);
             if (requester.isPresent()) {
                 long rank = playerProfileRepository.findRankByPlayerId(requesterId);
-                me = new LeaderboardEntryDto(rank, requesterId,
+                me = new LeaderboardEntryDto(rank, playerPublicIdService.publicId(requesterId),
                         displayNameOrGenerated(requester.get()),
-                        requester.get().getTotalScore(), requester.get().getScenariosCompleted());
+                        requester.get().getTotalScore(), requester.get().getScenariosCompleted(), true);
             }
         }
         return new LeaderboardResponse(top, me);
@@ -102,15 +104,16 @@ public class GamificationQueryService {
 
     private List<LeaderboardEntryDto> withRanks(List<LeaderboardEntryDto> ordered) {
         return IntStream.range(0, ordered.size())
-                .mapToObj(i -> new LeaderboardEntryDto(i + 1L, ordered.get(i).playerId(),
+                .mapToObj(i -> new LeaderboardEntryDto(i + 1L, ordered.get(i).publicId(),
                         ordered.get(i).displayName(), ordered.get(i).totalScore(),
-                        ordered.get(i).scenariosCompleted()))
+                        ordered.get(i).scenariosCompleted(), ordered.get(i).me()))
                 .toList();
     }
 
-    private LeaderboardEntryDto toLeaderboardEntry(PlayerProfile profile) {
-        return new LeaderboardEntryDto(0, profile.getId(), displayNameOrGenerated(profile),
-                profile.getTotalScore(), profile.getScenariosCompleted());
+    private LeaderboardEntryDto toLeaderboardEntry(PlayerProfile profile, UUID requesterId) {
+        return new LeaderboardEntryDto(0, playerPublicIdService.publicId(profile.getId()),
+                displayNameOrGenerated(profile), profile.getTotalScore(), profile.getScenariosCompleted(),
+                profile.getId().equals(requesterId));
     }
 
     private BlockProgressDto toBlockProgress(CompetencyScore score) {

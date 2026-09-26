@@ -41,17 +41,40 @@ import tools.jackson.databind.ObjectMapper;
  */
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties({AdminAccountProperties.class, JwtProperties.class})
+@EnableConfigurationProperties({AdminAccountProperties.class, JwtProperties.class, PlayerPublicIdProperties.class})
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private static final String[] ADMIN_ONLY_PATHS = {"/api/admin/**", "/api/editor/**"};
+
+    /**
+     * "Игровые" эндпоинты, идентифицирующие игрока по {@code X-Player-Id}/{@code ?playerId=}
+     * (см. находку CRITICAL в аудите безопасности) — при {@code app.auth.require-token=true}
+     * требуют валидный {@code Authorization: Bearer}, эти заголовок/параметр перестают
+     * приниматься как самостоятельное доказательство личности. Публичные лидерборды (игроков и
+     * команд) и каталог команд сюда намеренно не входят — их можно читать анонимно всегда.
+     */
+    private static final String[] GAME_PATHS = {
+            "/api/scenarios/**",
+            "/api/exams/**",
+            "/api/gamification/profile/**",
+            "/api/gamification/achievements",
+            "/api/gamification/achievements/**",
+            "/api/gamification/notifications",
+            "/api/gamification/notifications/**",
+            "/api/gamification/challenges",
+            "/api/gamification/challenges/**",
+            "/api/gamification/teams/*/join",
+    };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final ObjectMapper objectMapper;
 
     @Value("${app.auth.admin-protection-enabled:true}")
     private boolean adminProtectionEnabled;
+
+    @Value("${app.auth.require-token:false}")
+    private boolean requireToken;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -61,6 +84,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> {
                     if (adminProtectionEnabled) {
                         authorize.requestMatchers(ADMIN_ONLY_PATHS).hasRole("ADMIN");
+                    }
+                    if (requireToken) {
+                        authorize.requestMatchers(GAME_PATHS).authenticated();
                     }
                     authorize.anyRequest().permitAll();
                 })

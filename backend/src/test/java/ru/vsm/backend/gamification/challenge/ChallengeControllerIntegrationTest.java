@@ -66,11 +66,24 @@ class ChallengeControllerIntegrationTest {
                 ScenarioOutcome.SUCCESS, 10, 10, 3, false, true,
                 now.minusSeconds(60), now, false, true));
 
-        mockMvc.perform(get("/api/gamification/challenges").param("playerId", playerId.toString()))
+        mockMvc.perform(get("/api/gamification/challenges")
+                        .param("playerId", playerId.toString())
+                        .header("X-Player-Id", playerId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.code == '" + challenge.getCode() + "')].current").value(1))
                 .andExpect(jsonPath("$[?(@.code == '" + challenge.getCode() + "')].completed").value(false))
                 .andExpect(jsonPath("$[?(@.code == '" + challenge.getCode() + "')].targetCount").value(2));
+    }
+
+    @Test
+    void returnsForbiddenWhenPlayerIdDoesNotMatchRequester() throws Exception {
+        UUID playerId = UUID.randomUUID();
+
+        mockMvc.perform(get("/api/gamification/challenges")
+                        .param("playerId", playerId.toString())
+                        .header("X-Player-Id", UUID.randomUUID().toString()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("forbidden"));
     }
 
     @Test

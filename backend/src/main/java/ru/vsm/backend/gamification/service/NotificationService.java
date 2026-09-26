@@ -57,6 +57,19 @@ public class NotificationService {
         return toDto(notification);
     }
 
+    /**
+     * Владелец уведомления — нужен контроллеру, чтобы проверить доступ ({@code PlayerAccessGuard})
+     * до вызова {@link #markRead}, т.к. эндпоинт {@code POST .../{id}/read} сам по себе не
+     * принимает {@code playerId} (id уведомления не раскрывает, чьё оно, без этого запроса).
+     */
+    @Transactional(readOnly = true)
+    public UUID ownerOf(UUID notificationId) {
+        return notificationRepository.findById(notificationId)
+                .map(Notification::getPlayerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Уведомление не найдено: " + notificationId));
+    }
+
     @Transactional
     public int markAllRead(UUID playerId) {
         List<Notification> unread = notificationRepository.findByPlayerIdAndReadAtIsNull(playerId);

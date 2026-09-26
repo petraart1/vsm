@@ -45,6 +45,12 @@ services:
       # Set to false to temporarily open /api/admin/** and /api/editor/** without an ADMIN token
       # (e.g. demoing before the frontend has a login screen wired up).
       APP_AUTH_ADMIN_PROTECTION_ENABLED: ${APP_AUTH_ADMIN_PROTECTION_ENABLED:-true}
+      # Set to true to require a valid JWT on game endpoints/WebSocket (X-Player-Id/?playerId=
+      # stop being trusted as a standalone identity) — see README "Безопасность".
+      APP_AUTH_REQUIRE_TOKEN: ${APP_AUTH_REQUIRE_TOKEN:-false}
+      # HMAC key for the public leaderboard's publicId (see README "Безопасность"). Demo default
+      # baked into application.properties — override for real deployments.
+      APP_SECURITY_PUBLIC_ID_SECRET: ${APP_SECURITY_PUBLIC_ID_SECRET:-vsm-demo-public-id-secret-please-change-in-production-0123456789}
     ports:
       # Host port only. Default host port is 8080 (matches the app's own default server.port);
       # override BACKEND_HOST_PORT if 8080 is already taken on the host (e.g. by an unrelated

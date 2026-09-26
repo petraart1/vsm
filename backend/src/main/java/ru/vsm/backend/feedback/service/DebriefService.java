@@ -51,6 +51,18 @@ public class DebriefService {
     private final ExplanationResolver explanationResolver;
     private final ExamService examService;
 
+    /**
+     * Владелец прохождения — нужен контроллеру, чтобы проверить доступ ({@code PlayerAccessGuard})
+     * до вызова {@link #buildDebrief}, т.к. {@code userProgressId} сам по себе не раскрывает,
+     * чей это разбор (см. паттерн {@code NotificationService#ownerOf}).
+     */
+    public UUID ownerOf(UUID userProgressId) {
+        return userProgressRepository.findById(userProgressId)
+                .map(UserProgress::getUserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Прохождение не найдено: " + userProgressId));
+    }
+
     public DebriefResponse buildDebrief(UUID userProgressId) {
         // Режим экзамена: разбор этого пункта недоступен, пока экзамен не завершён целиком (иначе
         // игрок получил бы подсказку по уже пройденному пункту, пока следующий ещё впереди) — см.
