@@ -38,4 +38,15 @@ public interface UserProgressRepository extends JpaRepository<UserProgress, UUID
      * поэтому проверка не ограничивается только {@code IN_PROGRESS}.
      */
     boolean existsByScenarioId(UUID scenarioId);
+
+    /**
+     * Есть ли у игрока УЖЕ ДРУГОЕ (не {@code excludedProgressId}) завершённое прохождение этого
+     * сценария. Используется {@code ScenarioPlayService.publishCompletion} для вычисления
+     * {@link ru.vsm.backend.scenario.event.ScenarioCompletedEvent#firstCompletion} —
+     * {@code excludedProgressId} исключает само только что завершённое прохождение (его строка
+     * в БД уже {@code status = COMPLETED} к моменту вызова), иначе первое прохождение всегда
+     * считало бы себя повторным.
+     */
+    boolean existsByUserIdAndScenarioIdAndStatusAndIdNot(
+            UUID userId, UUID scenarioId, ProgressStatus status, UUID excludedProgressId);
 }

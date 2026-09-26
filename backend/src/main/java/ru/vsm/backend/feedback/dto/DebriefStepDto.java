@@ -23,12 +23,17 @@ import ru.vsm.backend.scenario.domain.NodeType;
  * @param scaleConflict        true, если выбор — осознанный компромисс шкал (дельты разного знака)
  * @param explanation          человекочитаемое объяснение «что пошло не так и почему» / что было
  *                             сделано верно для этого шага
- * @param hiddenCommunicationEffect true, если решение принято в узле-эскалации, где пассажир сам
- *                             разговор не слышит (все альтернативы в узле дают одну и ту же дельту
- *                             лояльности), но при этом альтернативы расходятся по эффекту на
- *                             безопасность — формулировка меняет исход "за кадром", не для
- *                             пассажира. Признак вычислен по фактическим дельтам узла, не зашит
- *                             под конкретный сценарий/узел.
+ * @param hiddenCommunicationEffect true, если решение принято в закадровом узле (см.
+ *                             {@link ru.vsm.backend.scenario.domain.ScenarioNode#isHiddenFromPassenger()}) —
+ *                             пассажир сам разговор не слышит, эффект только на шкалы. Для узлов
+ *                             без явного флага используется резервная эвристика: узел-эскалация,
+ *                             где все альтернативы дают одну и ту же дельту лояльности, но
+ *                             расходятся по эффекту на безопасность.
+ * @param normRef              ссылка на норматив у сделанного выбора ({@code null}, если автор
+ *                             seed-данных её не указал) — то же значение, что и элемент общего
+ *                             {@code DebriefResponse#normReferences()} для этого шага, продублировано
+ *                             на уровне шага для клиентов, которым нужна привязка нормы к конкретному
+ *                             решению, а не только общий список по всему прохождению
  */
 public record DebriefStepDto(
         int sequenceIndex,
@@ -44,5 +49,6 @@ public record DebriefStepDto(
         List<String> roleStepsSkipped,
         boolean scaleConflict,
         String explanation,
-        boolean hiddenCommunicationEffect) {
+        boolean hiddenCommunicationEffect,
+        String normRef) {
 }

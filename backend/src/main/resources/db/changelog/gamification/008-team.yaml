@@ -1,0 +1,90 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-008-create-team
+      author: vsm
+      comment: >
+        Каталог команд (бригад/депо) для командного рейтинга. Заполняется идемпотентным
+        сидером (TeamSeeder) на старте приложения.
+      changes:
+        - createTable:
+            tableName: gamification_team
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: code
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uq_team_code
+              - column:
+                  name: name
+                  type: varchar(150)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: depot
+                  type: varchar(150)
+                  remarks: Депо/город приписки бригады.
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: gamification-008-create-team-membership
+      author: vsm
+      comment: >
+        Членство игрока в команде — один игрок состоит не более чем в одной команде
+        (uq_team_membership_player). Смена команды обновляет team_id у существующей строки.
+        FK на gamification_player_profile — TeamService.join лениво создаёт строку профиля,
+        если игрок ещё ни разу не проходил сценарий (тот же приём, что GamificationAccrualService
+        использует при первом начислении очков).
+      changes:
+        - createTable:
+            tableName: gamification_team_membership
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: player_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uq_team_membership_player
+                    foreignKeyName: fk_team_membership_player
+                    references: gamification_player_profile(id)
+                    deleteCascade: true
+              - column:
+                  name: team_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_team_membership_team
+                    references: gamification_team(id)
+                    deleteCascade: true
+              - column:
+                  name: joined_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: gamification_team_membership
+            indexName: idx_team_membership_team
+            columns:
+              - column:
+                  name: team_id

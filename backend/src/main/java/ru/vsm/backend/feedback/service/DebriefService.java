@@ -28,6 +28,7 @@ import ru.vsm.backend.scenario.repository.ScenarioChoiceRepository;
 import ru.vsm.backend.scenario.repository.ScenarioNodeRepository;
 import ru.vsm.backend.scenario.repository.ScenarioRepository;
 import ru.vsm.backend.scenario.repository.UserProgressRepository;
+import ru.vsm.backend.scenario.service.ExamService;
 
 /**
  * Строит разбор прохождения сценария (см. {@code design/screens/debrief.md}) по id
@@ -48,8 +49,14 @@ public class DebriefService {
     private final ScenarioChoiceRepository scenarioChoiceRepository;
     private final ScenarioChoiceHistoryRepository historyRepository;
     private final ExplanationResolver explanationResolver;
+    private final ExamService examService;
 
     public DebriefResponse buildDebrief(UUID userProgressId) {
+        // Режим экзамена: разбор этого пункта недоступен, пока экзамен не завершён целиком (иначе
+        // игрок получил бы подсказку по уже пройденному пункту, пока следующий ещё впереди) — см.
+        // Javadoc ExamService.assertDebriefAllowed. Не ограничивает прохождения вне экзамена.
+        examService.assertDebriefAllowed(userProgressId);
+
         UserProgress progress = userProgressRepository.findById(userProgressId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Прохождение не найдено: " + userProgressId));
@@ -87,7 +94,10 @@ public class DebriefService {
             // скрытой механики закадровой коммуникации (эскалация, которую пассажир не слышит) —
             // считаем один раз на шаг.
             List<ScenarioChoice> alternatives = scenarioChoiceRepository.findByNodeIdOrderBySortOrder(node.getId());
-            boolean hiddenCommunicationEffect = isHiddenCommunicationEffect(node, alternatives);
+            // Флаг узла — источник истины; эвристика по дельтам остаётся резервной для узлов,
+            // где автор seed-данных его не проставил (см. javadoc ScenarioNode.hiddenFromPassenger).
+            boolean hiddenCommunicationEffect =
+                    node.isHiddenFromPassenger() || isHiddenCommunicationEffect(node, alternatives);
 
             ExplanationResolver.Explanation explanation =
                     explanationResolver.resolve(choice, node.getNodeType(), entry.isWasTimeout());
@@ -111,7 +121,8 @@ public class DebriefService {
                     skipped.stream().map(RoleStep::label).toList(),
                     scaleConflict,
                     explanation.text(),
-                    hiddenCommunicationEffect));
+                    hiddenCommunicationEffect,
+                    choice.getNormRef()));
 
             // Ключевая развилка: сравниваем фактический выбор со всеми альтернативами в том же
             // узле по суммарному эффекту на обе шкалы (равный вес) — где разрыв с лучшей

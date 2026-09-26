@@ -95,15 +95,18 @@ class GamificationAccrualIntegrationTest {
                 false,
                 true,
                 Instant.now().minusSeconds(60),
-                Instant.now());
+                Instant.now(),
+                false,
+                true);
 
         TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
         transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(event));
 
-        // base(SUCCESS)=100 + loyaltyGain=10 + safetyGain=10 - timeoutPenalty=0 = 120
+        // base(SUCCESS)=100 + loyaltyGain=10 + safetyGain=10 - timeoutPenalty=0 = 120 raw;
+        // playerId без AppUser-записи -> неподтверждён -> множитель 0.5 (см. GamificationLimitsProperties) -> 60.
         Optional<PlayerProfile> profile = playerProfileRepository.findById(playerId);
         assertThat(profile).isPresent();
-        assertThat(profile.get().getTotalScore()).isEqualTo(120);
+        assertThat(profile.get().getTotalScore()).isEqualTo(60);
         assertThat(profile.get().getScenariosCompleted()).isEqualTo(1);
         assertThat(accrualLogRepository.existsByUserProgressId(userProgressId)).isTrue();
     }
@@ -125,14 +128,18 @@ class GamificationAccrualIntegrationTest {
                 false,
                 true,
                 Instant.now().minusSeconds(120),
-                Instant.now());
+                Instant.now(),
+                false,
+                true);
 
         eventPublisher.publishEvent(event);
 
-        // base(SUCCESS)=100 + loyaltyGain=30 + safetyGain=30 - timeoutPenalty=0 = 160
+        // base(SUCCESS)=100 + loyaltyGain=30 + safetyGain=30 - timeoutPenalty=0 = 160 raw;
+        // неподтверждённый playerId -> множитель 0.5 -> 80 (см. GamificationAntifraudIntegrationTest
+        // для отдельных тестов множителя/лимита/подтверждённого профиля).
         Optional<PlayerProfile> profile = playerProfileRepository.findById(playerId);
         assertThat(profile).isPresent();
-        assertThat(profile.get().getTotalScore()).isEqualTo(160);
+        assertThat(profile.get().getTotalScore()).isEqualTo(80);
         assertThat(profile.get().getScenariosCompleted()).isEqualTo(1);
 
         Optional<CompetencyScore> competency =
@@ -157,8 +164,83 @@ class GamificationAccrualIntegrationTest {
 
         Optional<PlayerProfile> profileAfterReplay = playerProfileRepository.findById(playerId);
         assertThat(profileAfterReplay).isPresent();
-        assertThat(profileAfterReplay.get().getTotalScore()).isEqualTo(160);
+        assertThat(profileAfterReplay.get().getTotalScore()).isEqualTo(80);
         assertThat(profileAfterReplay.get().getScenariosCompleted()).isEqualTo(1);
         assertThat(playerAchievementRepository.findByPlayerId(playerId)).hasSize(3);
+    }
+
+    /**
+     * Регрессионный тест на находку аудита безопасности: replay уже {@code COMPLETED} сценария
+     * (новый {@code userProgressId} на каждый заход, поэтому идемпотентность по
+     * {@code userProgressId} его не ловит) не должен приносить очки/scenariosCompleted/ачивки —
+     * см. Javadoc {@code GamificationAccrualService#processEvent}, поле {@code awardable}.
+     * Компетенции по шкалам растут при каждой реальной попытке — это нужно аналитике компетенций.
+     */
+    @Test
+    void replayOfAlreadyCompletedScenarioAwardsNoPointsOrAchievementsButUpdatesCompetencies() {
+        UUID playerId = UUID.randomUUID();
+
+        ScenarioCompletedEvent firstPlay = new ScenarioCompletedEvent(
+                UUID.randomUUID(), playerId, UUID.randomUUID(), "boarding-no-ticket", "boarding",
+                ScenarioOutcome.SUCCESS, 10, 10, 3, false, true,
+                Instant.now().minusSeconds(120), Instant.now(), false, true);
+        eventPublisher.publishEvent(firstPlay);
+
+        // base(SUCCESS)=100+10+10=120 raw, неподтверждённый playerId -> множитель 0.5 -> 60.
+        assertThat(playerProfileRepository.findById(playerId).orElseThrow().getTotalScore()).isEqualTo(60);
+        assertThat(playerProfileRepository.findById(playerId).orElseThrow().getScenariosCompleted()).isEqualTo(1);
+        assertThat(playerAchievementRepository.findByPlayerId(playerId))
+                .extracting(PlayerAchievement::getAchievementCode)
+                .contains(AchievementCode.FIRST_SCENARIO);
+
+        // Повторное прохождение того же сценария игроком: новый userProgressId, firstCompletion=false.
+        ScenarioCompletedEvent replay = new ScenarioCompletedEvent(
+                UUID.randomUUID(), playerId, UUID.randomUUID(), "boarding-no-ticket", "boarding",
+                ScenarioOutcome.SUCCESS, 10, 10, 3, false, true,
+                Instant.now().minusSeconds(60), Instant.now(), false, false);
+        eventPublisher.publishEvent(replay);
+
+        PlayerProfile profileAfterReplay = playerProfileRepository.findById(playerId).orElseThrow();
+        assertThat(profileAfterReplay.getTotalScore()).isEqualTo(60);
+        assertThat(profileAfterReplay.getScenariosCompleted()).isEqualTo(1);
+        assertThat(playerAchievementRepository.findByPlayerId(playerId)).hasSize(1);
+
+        CompetencyScore competency =
+                competencyScoreRepository.findByPlayerIdAndBlock(playerId, "boarding").orElseThrow();
+        assertThat(competency.getLoyaltyPoints()).isEqualTo(20);
+        assertThat(competency.getSafetyPoints()).isEqualTo(20);
+        assertThat(competency.getScenariosCompleted()).isEqualTo(2);
+
+        assertThat(accrualLogRepository.existsByUserProgressId(replay.userProgressId())).isTrue();
+    }
+
+    /**
+     * Пункт экзамена ({@code examMode=true}) не приносит очков/ачивок — экзамен вознаграждается
+     * отдельно, итоговым бонусом за всю попытку ({@code ExamAccrualService} по {@code
+     * ExamCompletedEvent}), а не за каждый входящий в него сценарий. Компетенции по шкалам растут
+     * как обычно.
+     */
+    @Test
+    void examModeScenarioAwardsNoPointsOrAchievementsButUpdatesCompetencies() {
+        UUID playerId = UUID.randomUUID();
+
+        ScenarioCompletedEvent examPiece = new ScenarioCompletedEvent(
+                UUID.randomUUID(), playerId, UUID.randomUUID(), "medical-passenger-unwell", "medical",
+                ScenarioOutcome.SUCCESS, 15, 20, 2, false, true,
+                Instant.now().minusSeconds(90), Instant.now(), true, true);
+        eventPublisher.publishEvent(examPiece);
+
+        PlayerProfile profile = playerProfileRepository.findById(playerId).orElseThrow();
+        assertThat(profile.getTotalScore()).isZero();
+        assertThat(profile.getScenariosCompleted()).isZero();
+        assertThat(playerAchievementRepository.findByPlayerId(playerId)).isEmpty();
+
+        CompetencyScore competency =
+                competencyScoreRepository.findByPlayerIdAndBlock(playerId, "medical").orElseThrow();
+        assertThat(competency.getLoyaltyPoints()).isEqualTo(15);
+        assertThat(competency.getSafetyPoints()).isEqualTo(20);
+        assertThat(competency.getScenariosCompleted()).isEqualTo(1);
+
+        assertThat(accrualLogRepository.existsByUserProgressId(examPiece.userProgressId())).isTrue();
     }
 }

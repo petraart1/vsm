@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Component;
+import ru.vsm.backend.scenario.domain.CarClass;
 import ru.vsm.backend.scenario.domain.NodeType;
 import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 import ru.vsm.backend.scenario.seed.ChoiceSeedDto;
@@ -84,6 +85,7 @@ public class ScenarioGraphValidator {
                 continue;
             }
             validateNodeType(label, n, errors);
+            validatePassengerPortraits(n, errors);
             List<ChoiceSeedDto> choices = n.getChoices();
             boolean hasChoices = choices != null && !choices.isEmpty();
 
@@ -140,6 +142,24 @@ public class ScenarioGraphValidator {
         } catch (IllegalArgumentException | NullPointerException e) {
             errors.add("узел '" + n.getCode() + "': некорректный type '" + n.getType()
                     + "' (ожидается DIALOGUE/ESCALATION/TERMINAL)");
+        }
+    }
+
+    /**
+     * «Портрет пассажира»: ключи {@code passengerPortraits} — коды {@link CarClass}, не
+     * произвольные строки.
+     */
+    private void validatePassengerPortraits(NodeSeedDto n, List<String> errors) {
+        if (n.getPassengerPortraits() == null) {
+            return;
+        }
+        for (String carClassCode : n.getPassengerPortraits().keySet()) {
+            try {
+                CarClass.valueOf(carClassCode);
+            } catch (IllegalArgumentException e) {
+                errors.add("узел '" + n.getCode() + "': некорректный класс вагона в passengerPortraits '"
+                        + carClassCode + "' (ожидается STANDARD/COMFORT/BUSINESS/FIRST)");
+            }
         }
     }
 

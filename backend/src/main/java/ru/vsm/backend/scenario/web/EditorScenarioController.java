@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.vsm.backend.scenario.domain.Scenario;
 import ru.vsm.backend.scenario.repository.ScenarioRepository;
@@ -18,11 +19,16 @@ import ru.vsm.backend.scenario.seed.ScenarioSeedDto;
 import ru.vsm.backend.scenario.seed.ScenarioSeedExporter;
 import ru.vsm.backend.scenario.seed.ScenarioSeedService;
 import ru.vsm.backend.scenario.seed.ScenarioSeedTemplateFactory;
+import ru.vsm.backend.scenario.seed.markdown.ScenarioMarkdownParser;
 import ru.vsm.backend.scenario.service.ScenarioGraphValidator;
+import ru.vsm.backend.scenario.service.exception.MarkdownImportException;
 import ru.vsm.backend.scenario.service.exception.ScenarioGraphInvalidException;
 import ru.vsm.backend.scenario.service.exception.ScenarioNotFoundException;
 import ru.vsm.backend.scenario.web.dto.GraphValidationResponse;
+import ru.vsm.backend.scenario.web.dto.MarkdownImportResponse;
 import ru.vsm.backend.scenario.web.dto.ScenarioSummaryResponse;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Редактор сценариев: добавить новую ситуацию (или отредактировать существующую) без пересборки
@@ -49,6 +55,8 @@ public class EditorScenarioController {
     private final ScenarioSeedService scenarioSeedService;
     private final ScenarioSeedExporter scenarioSeedExporter;
     private final ScenarioRepository scenarioRepository;
+    private final ScenarioMarkdownParser scenarioMarkdownParser;
+    private final ObjectMapper objectMapper;
 
     /** Проверка графа без сохранения — список проблем (узел/выбор/что не так), пуст = граф валиден. */
     @PostMapping("/scenarios/validate")
@@ -85,6 +93,67 @@ public class EditorScenarioController {
     @GetMapping("/template")
     public ScenarioSeedDto template() {
         return ScenarioSeedTemplateFactory.build();
+    }
+
+    /**
+     * Импорт ситуации из простого построчного markdown-формата (README, раздел «Импорт из
+     * markdown») вместо JSON seed-формата — тело запроса принимает как сырой {@code text/markdown},
+     * так и {@code application/json} вида {@code {"markdown": "..."}} (тип содержимого не
+     * проверяется по заголовку, а определяется по первому символу тела: {@code '{'} — JSON).
+     *
+     * <p>Ошибки самой разметки (строка не распознана, отсутствуют обязательные метаданные) — сразу
+     * {@code 400 invalid_markdown} со списком "строка: причина" в {@code details}
+     * ({@link MarkdownImportException}, маппится в {@link ru.vsm.backend.config.error.ApiError} в
+     * {@link ScenarioExceptionHandler}). Если разметка разобрана, граф всегда прогоняется через тот
+     * же {@link ScenarioGraphValidator}, что и {@code POST /scenarios}:
+     * <ul>
+     *   <li>{@code save=false} (по умолчанию) — граф не сохраняется, ответ содержит разобранный
+     *       seed-JSON и список проблем графа (пуст, если граф валиден) — для предпросмотра перед
+     *       сохранением;</li>
+     *   <li>{@code save=true} — проблемы графа сразу дают {@code 400 invalid_graph} (как у
+     *       {@code POST /scenarios}), иначе сценарий сохраняется тем же
+     *       {@code ScenarioSeedService.upsertForEditor} (создание — 201, обновление — 200, конфликт
+     *       с уже пройденным сценарием — 409).</li>
+     * </ul>
+     */
+    @PostMapping("/scenarios/import-markdown")
+    public ResponseEntity<?> importMarkdown(
+            @RequestBody String rawBody, @RequestParam(defaultValue = "false") boolean save) {
+        String markdown = extractMarkdown(rawBody);
+        ScenarioSeedDto dto = scenarioMarkdownParser.parse(markdown);
+        List<String> graphErrors = scenarioGraphValidator.validate(dto);
+
+        if (!save) {
+            return ResponseEntity.ok(new MarkdownImportResponse(dto, graphErrors));
+        }
+        if (!graphErrors.isEmpty()) {
+            throw new ScenarioGraphInvalidException(graphErrors);
+        }
+        boolean isNew = !scenarioRepository.existsByCode(dto.getCode());
+        UUID id = scenarioSeedService.upsertForEditor(dto);
+        Scenario saved = scenarioRepository.findById(id)
+                .orElseThrow(() -> new ScenarioNotFoundException("Сценарий '" + dto.getCode() + "' не найден"));
+        return ResponseEntity.status(isNew ? HttpStatus.CREATED : HttpStatus.OK).body(toSummary(saved));
+    }
+
+    /** Тело запроса — JSON {@code {"markdown": "..."}}, если начинается с {@code '{'}, иначе сырой markdown как есть. */
+    private String extractMarkdown(String rawBody) {
+        String trimmed = rawBody == null ? "" : rawBody.strip();
+        if (!trimmed.startsWith("{")) {
+            return rawBody;
+        }
+        JsonNode node;
+        try {
+            node = objectMapper.readTree(trimmed);
+        } catch (RuntimeException e) {
+            throw new MarkdownImportException(List.of("тело запроса похоже на JSON, но не распарсилось: " + e.getMessage()));
+        }
+        JsonNode markdownNode = node.get("markdown");
+        if (markdownNode == null || markdownNode.isNull()) {
+            throw new MarkdownImportException(
+                    List.of("тело запроса — JSON, но строковое поле 'markdown' отсутствует"));
+        }
+        return markdownNode.asString();
     }
 
     private ScenarioSummaryResponse toSummary(Scenario s) {

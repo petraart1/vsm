@@ -1,0 +1,56 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-011-create-exam-accrual-log
+      author: vsm
+      comment: >
+        Журнал бонусных начислений за завершение экзамена целиком (ExamCompletedEvent, отдельно от
+        gamification_accrual_log, который пишется за каждый отдельный сценарий, в т.ч. пункты
+        экзамена). Уникальность exam_id — механизм идемпотентности: повторная доставка события с
+        тем же экзаменом не начисляет бонус дважды. exam_id — без FK на scenario.exam, междоменная
+        связь только по id.
+      changes:
+        - createTable:
+            tableName: gamification_exam_accrual_log
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: exam_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uq_exam_accrual_log_exam
+              - column:
+                  name: player_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_exam_accrual_log_player
+                    references: gamification_player_profile(id)
+                    deleteCascade: true
+              - column:
+                  name: grade
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: bonus_points_awarded
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - sql:
+            comment: grade — допустимые значения (согласовано с scenario.domain.ExamGrade)
+            sql: >-
+              ALTER TABLE gamification_exam_accrual_log ADD CONSTRAINT chk_exam_accrual_log_grade
+              CHECK (grade IN ('EXCELLENT', 'GOOD', 'SATISFACTORY', 'UNSATISFACTORY'))

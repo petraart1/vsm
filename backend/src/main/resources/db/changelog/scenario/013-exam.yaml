@@ -1,0 +1,168 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-013-exam
+      author: vsm
+      comment: >
+        Режим экзамена: набор сценариев (exam_scenario, порядок фиксирован полем sort_order),
+        пройденных подряд без подсказок, с единым итогом на exam (агрегаты/оценка заполняются
+        только при status=COMPLETED — см. javadoc Exam/ExamScenario). user_progress получает
+        exam_mode/exam_id, чтобы ScenarioPlayService мог отличить прохождение внутри экзамена от
+        обычной тренировочной попытки, а DebriefService — заблокировать разбор, пока экзамен идёт.
+      changes:
+        - createTable:
+            tableName: exam
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: player_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: car_class
+                  type: varchar(16)
+                  defaultValue: STANDARD
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(16)
+                  defaultValue: IN_PROGRESS
+                  constraints:
+                    nullable: false
+              - column:
+                  name: size
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: current_index
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: avg_loyalty_score
+                  type: float8
+              - column:
+                  name: avg_safety_score
+                  type: float8
+              - column:
+                  name: success_rate
+                  type: float8
+              - column:
+                  name: grade
+                  type: varchar(16)
+              - column:
+                  name: started_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: finished_at
+                  type: timestamp
+        - createIndex:
+            tableName: exam
+            indexName: idx_exam_player_id
+            columns:
+              - column:
+                  name: player_id
+        - sql:
+            comment: status — допустимые значения
+            sql: >-
+              ALTER TABLE exam ADD CONSTRAINT chk_exam_status
+              CHECK (status IN ('IN_PROGRESS', 'COMPLETED'))
+        - sql:
+            comment: grade — допустимые значения (NULL пока экзамен не завершён)
+            sql: >-
+              ALTER TABLE exam ADD CONSTRAINT chk_exam_grade
+              CHECK (grade IS NULL OR grade IN ('EXCELLENT', 'GOOD', 'SATISFACTORY', 'UNSATISFACTORY'))
+        - createTable:
+            tableName: exam_scenario
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: exam_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_exam_scenario_exam
+                    references: exam(id)
+                    deleteCascade: true
+              - column:
+                  name: sort_order
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: scenario_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_exam_scenario_scenario
+                    references: scenarios(id)
+              - column:
+                  name: block
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: flagship
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_progress_id
+                  type: uuid
+              - column:
+                  name: completed
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: outcome
+                  type: varchar(16)
+              - column:
+                  name: loyalty_score
+                  type: integer
+              - column:
+                  name: safety_score
+                  type: integer
+        - addUniqueConstraint:
+            tableName: exam_scenario
+            columnNames: exam_id, sort_order
+            constraintName: uq_exam_scenario_exam_sort_order
+        - addUniqueConstraint:
+            tableName: exam_scenario
+            columnNames: exam_id, scenario_id
+            constraintName: uq_exam_scenario_exam_scenario
+        - sql:
+            comment: outcome — допустимые значения
+            sql: >-
+              ALTER TABLE exam_scenario ADD CONSTRAINT chk_exam_scenario_outcome
+              CHECK (outcome IS NULL OR outcome IN ('SUCCESS', 'PARTIAL', 'FAILURE'))
+        - addColumn:
+            tableName: user_progress
+            columns:
+              - column:
+                  name: exam_mode
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: exam_id
+                  type: uuid

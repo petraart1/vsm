@@ -7,8 +7,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -29,6 +31,12 @@ import tools.jackson.databind.ObjectMapper;
  * без пересборки и сразу пройти её): validate с битым графом, create -> сразу видна в каталоге и
  * проходима через {@code ScenarioPlayController} до терминала, update существующего без
  * прохождений, update сценария с прохождениями -> 409, export/import round-trip.
+ *
+ * <p>С шага 3 авторизации {@code /api/editor/**} требует роль ADMIN — все запросы к нему здесь
+ * несут токен дефолтного администратора (логин/пароль из {@code app.auth.admin.*}, см.
+ * {@code AdminAccountInitializer}), полученный через {@code POST /api/auth/login} в
+ * {@link #loginAsAdmin()}. Доступ по ролям (401/403/200) сам по себе проверяется отдельно —
+ * {@code ru.vsm.backend.auth.web.AdminRoleAuthorizationIntegrationTest}.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -51,9 +59,31 @@ class EditorScenarioControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Value("${app.auth.admin.login}")
+    private String adminLogin;
+
+    @Value("${app.auth.admin.password}")
+    private String adminPassword;
+
+    private String adminToken;
+
+    @BeforeEach
+    void loginAsAdmin() throws Exception {
+        String loginBody = """
+                {"login":"%s","password":"%s"}
+                """.formatted(adminLogin, adminPassword);
+        String response = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        adminToken = objectMapper.readTree(response).get("token").asText();
+    }
+
     @Test
     void templateEndpointReturnsPlayableSkeleton() throws Exception {
-        mockMvc.perform(get("/api/editor/template"))
+        mockMvc.perform(get("/api/editor/template")
+                        .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.entryNode").value("start"))
                 .andExpect(jsonPath("$.nodes[0].choices.length()").value(3));
@@ -67,6 +97,7 @@ class EditorScenarioControllerIntegrationTest {
         dto.getNodes().get(0).getChoices().get(0).setTarget("does-not-exist");
 
         mockMvc.perform(post("/api/editor/scenarios/validate")
+                .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -84,6 +115,7 @@ class EditorScenarioControllerIntegrationTest {
         dto.setTitle("Новая ситуация из редактора");
 
         String createResponse = mockMvc.perform(post("/api/editor/scenarios")
+                .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
@@ -121,18 +153,21 @@ class EditorScenarioControllerIntegrationTest {
         dto.setCode(code);
 
         mockMvc.perform(post("/api/editor/scenarios")
+                .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated());
 
         dto.setTitle("Обновлённый заголовок");
         mockMvc.perform(post("/api/editor/scenarios")
+                .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Обновлённый заголовок"));
 
-        mockMvc.perform(get("/api/editor/scenarios/{code}", code))
+        mockMvc.perform(get("/api/editor/scenarios/{code}", code)
+                        .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Обновлённый заголовок"))
                 .andExpect(jsonPath("$.nodes.length()").value(4));
@@ -145,6 +180,7 @@ class EditorScenarioControllerIntegrationTest {
         dto.setCode(code);
 
         String createResponse = mockMvc.perform(post("/api/editor/scenarios")
+                .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
@@ -158,6 +194,7 @@ class EditorScenarioControllerIntegrationTest {
 
         dto.setTitle("Попытка правки уже пройденного сценария");
         mockMvc.perform(post("/api/editor/scenarios")
+                .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isConflict())
@@ -171,11 +208,13 @@ class EditorScenarioControllerIntegrationTest {
         dto.setCode(code);
 
         mockMvc.perform(post("/api/editor/scenarios")
+                .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated());
 
-        String exported = mockMvc.perform(get("/api/editor/scenarios/{code}", code))
+        String exported = mockMvc.perform(get("/api/editor/scenarios/{code}", code)
+                        .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         ScenarioSeedDto reimported = objectMapper.readValue(exported, ScenarioSeedDto.class);
@@ -186,6 +225,7 @@ class EditorScenarioControllerIntegrationTest {
         // Повторное сохранение того же экспортированного графа (без изменений) должно пройти как
         // штатное обновление без прохождений, а не свалиться на неожиданном формате.
         mockMvc.perform(post("/api/editor/scenarios")
+                .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reimported)))
                 .andExpect(status().isOk());

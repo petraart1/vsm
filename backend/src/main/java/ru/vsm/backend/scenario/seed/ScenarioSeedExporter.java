@@ -1,6 +1,7 @@
 package ru.vsm.backend.scenario.seed;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -9,7 +10,9 @@ import org.springframework.stereotype.Component;
 import ru.vsm.backend.scenario.domain.Scenario;
 import ru.vsm.backend.scenario.domain.ScenarioChoice;
 import ru.vsm.backend.scenario.domain.ScenarioNode;
+import ru.vsm.backend.scenario.domain.ScenarioNodePortrait;
 import ru.vsm.backend.scenario.repository.ScenarioChoiceRepository;
+import ru.vsm.backend.scenario.repository.ScenarioNodePortraitRepository;
 import ru.vsm.backend.scenario.repository.ScenarioNodeRepository;
 import ru.vsm.backend.scenario.repository.ScenarioRepository;
 import ru.vsm.backend.scenario.service.exception.ScenarioNotFoundException;
@@ -30,6 +33,7 @@ public class ScenarioSeedExporter {
     private final ScenarioRepository scenarioRepository;
     private final ScenarioNodeRepository scenarioNodeRepository;
     private final ScenarioChoiceRepository scenarioChoiceRepository;
+    private final ScenarioNodePortraitRepository scenarioNodePortraitRepository;
 
     public ScenarioSeedDto export(String code) {
         Scenario scenario = scenarioRepository.findByCode(code)
@@ -74,6 +78,12 @@ public class ScenarioSeedExporter {
             nodeDto.setTerminal(n.isTerminal());
             nodeDto.setTerminalOutcome(n.getTerminalOutcome() != null ? n.getTerminalOutcome().name() : null);
             nodeDto.setOutcomeSummary(n.getOutcomeSummary());
+            nodeDto.setHiddenFromPassenger(n.isHiddenFromPassenger());
+            Map<String, String> portraits = new LinkedHashMap<>();
+            for (ScenarioNodePortrait p : scenarioNodePortraitRepository.findByNodeId(n.getId())) {
+                portraits.put(p.getCarClass().name(), p.getText());
+            }
+            nodeDto.setPassengerPortraits(portraits);
 
             for (ScenarioChoice c : choicesByNodeId.getOrDefault(n.getId(), List.of())) {
                 ChoiceSeedDto choiceDto = new ChoiceSeedDto();

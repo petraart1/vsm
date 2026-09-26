@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-012-scenario-node-portraits
+      author: vsm
+      comment: >
+        «Портрет пассажира»: опциональное переопределение текста узла (scenario_nodes.text)
+        по классу вагона (СТО РЖД 03.011). При отсутствии записи для (node_id, car_class)
+        используется обычный scenario_nodes.text — см. javadoc ScenarioNodePortrait.
+        node_id — ON DELETE CASCADE, т.к. это часть содержимого узла: удаление узла
+        (ScenarioSeedService.deleteExistingGraph при обновлении графа) должно снести и его
+        переопределения без отдельного кода очистки.
+      changes:
+        - createTable:
+            tableName: scenario_node_portraits
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: node_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_scenario_node_portraits_node
+                    references: scenario_nodes(id)
+                    deleteCascade: true
+              - column:
+                  name: car_class
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: text
+                  type: text
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: scenario_node_portraits
+            columnNames: node_id, car_class
+            constraintName: uq_scenario_node_portraits_node_class
+        - sql:
+            comment: car_class — допустимые значения
+            sql: >-
+              ALTER TABLE scenario_node_portraits ADD CONSTRAINT chk_scenario_node_portraits_class
+              CHECK (car_class IN ('STANDARD', 'COMFORT', 'BUSINESS', 'FIRST'))

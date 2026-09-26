@@ -34,6 +34,17 @@ services:
       # Spring Boot binds SERVER_PORT to server.port automatically; container always listens on
       # this port internally regardless of the host-side mapping below.
       SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-demo}
+      # Default admin account created at startup if missing (AdminAccountInitializer). Demo-only
+      # defaults baked into application.properties — override for real deployments.
+      APP_AUTH_ADMIN_LOGIN: ${APP_AUTH_ADMIN_LOGIN:-admin}
+      APP_AUTH_ADMIN_PASSWORD: ${APP_AUTH_ADMIN_PASSWORD:-admin123}
+      # JWT signing secret for login tokens (HS256, needs >= 32 bytes). Demo default baked into
+      # application.properties — override for real deployments.
+      APP_AUTH_JWT_SECRET: ${APP_AUTH_JWT_SECRET:-vsm-demo-jwt-secret-please-change-in-production-0123456789abcdef}
+      # Set to false to temporarily open /api/admin/** and /api/editor/** without an ADMIN token
+      # (e.g. demoing before the frontend has a login screen wired up).
+      APP_AUTH_ADMIN_PROTECTION_ENABLED: ${APP_AUTH_ADMIN_PROTECTION_ENABLED:-true}
     ports:
       # Host port only. Default host port is 8080 (matches the app's own default server.port);
       # override BACKEND_HOST_PORT if 8080 is already taken on the host (e.g. by an unrelated

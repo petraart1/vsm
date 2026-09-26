@@ -1,7 +1,9 @@
 package ru.vsm.backend.scenario.seed;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -28,10 +30,24 @@ public class NodeSeedDto {
 
     private boolean terminal = false;
 
+    /**
+     * Узел закадровой коммуникации (например, разговор по служебной рации) — пассажир решение не
+     * слышит и не видит. См. {@link ru.vsm.backend.scenario.domain.ScenarioNode#isHiddenFromPassenger()}.
+     */
+    private boolean hiddenFromPassenger = false;
+
     /** SUCCESS | PARTIAL | FAILURE, только если {@link #terminal} = true. */
     private String terminalOutcome;
 
     private String outcomeSummary;
+
+    /**
+     * «Портрет пассажира»: переопределение {@link #text} по классу вагона (ключ — имя
+     * {@link ru.vsm.backend.scenario.domain.CarClass}, например {@code "FIRST"}). Опционально —
+     * если для класса записи нет, используется общий {@link #text}. См. javadoc
+     * {@link ru.vsm.backend.scenario.domain.ScenarioNodePortrait}.
+     */
+    private Map<String, String> passengerPortraits = new LinkedHashMap<>();
 
     private List<ChoiceSeedDto> choices = new ArrayList<>();
 }

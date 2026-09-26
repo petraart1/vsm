@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-007-notification-type-challenge-completed
+      author: vsm
+      comment: >
+        Расширяет допустимые значения gamification_notification.type новым CHALLENGE_COMPLETED —
+        уведомление о выполнении челленджа месяца (см. gamification.challenge).
+      changes:
+        - sql:
+            sql: ALTER TABLE gamification_notification DROP CONSTRAINT chk_notification_type
+        - sql:
+            comment: type — допустимые значения (согласовано с gamification.domain.NotificationType)
+            sql: >-
+              ALTER TABLE gamification_notification ADD CONSTRAINT chk_notification_type
+              CHECK (type IN ('ACHIEVEMENT_UNLOCKED', 'NEW_PERSONAL_BEST', 'LEADERBOARD_RANK_UP',
+              'RECOMMENDED_SCENARIO', 'CHALLENGE_COMPLETED'))

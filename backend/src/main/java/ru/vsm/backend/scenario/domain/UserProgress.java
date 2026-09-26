@@ -60,6 +60,16 @@ public class UserProgress {
     @Builder.Default
     private ProgressStatus status = ProgressStatus.IN_PROGRESS;
 
+    /**
+     * Класс вагона ("портрет пассажира"), в котором игрок проходит сценарий — задаётся один раз
+     * при старте прохождения ({@link #startedAt}) и не меняется до его завершения; модифицирует
+     * дельту лояльности каждого применённого выбора (см. {@link CarClass}).
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "car_class", nullable = false, length = 16)
+    @Builder.Default
+    private CarClass carClass = CarClass.STANDARD;
+
     @Column(name = "loyalty_score", nullable = false)
     @Builder.Default
     private int loyaltyScore = 0;
@@ -83,4 +93,21 @@ public class UserProgress {
 
     @Column(name = "completed_at")
     private Instant completedAt;
+
+    /**
+     * {@code true}, если это прохождение — один из пунктов экзамена ({@link Exam}), а не обычная
+     * тренировочная попытка. Задаётся один раз при старте ({@code ScenarioPlayService.start} с
+     * {@code examId != null}) и не меняется. Меняет поведение {@code ScenarioPlayService} и
+     * {@code DebriefService}: в {@code ChoiceAppliedResponse} прикладного выбора не раскрываются
+     * дельты/итоговые значения шкал (без подсказок во время экзамена — см. javadoc
+     * {@code ChoiceAppliedResponse}), а разбор прохождения ({@code GET /api/feedback/debrief/*})
+     * недоступен (409), пока экзамен не завершён целиком (см. {@code ExamService.assertDebriefAllowed}).
+     */
+    @Column(name = "exam_mode", nullable = false)
+    @Builder.Default
+    private boolean examMode = false;
+
+    /** id {@link Exam}, если {@link #examMode}; иначе {@code null}. Без FK — см. Javadoc {@link Exam}. */
+    @Column(name = "exam_id")
+    private UUID examId;
 }

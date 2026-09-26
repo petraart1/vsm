@@ -57,16 +57,17 @@ class ScenarioSeedVersionUpdateIntegrationTest {
     @Test
     void newerVersionReplacesGraphInPlaceWhenNoProgressExists() {
         Scenario before = scenarioRepository.findByCode("boarding-no-ticket").orElseThrow();
-        assertThat(before.getVersion()).isEqualTo(2);
+        // Версия 3 — «портрет пассажира» (passengerPortraits на узле start, см. seed-файл).
+        assertThat(before.getVersion()).isEqualTo(3);
         UUID scenarioId = before.getId();
         assertThat(userProgressRepository.existsByScenarioId(scenarioId)).isFalse();
 
-        ScenarioSeedDto v3 = minimalSingleTerminalNodeDto("boarding-no-ticket", "boarding", 3);
-        scenarioSeedService.seed(v3);
+        ScenarioSeedDto v4 = minimalSingleTerminalNodeDto("boarding-no-ticket", "boarding", 4);
+        scenarioSeedService.seed(v4);
 
         Scenario after = scenarioRepository.findByCode("boarding-no-ticket").orElseThrow();
         assertThat(after.getId()).isEqualTo(scenarioId);
-        assertThat(after.getVersion()).isEqualTo(3);
+        assertThat(after.getVersion()).isEqualTo(4);
 
         List<ScenarioNode> nodes = scenarioNodeRepository.findByScenarioId(scenarioId);
         assertThat(nodes).hasSize(1);

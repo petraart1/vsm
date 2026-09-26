@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: common-002-app-user-verified
+      author: vsm
+      comment: >
+        Флаг подтверждённой личности (устанавливается демо-заглушкой входа через Госуслуги/ЕСИА,
+        см. ru.vsm.backend.auth.esia). Подготовка для будущего антифрода (PlayerVerificationService.
+        isVerified) — на этом шаге ни на что не влияет, при обычной регистрации логином/паролем
+        остаётся false.
+      changes:
+        - addColumn:
+            tableName: app_user
+            columns:
+              - column:
+                  name: verified
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

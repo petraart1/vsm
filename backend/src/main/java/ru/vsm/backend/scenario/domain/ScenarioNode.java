@@ -62,6 +62,17 @@ public class ScenarioNode {
     @Builder.Default
     private boolean terminal = false;
 
+    /**
+     * Узел закадровой коммуникации: решение здесь не долетает до пассажира (служебная рация,
+     * внутренние переговоры бригады) — эффект только на шкалы, реакция пассажира не показывается.
+     * Используется разбором прохождения ({@code feedback.service.DebriefService}) как основной
+     * признак скрытой механики; эвристика по одинаковой дельте лояльности у всех альтернатив узла
+     * остаётся резервным вариантом для узлов, где флаг не проставлен.
+     */
+    @Column(name = "hidden_from_passenger", nullable = false)
+    @Builder.Default
+    private boolean hiddenFromPassenger = false;
+
     /** Заполняется только если {@link #terminal} = true. */
     @Enumerated(EnumType.STRING)
     @Column(name = "terminal_outcome", length = 16)

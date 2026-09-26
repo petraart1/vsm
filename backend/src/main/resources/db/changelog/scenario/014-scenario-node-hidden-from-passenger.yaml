@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-014-scenario-node-hidden-from-passenger
+      author: vsm
+      comment: >
+        Флаг закадрового узла: решение в этом узле пассажир не слышит и не видит (например,
+        разговор по служебной рации) — эффект только на шкалы, без реакции пассажира. Разбор
+        прохождения (feedback.service.DebriefService) использует его как основной признак скрытой
+        коммуникации вместо прежней эвристики по одинаковой дельте лояльности у всех альтернатив
+        узла (эвристика остаётся резервным вариантом для узлов без явного флага).
+      changes:
+        - addColumn:
+            tableName: scenario_nodes
+            columns:
+              - column:
+                  name: hidden_from_passenger
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false

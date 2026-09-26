@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-010-notification-type-exam-completed
+      author: vsm
+      comment: >
+        Расширяет допустимые значения gamification_notification.type новым EXAM_COMPLETED —
+        уведомление об итоге экзамена, включая бонусные очки по оценке (см.
+        gamification.event.ExamCompletedEventListener / gamification.service.ExamAccrualService).
+      changes:
+        - sql:
+            sql: ALTER TABLE gamification_notification DROP CONSTRAINT chk_notification_type
+        - sql:
+            comment: type — допустимые значения (согласовано с gamification.domain.NotificationType)
+            sql: >-
+              ALTER TABLE gamification_notification ADD CONSTRAINT chk_notification_type
+              CHECK (type IN ('ACHIEVEMENT_UNLOCKED', 'NEW_PERSONAL_BEST', 'LEADERBOARD_RANK_UP',
+              'RECOMMENDED_SCENARIO', 'CHALLENGE_COMPLETED', 'TEAM_RANK_UP', 'EXAM_COMPLETED'))

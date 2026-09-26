@@ -36,6 +36,22 @@ import ru.vsm.backend.scenario.domain.ScenarioOutcome;
  *        "без пропуска шагов ролевой модели".
  * @param startedAt       момент начала прохождения
  * @param completedAt     момент завершения прохождения
+ * @param examMode        {@code true}, если это прохождение — пункт экзамена ({@code UserProgress.examMode},
+ *        см. {@code ExamService}), а не обычная тренировочная попытка. Сигнал для gamification:
+ *        полное начисление очков/ачивок/челленджей не выдаётся за экзаменационные прохождения
+ *        (сам факт участия и итоговая аттестация вознаграждаются отдельно, при завершении всего
+ *        экзамена — {@link ru.vsm.backend.scenario.domain.ExamGrade}/{@code ExamCompletedEvent}),
+ *        иначе один и тот же набор сценариев экзамена приносил бы очки дважды: и за каждый пункт
+ *        по отдельности, и за итоговую оценку.
+ * @param firstCompletion {@code true}, если это первое когда-либо завершённое ({@code COMPLETED})
+ *        прохождение ИМЕННО этого сценария этим игроком (независимо от {@link #examMode}) —
+ *        {@code false} для повторного прохождения уже когда-то завершённого сценария. Сигнал для
+ *        gamification: полные очки/ачивки/челленджи только за первое прохождение — иначе один и
+ *        тот же лёгкий сценарий можно фармить бесконечно, каждый раз получая новый
+ *        {@code userProgressId} (см. находку аудита безопасности про replay уже {@code COMPLETED}
+ *        сценариев). Компетенции по шкалам (см. {@code CompetencyScore}) и разбор решений
+ *        (feedback) НЕ зависят от этого флага — аналитика должна видеть все реальные попытки
+ *        игрока, а не только первую.
  */
 public record ScenarioCompletedEvent(
         UUID userProgressId,
@@ -50,5 +66,7 @@ public record ScenarioCompletedEvent(
         boolean hadTimeout,
         boolean allRoleStepsFollowed,
         Instant startedAt,
-        Instant completedAt) {
+        Instant completedAt,
+        boolean examMode,
+        boolean firstCompletion) {
 }

@@ -117,6 +117,9 @@ class DebriefServiceIntegrationTest {
         // его как есть, без алгоритмической достройки.
         assertThat(firstStep.explanation()).isEqualTo(acknowledgeAndExplain.getExplanation());
         assertThat(firstStep.hiddenCommunicationEffect()).isFalse();
+        // normRef на уровне шага — то же значение, что и у сделанного выбора, продублировано
+        // из общего normReferences прохождения.
+        assertThat(firstStep.normRef()).isEqualTo(acknowledgeAndExplain.getNormRef());
 
         // На узле "start" лучшая альтернатива по сумме дельт — offer-to-check (score 5),
         // выбранный acknowledge-and-explain даёт score 3 => это и есть ключевая развилка.
@@ -166,6 +169,7 @@ class DebriefServiceIntegrationTest {
         // времени сообщает отдельное поле wasTimeout, текст объяснения не подменяется генерик-фразой.
         assertThat(step.explanation()).isEqualTo(letThroughFriendly.getExplanation());
         assertThat(debrief.normReferences()).containsExactly(letThroughFriendly.getNormRef());
+        assertThat(step.normRef()).isEqualTo(letThroughFriendly.getNormRef());
     }
 
     /**
@@ -225,7 +229,10 @@ class DebriefServiceIntegrationTest {
         assertThat(radioStep.explanation()).contains("не слышит");
         assertThat(openFormulation.getNormRef()).isNotBlank();
         assertThat(debrief.normReferences()).contains(openFormulation.getNormRef());
-        // Скрытая механика распознана алгоритмически по дельтам узла (не зашита под этот сценарий).
+        assertThat(radioStep.normRef()).isEqualTo(openFormulation.getNormRef());
+        // Скрытая механика распознана по явному флагу узла (не эвристикой): seed-файл проставляет
+        // hiddenFromPassenger=true на этом узле начиная с версии 2.
+        assertThat(radioNode.isHiddenFromPassenger()).isTrue();
         assertThat(radioStep.hiddenCommunicationEffect()).isTrue();
         // Обычный узел без этой механики (start) — признак не срабатывает.
         assertThat(debrief.timeline().get(0).hiddenCommunicationEffect()).isFalse();

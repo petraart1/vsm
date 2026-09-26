@@ -16,5 +16,19 @@ public enum NotificationType {
     LEADERBOARD_RANK_UP,
 
     /** Рекомендованный сценарий (точка расширения; в MVP не создаётся начислением). */
-    RECOMMENDED_SCENARIO
+    RECOMMENDED_SCENARIO,
+
+    /** Выполнен челлендж месяца (см. {@code gamification.challenge}). */
+    CHALLENGE_COMPLETED,
+
+    /** Команда игрока поднялась на 1-е место в командном рейтинге (см. {@code gamification.team}). */
+    TEAM_RANK_UP,
+
+    /**
+     * Экзамен завершён: оценка и бонусные очки (см. {@code ExamAccrualService},
+     * {@code ru.vsm.backend.scenario.event.ExamCompletedEvent}). Отдельно от этого уведомления,
+     * если оценка "отлично" — выдаётся ещё и {@code ACHIEVEMENT_UNLOCKED} за {@link
+     * AchievementCode#CERTIFICATE}.
+     */
+    EXAM_COMPLETED
 }

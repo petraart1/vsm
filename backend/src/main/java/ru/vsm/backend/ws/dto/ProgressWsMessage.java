@@ -62,10 +62,17 @@ public record ProgressWsMessage(
                 null, null, loyaltyScore, safetyScore, status, null, currentNode);
     }
 
-    /** {@code state}/{@code timeout}/{@code completed} share the same field set, only {@code type} differs. */
+    /**
+     * {@code state}/{@code timeout}/{@code completed} share the same field set, only {@code type} differs.
+     *
+     * <p>{@code loyaltyDelta}/{@code safetyDelta}/{@code loyaltyScore}/{@code safetyScore} accept
+     * {@code Integer} (not {@code int}) so a {@code null} from {@code ChoiceAppliedResponse} in
+     * exam mode (see its Javadoc) propagates through as {@code null} instead of throwing on
+     * auto-unboxing — the exam hides these fields over WebSocket the same way it hides them in REST.
+     */
     public static ProgressWsMessage fromAppliedChoice(String type, UUID progressId,
             UUID appliedChoiceId, String appliedChoiceCode, boolean wasTimeout,
-            int loyaltyDelta, int safetyDelta, int loyaltyScore, int safetyScore,
+            Integer loyaltyDelta, Integer safetyDelta, Integer loyaltyScore, Integer safetyScore,
             ProgressStatus status, ScenarioOutcome finalOutcome, NodeStateResponse currentNode) {
         return new ProgressWsMessage(
                 type, progressId, null, appliedChoiceId, appliedChoiceCode, wasTimeout,

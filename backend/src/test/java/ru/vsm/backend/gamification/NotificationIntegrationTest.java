@@ -58,7 +58,9 @@ class NotificationIntegrationTest {
                 false,
                 true,
                 Instant.now().minusSeconds(90),
-                Instant.now());
+                Instant.now(),
+                false,
+                true);
     }
 
     @Test

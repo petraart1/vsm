@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: scenario-011-user-progress-car-class
+      author: vsm
+      comment: >
+        «Портрет пассажира»: класс вагона (СТО РЖД 03.011 — Стандарт/Комфорт/Бизнес/Первый),
+        в котором игрок проходит сценарий. Задаётся один раз при старте прохождения и модифицирует
+        дельту лояльности каждого применённого выбора (см. javadoc CarClass) — не трогает
+        рейтинг безопасности, он объективен вне зависимости от класса. По умолчанию STANDARD —
+        не меняет поведение уже существующих клиентов, не передающих класс явно.
+      changes:
+        - addColumn:
+            tableName: user_progress
+            columns:
+              - column:
+                  name: car_class
+                  type: varchar(16)
+                  defaultValue: STANDARD
+                  constraints:
+                    nullable: false
+        - sql:
+            comment: car_class — допустимые значения
+            sql: >-
+              ALTER TABLE user_progress ADD CONSTRAINT chk_user_progress_car_class
+              CHECK (car_class IN ('STANDARD', 'COMFORT', 'BUSINESS', 'FIRST'))

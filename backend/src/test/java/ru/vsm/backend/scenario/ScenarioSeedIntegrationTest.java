@@ -109,6 +109,7 @@ class ScenarioSeedIntegrationTest {
         ScenarioNode radioNode = scenarioNodeRepository
                 .findByScenarioIdAndCode(scenario.getId(), "radio-call-chief")
                 .orElseThrow();
+        assertThat(radioNode.isHiddenFromPassenger()).isTrue();
         List<ru.vsm.backend.scenario.domain.ScenarioChoice> radioChoices =
                 scenarioChoiceRepository.findByNodeIdOrderBySortOrder(radioNode.getId());
         assertThat(radioChoices).hasSize(2);

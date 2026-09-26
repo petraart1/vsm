@@ -9,6 +9,8 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import org.springframework.web.util.UriComponentsBuilder;
+import ru.vsm.backend.auth.security.JwtClaims;
+import ru.vsm.backend.auth.security.JwtService;
 import ru.vsm.backend.scenario.domain.ProgressStatus;
 import ru.vsm.backend.scenario.service.ScenarioPlayService;
 import ru.vsm.backend.scenario.service.exception.ProgressAccessDeniedException;
@@ -22,6 +24,11 @@ import ru.vsm.backend.ws.dto.ProgressWsMessage;
  * REST ({@code ScenarioPlayService.getProgress}, тот же {@code playerId}), поэтому чужое
  * прохождение по WebSocket недоступно так же, как и по REST.
  *
+ * <p>{@code ?token=<jwt>} — альтернатива {@code playerId} для авторизованных клиентов (тот же
+ * токен, что выдаёт {@code POST /api/auth/login}): playerId берётся из токена, query-параметр
+ * {@code playerId} в этом случае игнорируется. Невалидный/просроченный токен равносилен его
+ * отсутствию — сервер откатывается на {@code playerId}, а если и его нет, закрывает соединение.
+ *
  * <p>Клиент не обязан ничего слать — сообщения от клиента игнорируются (нет клиент→сервер
  * протокола); подключение только читает события. Формат событий — {@link ProgressWsMessage}.
  */
@@ -31,10 +38,12 @@ import ru.vsm.backend.ws.dto.ProgressWsMessage;
 public class ProgressWebSocketHandler extends TextWebSocketHandler {
 
     private static final String PLAYER_ID_QUERY_PARAM = "playerId";
+    private static final String TOKEN_QUERY_PARAM = "token";
     private static final String PROGRESS_ID_ATTRIBUTE = "progressId";
 
     private final ScenarioPlayService scenarioPlayService;
     private final ProgressChannelRegistry registry;
+    private final JwtService jwtService;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
@@ -89,8 +98,16 @@ public class ProgressWebSocketHandler extends TextWebSocketHandler {
         if (session.getUri() == null) {
             return null;
         }
-        String raw = UriComponentsBuilder.fromUri(session.getUri()).build().getQueryParams().getFirst(PLAYER_ID_QUERY_PARAM);
-        return parseUuid(raw);
+        var queryParams = UriComponentsBuilder.fromUri(session.getUri()).build().getQueryParams();
+        String token = queryParams.getFirst(TOKEN_QUERY_PARAM);
+        if (token != null && !token.isBlank()) {
+            UUID playerIdFromToken = jwtService.parse(token).map(JwtClaims::playerId).orElse(null);
+            if (playerIdFromToken != null) {
+                return playerIdFromToken;
+            }
+            log.debug("Невалидный/просроченный WS-токен, откатываемся на query-параметр {}", PLAYER_ID_QUERY_PARAM);
+        }
+        return parseUuid(queryParams.getFirst(PLAYER_ID_QUERY_PARAM));
     }
 
     private UUID parseUuid(String raw) {

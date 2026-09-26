@@ -1,0 +1,154 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-006-create-challenge
+      author: vsm
+      comment: >
+        Челленджи месяца: игровая цель с периодом действия (starts_at-ends_at), типом цели и
+        наградой (очки + опциональная ачивка). Каталог заполняется идемпотентным сидером
+        (ChallengeSeeder) на старте приложения по коду вида "<ключ шаблона>-<год-месяц>" — даты
+        периода не захардкожены здесь, чтобы набор челленджей обновлялся на новый календарный
+        месяц без релиза.
+      changes:
+        - createTable:
+            tableName: gamification_challenge
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: code
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uq_challenge_code
+              - column:
+                  name: title
+                  type: varchar(150)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: goal_type
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: target_block
+                  type: varchar(32)
+                  remarks: >-
+                    Фильтр по блоку ситуаций; обязателен для BLOCK_SCENARIOS_NO_FAILURE, null для
+                    остальных типов означает "любой блок".
+              - column:
+                  name: target_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: safety_threshold
+                  type: integer
+                  remarks: Порог шкалы безопасности; используется только типом SAFETY_STREAK.
+              - column:
+                  name: starts_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ends_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reward_points
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reward_achievement_code
+                  type: varchar(64)
+                  remarks: Имя константы gamification.domain.AchievementCode; null — награда только очками.
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: gamification_challenge
+            indexName: idx_challenge_active_period
+            columns:
+              - column:
+                  name: starts_at
+              - column:
+                  name: ends_at
+        - sql:
+            comment: goal_type — допустимые значения (согласовано с gamification.challenge.domain.ChallengeGoalType)
+            sql: >-
+              ALTER TABLE gamification_challenge ADD CONSTRAINT chk_challenge_goal_type
+              CHECK (goal_type IN ('BLOCK_SCENARIOS_NO_FAILURE', 'SAFETY_STREAK', 'ROLE_MODEL_ALL_STEPS'))
+  - changeSet:
+      id: gamification-006-create-challenge-progress
+      author: vsm
+      comment: >
+        Прогресс игрока по одному челленджу. Одна строка на пару (challenge, player) —
+        обновляется в том же обработчике ScenarioCompletedEvent, что и начисление очков
+        (GamificationAccrualService), под общей защитой идемпотентности по user_progress_id
+        (gamification_accrual_log): при повторной доставке события метод пропускается целиком.
+      changes:
+        - createTable:
+            tableName: gamification_challenge_progress
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: challenge_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_challenge_progress_challenge
+                    references: gamification_challenge(id)
+                    deleteCascade: true
+              - column:
+                  name: player_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_challenge_progress_player
+                    references: gamification_player_profile(id)
+                    deleteCascade: true
+              - column:
+                  name: current_value
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: completed
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: completed_at
+                  type: timestamp
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: gamification_challenge_progress
+            columnNames: challenge_id, player_id
+            constraintName: uq_challenge_progress_challenge_player

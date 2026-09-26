@@ -9,13 +9,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.vsm.backend.scenario.domain.CarClass;
 import ru.vsm.backend.scenario.domain.NodeType;
 import ru.vsm.backend.scenario.domain.RoleStepFlags;
 import ru.vsm.backend.scenario.domain.Scenario;
 import ru.vsm.backend.scenario.domain.ScenarioChoice;
 import ru.vsm.backend.scenario.domain.ScenarioNode;
+import ru.vsm.backend.scenario.domain.ScenarioNodePortrait;
 import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 import ru.vsm.backend.scenario.repository.ScenarioChoiceRepository;
+import ru.vsm.backend.scenario.repository.ScenarioNodePortraitRepository;
 import ru.vsm.backend.scenario.repository.ScenarioNodeRepository;
 import ru.vsm.backend.scenario.repository.ScenarioRepository;
 import ru.vsm.backend.scenario.repository.UserProgressRepository;
@@ -57,6 +60,7 @@ public class ScenarioSeedService {
     private final ScenarioRepository scenarioRepository;
     private final ScenarioNodeRepository scenarioNodeRepository;
     private final ScenarioChoiceRepository scenarioChoiceRepository;
+    private final ScenarioNodePortraitRepository scenarioNodePortraitRepository;
     private final UserProgressRepository userProgressRepository;
 
     @Transactional
@@ -120,8 +124,11 @@ public class ScenarioSeedService {
                     .terminal(n.isTerminal())
                     .terminalOutcome(parseOutcome(dto.getCode(), n.getCode(), n.getTerminalOutcome()))
                     .outcomeSummary(n.getOutcomeSummary())
+                    .hiddenFromPassenger(n.isHiddenFromPassenger())
                     .build();
-            nodesByCode.put(n.getCode(), scenarioNodeRepository.save(node));
+            ScenarioNode savedNode = scenarioNodeRepository.save(node);
+            nodesByCode.put(n.getCode(), savedNode);
+            savePortraits(dto.getCode(), savedNode, n.getPassengerPortraits());
         }
 
         ScenarioNode entryNode = nodesByCode.get(dto.getEntryNode());
@@ -278,6 +285,31 @@ public class ScenarioSeedService {
 
         scenarioNodeRepository.deleteAll(oldNodes);
         scenarioNodeRepository.flush();
+    }
+
+    /**
+     * «Портрет пассажира»: сохраняет переопределения текста узла по классу вагона, если они
+     * заданы в seed-файле (см. javadoc {@link NodeSeedDto#getPassengerPortraits()}). Пустая
+     * карта — обычный случай, узел без переопределений.
+     */
+    private void savePortraits(String scenarioCode, ScenarioNode node, Map<String, String> passengerPortraits) {
+        if (passengerPortraits == null || passengerPortraits.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, String> entry : passengerPortraits.entrySet()) {
+            CarClass carClass;
+            try {
+                carClass = CarClass.valueOf(entry.getKey());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalStateException("Сценарий '" + scenarioCode + "', узел '" + node.getCode()
+                        + "': некорректный класс вагона в passengerPortraits '" + entry.getKey() + "'", e);
+            }
+            scenarioNodePortraitRepository.save(ScenarioNodePortrait.builder()
+                    .nodeId(node.getId())
+                    .carClass(carClass)
+                    .text(entry.getValue())
+                    .build());
+        }
     }
 
     private NodeType parseNodeType(String scenarioCode, NodeSeedDto n) {

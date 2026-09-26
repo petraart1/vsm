@@ -28,7 +28,19 @@ public enum AchievementCode {
     VERSATILE("Универсал", "Пройдите сценарии из трёх разных блоков ситуаций", "volume"),
 
     /** Десять завершённых прохождений. */
-    VETERAN("Десять рейсов", "Завершите 10 сценариев", "volume");
+    VETERAN("Десять рейсов", "Завершите 10 сценариев", "volume"),
+
+    /** Выполнен хотя бы один челлендж месяца (см. {@code gamification.challenge}). */
+    CHALLENGE_CHAMPION("Чемпион месяца", "Выполните любой челлендж месяца", "challenge"),
+
+    /**
+     * Экзамен ({@code ru.vsm.backend.scenario.service.ExamService}) сдан на оценку "отлично"
+     * ({@code ExamGrade.EXCELLENT}). Выдаётся {@code ExamAccrualService} по
+     * {@code ExamCompletedEvent}, а не {@code GamificationAccrualService} по
+     * {@code ScenarioCompletedEvent} — единственная ачивка каталога, привязанная к итогу
+     * экзамена, а не к отдельному прохождению сценария.
+     */
+    CERTIFICATE("Сертификат", "Сдайте экзамен на оценку «отлично»", "milestone");
 
     private final String title;
     private final String description;

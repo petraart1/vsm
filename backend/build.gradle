@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'jacoco'
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -25,6 +26,18 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-liquibase'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    // Bean Validation (@Valid) for request DTOs — единая форма 400 validation_failed, см.
+    // config/error/GlobalExceptionHandler.
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // Roles (USER/ADMIN) for the upcoming admin panel/editor authorization — see auth/ package.
+    // Deviation from the задача #1 decision to drop Security for MVP; recorded in project decisions.
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    // JWT issuing/verification for login (auth/security/) — jjwt chosen over spring-security-oauth2-jose:
+    // we only need to mint/verify our own HS256 tokens (subject=playerId, claim=role), not a full
+    // OAuth2 Resource Server/JWK Set setup. See project decisions log.
+    implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
     implementation 'io.projectreactor:reactor-core'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
     // Spring Boot 4 по умолчанию настраивает только Jackson 3 (tools.jackson); springdoc-openapi (и код доменов,
@@ -51,4 +64,14 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // Отчёт о покрытии всегда пересчитывается после прогона тестов, без отдельной команды.
+    finalizedBy tasks.named('jacocoTestReport')
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        html.required = true
+    }
 }

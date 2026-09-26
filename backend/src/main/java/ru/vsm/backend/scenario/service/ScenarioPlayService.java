@@ -10,18 +10,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.vsm.backend.scenario.domain.CarClass;
 import ru.vsm.backend.scenario.domain.ProgressStatus;
 import ru.vsm.backend.scenario.domain.RoleStepFlags;
 import ru.vsm.backend.scenario.domain.Scenario;
 import ru.vsm.backend.scenario.domain.ScenarioChoice;
 import ru.vsm.backend.scenario.domain.ScenarioChoiceHistory;
 import ru.vsm.backend.scenario.domain.ScenarioNode;
+import ru.vsm.backend.scenario.domain.ScenarioNodePortrait;
 import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 import ru.vsm.backend.scenario.domain.UserProgress;
 import ru.vsm.backend.scenario.event.ProgressStateChangedEvent;
 import ru.vsm.backend.scenario.event.ScenarioCompletedEvent;
 import ru.vsm.backend.scenario.repository.ScenarioChoiceHistoryRepository;
 import ru.vsm.backend.scenario.repository.ScenarioChoiceRepository;
+import ru.vsm.backend.scenario.repository.ScenarioNodePortraitRepository;
 import ru.vsm.backend.scenario.repository.ScenarioNodeRepository;
 import ru.vsm.backend.scenario.repository.ScenarioRepository;
 import ru.vsm.backend.scenario.repository.UserProgressRepository;
@@ -50,6 +53,12 @@ import ru.vsm.backend.scenario.web.dto.ProgressStateResponse;
  * loyalty/safety дельт — они появляются только в {@link ChoiceAppliedResponse} после того, как
  * выбор уже сделан и применён.
  *
+ * <p><b>«Портрет пассажира»</b>: {@link UserProgress#getCarClass()} фиксируется один раз при
+ * старте прохождения ({@link #start}) и модифицирует дельту лояльности каждого применённого
+ * выбора (см. {@link CarClass#modifyLoyaltyDelta}, применяется до {@link #clampScale}), а также
+ * подменяет текст узла на переопределение для этого класса, если оно задано (см.
+ * {@link #toNodeState}). Рейтинг безопасности от класса вагона не зависит.
+ *
  * <p><b>Завершение прохождения</b> происходит в двух случаях: (1) выбор ведёт в узел с
  * {@code terminal=true} — тогда исход берётся из {@code terminalOutcome} этого узла; (2) у самого
  * выбора {@code target == null} (конец сразу после выбора, без отдельного терминального узла) —
@@ -77,21 +86,41 @@ public class ScenarioPlayService {
     private final ScenarioChoiceRepository scenarioChoiceRepository;
     private final UserProgressRepository userProgressRepository;
     private final ScenarioChoiceHistoryRepository scenarioChoiceHistoryRepository;
+    private final ScenarioNodePortraitRepository scenarioNodePortraitRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Начинает новое прохождение сценария игроком, либо возвращает уже начатое (IN_PROGRESS) —
      * повторный вызов start для того же (playerId, scenarioId) не плодит дубликаты прогресса.
+     *
+     * <p>{@code carClass} — класс вагона ("портрет пассажира", см. {@link CarClass}), в котором
+     * игрок проходит сценарий; фиксируется только при создании нового прохождения и модифицирует
+     * дельту лояльности каждого применённого выбора до конца этого прохождения. Если уже есть
+     * незавершённое прохождение того же (playerId, scenarioId) — его класс не меняется, даже
+     * если в этом вызове передан другой (менять класс на середине прохождения означало бы
+     * задним числом переинтерпретировать уже применённые дельты).
      */
     @Transactional
-    public ProgressStateResponse start(UUID scenarioId, UUID playerId) {
+    public ProgressStateResponse start(UUID scenarioId, UUID playerId, CarClass carClass) {
+        return start(scenarioId, playerId, carClass, null);
+    }
+
+    /**
+     * Как {@link #start(UUID, UUID, CarClass)}, но помечает создаваемое прохождение как пункт
+     * экзамена ({@code examId != null}) — используется только {@code ExamService.startCurrentScenario}.
+     * Прохождение с {@code examMode=true} ведёт себя как обычное во всём, кроме одного отличия: в
+     * {@link ChoiceAppliedResponse} каждого применённого выбора не раскрываются дельты/итоговые
+     * значения шкал (см. Javadoc {@link ChoiceAppliedResponse}).
+     */
+    @Transactional
+    public ProgressStateResponse start(UUID scenarioId, UUID playerId, CarClass carClass, UUID examId) {
         Scenario scenario = scenarioRepository.findById(scenarioId)
                 .filter(Scenario::isActive)
                 .orElseThrow(() -> new ScenarioNotFoundException("Сценарий '" + scenarioId + "' не найден"));
 
         UserProgress progress = userProgressRepository
                 .findByUserIdAndScenarioIdAndStatus(playerId, scenarioId, ProgressStatus.IN_PROGRESS)
-                .orElseGet(() -> createProgress(scenario, playerId));
+                .orElseGet(() -> createProgress(scenario, playerId, carClass, examId));
 
         ScenarioNode currentNode = requireNode(progress.getCurrentNodeId());
         return toProgressState(progress, scenario, currentNode);
@@ -154,7 +183,10 @@ public class ScenarioPlayService {
 
         int loyaltyBefore = progress.getLoyaltyScore();
         int safetyBefore = progress.getSafetyScore();
-        int loyaltyAfter = clampScale(loyaltyBefore + choice.getLoyaltyDelta());
+        // «Портрет пассажира»: модификатор класса вагона меняет только лояльность (см. javadoc
+        // CarClass) — рейтинг безопасности объективен и класса вагона не касается.
+        int modifiedLoyaltyDelta = progress.getCarClass().modifyLoyaltyDelta(choice.getLoyaltyDelta());
+        int loyaltyAfter = clampScale(loyaltyBefore + modifiedLoyaltyDelta);
         int safetyAfter = clampScale(safetyBefore + choice.getSafetyDelta());
         int appliedLoyaltyDelta = loyaltyAfter - loyaltyBefore;
         int appliedSafetyDelta = safetyAfter - safetyBefore;
@@ -183,14 +215,14 @@ public class ScenarioPlayService {
                     ? nextNode.getTerminalOutcome()
                     : ScenarioOutcome.PARTIAL;
             completeProgress(progress, outcome, now);
-            nextNodeResponse = toNodeState(nextNode, List.of(), null);
+            nextNodeResponse = toNodeState(nextNode, List.of(), null, progress.getCarClass());
         } else if (nextNode != null) {
             progress.setCurrentNodeId(nextNode.getId());
             progress.setNodeDeadlineAt(
                     nextNode.getTimerSeconds() != null ? now.plusSeconds(nextNode.getTimerSeconds()) : null);
             nextNodeResponse = toNodeState(
                     nextNode, scenarioChoiceRepository.findByNodeIdOrderBySortOrder(nextNode.getId()),
-                    progress.getNodeDeadlineAt());
+                    progress.getNodeDeadlineAt(), progress.getCarClass());
         } else {
             // choice.target == null: конец сразу после выбора, без отдельного терминального узла.
             completeProgress(progress, ScenarioOutcome.PARTIAL, now);
@@ -203,10 +235,13 @@ public class ScenarioPlayService {
             publishCompletion(progress);
         }
 
+        // Режим экзамена: не подсказываем качество решения по ходу прохождения — см. Javadoc
+        // ChoiceAppliedResponse. Навигация (status/finalOutcome/nextNode) раскрывается как обычно.
+        boolean hideScoreSignal = progress.isExamMode();
         ChoiceAppliedResponse response = new ChoiceAppliedResponse(
-                progress.getId(), choice.getId(), choice.getCode(), wasTimeout,
-                appliedLoyaltyDelta, appliedSafetyDelta,
-                progress.getLoyaltyScore(), progress.getSafetyScore(),
+                progress.getId(), choice.getId(), choice.getCode(), wasTimeout, progress.getCarClass(),
+                hideScoreSignal ? null : appliedLoyaltyDelta, hideScoreSignal ? null : appliedSafetyDelta,
+                hideScoreSignal ? null : progress.getLoyaltyScore(), hideScoreSignal ? null : progress.getSafetyScore(),
                 progress.getStatus(), progress.getFinalOutcome(), nextNodeResponse);
         eventPublisher.publishEvent(new ProgressStateChangedEvent(progress.getUserId(), response));
         return response;
@@ -236,6 +271,11 @@ public class ScenarioPlayService {
     /**
      * Публикуется до коммита транзакции, которая перевела прогресс в COMPLETED (см. Javadoc
      * класса) — слушатели читают {@code @TransactionalEventListener(AFTER_COMMIT)}.
+     *
+     * <p>Здесь же вычисляются {@link ScenarioCompletedEvent#examMode()} (напрямую из
+     * {@link UserProgress#isExamMode()}) и {@link ScenarioCompletedEvent#firstCompletion()} —
+     * gamification использует оба флага, чтобы не начислять полные очки/ачивки/челленджи за
+     * экзаменационные и повторные прохождения (см. Javadoc полей события).
      */
     private void publishCompletion(UserProgress progress) {
         Scenario scenario = requireScenario(progress.getScenarioId());
@@ -244,6 +284,10 @@ public class ScenarioPlayService {
 
         boolean hadTimeout = history.stream().anyMatch(ScenarioChoiceHistory::isWasTimeout);
         boolean allRoleStepsFollowed = allRoleStepsFollowed(history);
+        // progress уже сохранён со status=COMPLETED (см. вызов userProgressRepository.save выше по
+        // стеку) — исключаем его собственный id, иначе первое прохождение сочло бы себя повторным.
+        boolean firstCompletion = !userProgressRepository.existsByUserIdAndScenarioIdAndStatusAndIdNot(
+                progress.getUserId(), progress.getScenarioId(), ProgressStatus.COMPLETED, progress.getId());
 
         eventPublisher.publishEvent(new ScenarioCompletedEvent(
                 progress.getId(),
@@ -258,7 +302,9 @@ public class ScenarioPlayService {
                 hadTimeout,
                 allRoleStepsFollowed,
                 progress.getStartedAt(),
-                progress.getCompletedAt()));
+                progress.getCompletedAt(),
+                progress.isExamMode(),
+                firstCompletion));
     }
 
     /**
@@ -289,7 +335,7 @@ public class ScenarioPlayService {
         return acknowledge && rule && solution && reassure;
     }
 
-    private UserProgress createProgress(Scenario scenario, UUID playerId) {
+    private UserProgress createProgress(Scenario scenario, UUID playerId, CarClass carClass, UUID examId) {
         ScenarioNode entryNode = requireNode(scenario.getEntryNodeId());
         Instant now = Instant.now();
         UserProgress progress = UserProgress.builder()
@@ -297,11 +343,14 @@ public class ScenarioPlayService {
                 .scenarioId(scenario.getId())
                 .currentNodeId(entryNode.getId())
                 .status(ProgressStatus.IN_PROGRESS)
+                .carClass(carClass != null ? carClass : CarClass.STANDARD)
                 .loyaltyScore(0)
                 .safetyScore(0)
                 .startedAt(now)
                 .updatedAt(now)
                 .nodeDeadlineAt(entryNode.getTimerSeconds() != null ? now.plusSeconds(entryNode.getTimerSeconds()) : null)
+                .examMode(examId != null)
+                .examId(examId)
                 .build();
         return userProgressRepository.save(progress);
     }
@@ -320,19 +369,29 @@ public class ScenarioPlayService {
             List<ScenarioChoice> choices = currentNode.isTerminal()
                     ? List.of()
                     : scenarioChoiceRepository.findByNodeIdOrderBySortOrder(currentNode.getId());
-            nodeResponse = toNodeState(currentNode, choices, progress.getNodeDeadlineAt());
+            nodeResponse = toNodeState(currentNode, choices, progress.getNodeDeadlineAt(), progress.getCarClass());
         }
         return new ProgressStateResponse(
-                progress.getId(), scenario.getId(), scenario.getCode(), progress.getStatus(),
+                progress.getId(), scenario.getId(), scenario.getCode(), progress.getStatus(), progress.getCarClass(),
                 progress.getLoyaltyScore(), progress.getSafetyScore(), nodeResponse);
     }
 
-    private NodeStateResponse toNodeState(ScenarioNode node, List<ScenarioChoice> choices, Instant deadlineAt) {
+    /**
+     * {@code carClass} резолвит «портрет пассажира» — переопределение {@link ScenarioNode#getText()}
+     * для этого класса вагона, если оно задано в {@code scenario_node_portraits} (см. javadoc
+     * {@link ru.vsm.backend.scenario.domain.ScenarioNodePortrait}); иначе используется обычный
+     * текст узла, общий для всех классов.
+     */
+    private NodeStateResponse toNodeState(
+            ScenarioNode node, List<ScenarioChoice> choices, Instant deadlineAt, CarClass carClass) {
         List<ChoiceOptionResponse> options = choices.stream()
                 .map(c -> new ChoiceOptionResponse(c.getId(), c.getCode(), c.getText()))
                 .toList();
+        String text = scenarioNodePortraitRepository.findByNodeIdAndCarClass(node.getId(), carClass)
+                .map(ScenarioNodePortrait::getText)
+                .orElse(node.getText());
         return new NodeStateResponse(
-                node.getId(), node.getCode(), node.getNodeType(), node.getText(), node.isTerminal(),
+                node.getId(), node.getCode(), node.getNodeType(), text, node.isTerminal(),
                 node.getTimerSeconds(), deadlineAt, node.getTerminalOutcome(), node.getOutcomeSummary(), options);
     }
 

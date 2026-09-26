@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import ru.vsm.backend.scenario.domain.CarClass;
 import ru.vsm.backend.scenario.service.ScenarioPlayService;
 import ru.vsm.backend.scenario.web.dto.ChoiceAppliedResponse;
 import ru.vsm.backend.scenario.web.dto.ProgressStateResponse;
@@ -30,11 +32,19 @@ public class ScenarioPlayController {
 
     private final ScenarioPlayService scenarioPlayService;
 
+    /**
+     * {@code carClass} — необязательный класс вагона ("портрет пассажира", см. {@link CarClass}),
+     * по умолчанию {@code STANDARD} — старые клиенты, не передающие параметр, ведут себя как
+     * раньше. Игнорируется, если у игрока уже есть незавершённое прохождение этого сценария (см.
+     * javadoc {@code ScenarioPlayService.start}).
+     */
     @PostMapping("/{scenarioId}/progress")
     @ResponseStatus(HttpStatus.CREATED)
     public ProgressStateResponse start(
-            @PathVariable UUID scenarioId, @RequestHeader(PLAYER_ID_HEADER) String playerIdHeader) {
-        return scenarioPlayService.start(scenarioId, parsePlayerId(playerIdHeader));
+            @PathVariable UUID scenarioId,
+            @RequestHeader(PLAYER_ID_HEADER) String playerIdHeader,
+            @RequestParam(required = false, defaultValue = "STANDARD") CarClass carClass) {
+        return scenarioPlayService.start(scenarioId, parsePlayerId(playerIdHeader), carClass);
     }
 
     @GetMapping("/progress/{progressId}")
