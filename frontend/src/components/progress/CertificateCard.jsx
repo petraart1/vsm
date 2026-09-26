@@ -1,4 +1,5 @@
-import Seal from "./Seal.jsx";
+import Medal from "../awards/Medal.jsx";
+import { moduleMedal, readFinish } from "../awards/awards.js";
 import { formatDate, pluralRu } from "../../progress.js";
 import styles from "./CertificateCard.module.css";
 
@@ -22,12 +23,7 @@ export default function CertificateCard({ qualification: q, onOpen, compact = fa
       data-highlighted={highlighted || undefined}
       onClick={() => onOpen(q)}
     >
-      <Seal
-        mark={q.code}
-        state={q.status}
-        progress={q.total ? q.completed / q.total : 0}
-        size={compact ? 64 : 76}
-      />
+      <Medal {...moduleMedal(q, readFinish())} size={compact ? 56 : 64} />
       <span className={styles.body}>
         <span className={styles.title}>{q.title}</span>
         <span className={styles.status}>{statusLine(q)}</span>

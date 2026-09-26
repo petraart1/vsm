@@ -18,7 +18,7 @@ function parseHash() {
     query[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || "");
   });
   const segments = path.split("/").filter(Boolean);
-  const screen = segments[0] || "scenarios";
+  const screen = segments[0] || "today";
   return { path, segments, screen, query };
 }
 

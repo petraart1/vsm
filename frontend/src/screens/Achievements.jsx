@@ -4,51 +4,23 @@ import Skeleton from "../components/ui/Skeleton.jsx";
 import ErrorState from "../components/ui/ErrorState.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import { CountUp } from "../components/motion/Motion.jsx";
-import Seal from "../components/progress/Seal.jsx";
-import CertificateCard from "../components/progress/CertificateCard.jsx";
+import Medal from "../components/awards/Medal.jsx";
 import CertificateDialog from "../components/progress/CertificateDialog.jsx";
+import { FINISH_OPTIONS, readFinish, writeFinish, moduleMedal, distinctionMedal } from "../components/awards/awards.js";
 import { buildQualifications, toDistinction, formatDate } from "../progress.js";
+import { readShifts } from "../shift/shiftModel.js";
 import styles from "./Achievements.module.css";
 
-const STATUS_LABEL = {
-  certified: "присвоена",
-  in_training: "в обучении",
-  not_started: "не начата"
-};
-
-/** Сводная ведомость: одна ячейка на модуль, цвет — статус квалификации. */
-function Transcript({ qualifications, onOpen }) {
-  return (
-    <ol className={styles.transcript} aria-label="Ведомость по учебным модулям">
-      {qualifications.map((q) => (
-        <li key={q.block}>
-          <button
-            type="button"
-            className={styles.cell}
-            data-state={q.status}
-            onClick={() => onOpen(q)}
-            aria-label={`Модуль ${q.code}, ${q.title}: квалификация ${STATUS_LABEL[q.status]}`}
-          >
-            <span className={styles.cellCode}>{q.code}</span>
-            <span className={styles.cellBar}>
-              <span style={{ transform: `scaleX(${q.total ? q.completed / q.total : 0})` }} />
-            </span>
-          </button>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 /**
- * Квалификации проводника: учебные модули (по блокам ситуаций) и служебные отличия
- * (каталог ачивок backend). См. design/screens/achievements.md.
+ * Награды в духе Apple Fitness: объёмные медали сеткой, полученные — цветные, будущие — серые.
+ * Единый дизайн-код: модуль — круг, служебное отличие — шестигранник, смена — эмалевый круг с поездом.
  * Query: ?highlight=<код отличия> или ?module=<блок> — открыть соответствующее свидетельство.
  */
 export default function Achievements({ route }) {
   const query = route.query || {};
   const [s, setS] = useState({ phase: "loading" });
   const [opened, setOpened] = useState(null);
+  const [finish, setFinish] = useState(readFinish);
 
   function load() {
     setS({ phase: "loading" });
@@ -75,13 +47,17 @@ export default function Achievements({ route }) {
 
   useEffect(load, []);
 
+  function pickFinish(v) {
+    setFinish(v);
+    writeFinish(v);
+  }
+
   if (s.phase === "loading") {
     return (
       <div className={styles.page}>
-        <PageHeader title="Квалификации" />
-        <Skeleton height="56px" />
+        <PageHeader title="Награды" />
         <div className={styles.grid}>
-          {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} height="108px" />)}
+          {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} height="140px" />)}
         </div>
       </div>
     );
@@ -93,66 +69,69 @@ export default function Achievements({ route }) {
 
   const { qualifications, distinctions, profile } = s;
   const certified = qualifications.filter((q) => q.status === "certified").length;
-  const inTraining = qualifications.filter((q) => q.status === "in_training").length;
   const earnedDistinctions = distinctions.filter((d) => d.earned).length;
-  const totalHours = qualifications.filter((q) => q.status === "certified").reduce((a, q) => a + q.hours, 0);
+  const shifts = readShifts();
+  const cleanShifts = shifts.filter((x) => x.admitted);
   const openModule = (q) => setOpened({ kind: "module", q });
 
   return (
     <div className={styles.page}>
-      <PageHeader
-        title="Квалификации"
-        description="Десять учебных модулей по типовым ситуациям на борту. Квалификация по модулю присваивается, когда все его ситуации пройдены без критических ошибок безопасности."
-      />
+      <PageHeader title="Награды" description="Квалификации по модулям, служебные отличия и смены без замечаний." />
 
-      <dl className={`${styles.totals} rv`} style={{ "--i": 2 }}>
-        <div><dt>Присвоено</dt><dd><CountUp value={certified} delay={300} /><span className={styles.of}>из {qualifications.length}</span></dd></div>
-        <div><dt>В обучении</dt><dd><CountUp value={inTraining} delay={350} /></dd></div>
-        <div><dt>Зачтено академических часов</dt><dd><CountUp value={totalHours} delay={400} /></dd></div>
-        <div><dt>Служебные отличия</dt><dd><CountUp value={earnedDistinctions} delay={450} /><span className={styles.of}>из {distinctions.length}</span></dd></div>
-      </dl>
-
-      <div className="rv" style={{ "--i": 3 }}>
-        <Transcript qualifications={qualifications} onOpen={openModule} />
-      </div>
-
-      <section className="rv" style={{ "--i": 4 }} aria-labelledby="modules-title">
-        <h2 className={styles.sectionTitle} id="modules-title">Учебные модули</h2>
-        <div className={styles.grid}>
-          {qualifications.map((q) => (
-            <CertificateCard
-              key={q.block}
-              qualification={q}
-              onOpen={openModule}
-              highlighted={query.module === q.block}
-            />
+      <div className={`${styles.toolbar} rv`} style={{ "--i": 1 }}>
+        <dl className={styles.totals}>
+          <div><dt>Модули</dt><dd><CountUp value={certified} /><small>/{qualifications.length}</small></dd></div>
+          <div><dt>Отличия</dt><dd><CountUp value={earnedDistinctions} /><small>/{distinctions.length}</small></dd></div>
+          <div><dt>Смены</dt><dd><CountUp value={cleanShifts.length} /></dd></div>
+        </dl>
+        <div className={styles.segmented} role="radiogroup" aria-label="Отделка медалей">
+          {FINISH_OPTIONS.map((o) => (
+            <button key={o.key} type="button" role="radio" aria-checked={finish === o.key} data-on={finish === o.key || undefined} onClick={() => pickFinish(o.key)}>{o.label}</button>
           ))}
         </div>
+      </div>
+
+      {cleanShifts.length > 0 && (
+        <section className="rv" style={{ "--i": 2 }}>
+          <h2 className={styles.sectionTitle}>Смены</h2>
+          <div className={styles.featured}>
+            <Medal shape="circle" finish={finish} glyph="train" size={108} spin backTitle="Смена без замечаний" backNote={`${cleanShifts.length} ${cleanShifts.length === 1 ? "раз" : "раза"}`} />
+            <div>
+              <p className={styles.featTitle}>Смена без замечаний</p>
+              <p className={styles.featNote}>Допуск подтверждён {cleanShifts.length} {cleanShifts.length === 1 ? "раз" : cleanShifts.length < 5 ? "раза" : "раз"}. Последний — {formatDate(cleanShifts[0].at, { day: "numeric", month: "long" })}.</p>
+              <p className={styles.featHint}>Покрутите медаль пальцем</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section className="rv" style={{ "--i": 3 }}>
+        <h2 className={styles.sectionTitle}>Учебные модули</h2>
+        <ul className={styles.grid}>
+          {qualifications.map((q, i) => (
+            <li key={q.block} style={{ "--i": i }}>
+              <button type="button" className={styles.award} data-earned={q.status === "certified" || undefined} data-highlighted={query.module === q.block || undefined} onClick={() => openModule(q)}>
+                <span className={styles.medalWrap}>
+                  <Medal {...moduleMedal(q, finish)} size={92} />
+                  {q.status === "in_training" && <Progress value={q.completed / q.total} />}
+                </span>
+                <span className={styles.awardTitle}>{q.title}</span>
+                <span className={styles.awardMeta}>{q.status === "certified" ? formatDate(q.certifiedAt, { day: "numeric", month: "short", year: "numeric" }) : q.status === "in_training" ? `${q.completed} из ${q.total}` : `Модуль ${q.code}`}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </section>
 
-      <section className="rv" style={{ "--i": 5 }} aria-labelledby="dist-title">
-        <div className={styles.sectionHead}>
-          <h2 className={styles.sectionTitle} id="dist-title">Служебные отличия</h2>
-        </div>
-        <ul className={styles.distinctions}>
-          {distinctions.map((d) => (
-            <li key={d.code}>
-              <button
-                type="button"
-                className={styles.distinction}
-                data-earned={d.earned || undefined}
-                data-highlighted={query.highlight === d.code || undefined}
-                onClick={() => setOpened({ kind: "distinction", d })}
-              >
-                <Seal
-                  mark={d.mark}
-                  caption="отличие"
-                  ring="ReactLab  •  служебное отличие  •  "
-                  state={d.earned ? "certified" : "not_started"}
-                  size={84}
-                />
-                <span className={styles.distTitle}>{d.title}</span>
-                <span className={styles.distMeta}>{d.earned ? formatDate(d.earnedAt, { day: "numeric", month: "short", year: "numeric" }) : d.description}</span>
+      <section className="rv" style={{ "--i": 4 }}>
+        <h2 className={styles.sectionTitle}>Служебные отличия</h2>
+        <ul className={styles.grid}>
+          {distinctions.map((d, i) => (
+            <li key={d.code} style={{ "--i": i }}>
+              <button type="button" className={styles.award} data-earned={d.earned || undefined} data-highlighted={query.highlight === d.code || undefined} onClick={() => setOpened({ kind: "distinction", d })}>
+                <span className={styles.medalWrap}><Medal {...distinctionMedal(d, finish)} size={92} /></span>
+                <span className={styles.awardTitle}>{d.title}</span>
+                <span className={styles.awardMeta}>{d.earned ? formatDate(d.earnedAt, { day: "numeric", month: "short", year: "numeric" }) : d.description}</span>
               </button>
             </li>
           ))}
@@ -160,11 +139,22 @@ export default function Achievements({ route }) {
       </section>
 
       <CertificateDialog
+        key={finish}
         item={opened}
         onClose={() => setOpened(null)}
         playerId={profile ? profile.playerId : api.getPlayerId()}
         displayName={profile ? profile.displayName : "проводнику"}
       />
     </div>
+  );
+}
+
+function Progress({ value }) {
+  const c = 2 * Math.PI * 52;
+  return (
+    <svg className={styles.progress} viewBox="0 0 112 112" aria-hidden="true">
+      <circle cx="56" cy="56" r="52" className={styles.progressTrack} />
+      <circle cx="56" cy="56" r="52" className={styles.progressFill} strokeDasharray={c} strokeDashoffset={c * (1 - value)} />
+    </svg>
   );
 }

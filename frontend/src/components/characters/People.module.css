@@ -1,0 +1,57 @@
+.person, .seated { display: block; overflow: visible; }
+
+.shadow { fill: rgba(15, 30, 60, 0.18); }
+
+/* Ходьба: ноги и руки качаются вокруг бедра/плеча, корпус слегка подпрыгивает. */
+.legL, .legR, .armL, .armR { transform-box: fill-box; transform-origin: 50% 0; }
+.body { transform-box: view-box; }
+
+.walking .legL { animation: swing 520ms ease-in-out infinite; }
+.walking .legR { animation: swing 520ms ease-in-out infinite reverse; }
+.walking .armL { animation: swing-arm 520ms ease-in-out infinite reverse; }
+.walking .armR { animation: swing-arm 520ms ease-in-out infinite; }
+.walking .body { animation: bob 260ms ease-in-out infinite alternate; }
+
+@keyframes swing { 0% { transform: rotate(16deg); } 50% { transform: rotate(-16deg); } 100% { transform: rotate(16deg); } }
+@keyframes swing-arm { 0% { transform: rotate(12deg); } 50% { transform: rotate(-12deg); } 100% { transform: rotate(12deg); } }
+@keyframes bob { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+
+/* Моргание и речь */
+.eyes { transform-box: fill-box; transform-origin: 50% 50%; animation: blink 4.2s infinite; }
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+
+.mouth { transform-box: fill-box; transform-origin: 50% 0; }
+.talking .mouth { animation: talk 280ms ease-in-out infinite alternate; }
+@keyframes talk { from { transform: scaleY(0.6); } to { transform: scaleY(1.8); } }
+
+.head { transform-box: fill-box; transform-origin: 50% 90%; }
+.talking .head { animation: nod 1.4s ease-in-out infinite; }
+@keyframes nod { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-3deg); } }
+
+/* Пассажир: дыхание и телефон */
+.torso { transform-box: fill-box; transform-origin: 50% 100%; animation: breath 3.8s ease-in-out infinite; animation-delay: var(--breath-delay, 0s); }
+@keyframes breath { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.015); } }
+
+.seatHead { transform-box: fill-box; transform-origin: 50% 100%; animation: look 9s ease-in-out infinite; animation-delay: var(--breath-delay, 0s); }
+@keyframes look { 0%, 70%, 100% { transform: rotate(0); } 78%, 90% { transform: rotate(6deg); } }
+
+.phone { animation: glow 3s ease-in-out infinite; }
+@keyframes glow { 0%, 100% { fill: #1c1c1e; } 50% { fill: #2c3e62; } }
+
+/* Портрет в кружке */
+.bust {
+  flex: none;
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #dfe8f6, #c8d6ec);
+}
+
+.bust > svg { position: absolute; left: 50%; top: 4%; transform: translateX(-50%); }
+.bustTalking { box-shadow: 0 0 0 2px var(--page-bg), 0 0 0 4px var(--blue); }
+
+@media (prefers-reduced-motion: reduce) {
+  .walking .legL, .walking .legR, .walking .armL, .walking .armR, .walking .body,
+  .eyes, .talking .mouth, .talking .head, .torso, .seatHead, .phone { animation: none !important; }
+}

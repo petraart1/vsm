@@ -67,7 +67,8 @@ export default function Leaderboard() {
   }
 
   const d = s.data;
-  const meInTop = d.me && d.top.some((t) => t.playerId === d.me.playerId);
+  const meInTop = d.top.some((t) => t.me);
+  const percentile = d.me && d.total > 1 ? Math.round(((d.total - d.me.rank) / (d.total - 1)) * 100) : null;
   const max = d.top.length ? d.top[0].totalScore : 0;
 
   return (
@@ -76,6 +77,13 @@ export default function Leaderboard() {
         title="Рейтинг"
         description="Проводники по сумме очков компетенций. Очки начисляются за каждое завершённое прохождение: больше за решения без ошибок безопасности."
       />
+
+      {percentile !== null && (
+        <div className={`${styles.percentile} rv`} style={{ "--i": 1 }}>
+          <span className={styles.pctNum}><CountUp value={percentile} />%</span>
+          <span className={styles.pctText}>Ваш результат лучше, чем у {percentile}% проводников. Место {d.me.rank} из {d.total}.</span>
+        </div>
+      )}
 
       {d.top.length === 0 ? (
         <EmptyState
@@ -94,7 +102,7 @@ export default function Leaderboard() {
           </div>
           <ol className={styles.list}>
             {d.top.map((entry, i) => (
-              <Row key={entry.playerId} entry={entry} index={i} max={max} isMe={d.me && entry.playerId === d.me.playerId} />
+              <Row key={entry.key} entry={entry} index={i} max={max} isMe={!!entry.me} />
             ))}
           </ol>
           {d.me && !meInTop && (

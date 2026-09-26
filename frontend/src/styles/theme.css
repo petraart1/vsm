@@ -1,57 +1,78 @@
 /*
- * ReactLab — визуальная система тренажёра.
- * Монохром по логотипу: чистый белый/чёрный, серые линии 1px, цвет только у данных
- * (безопасность — синий, дельты — зелёный/красный). Шрифт — Manrope, геометрический гротеск,
- * близкий к вордмарку ReactLab и с полной кириллицей.
+ * ReactLab · тренажёр проводника ВСМ — визуальная система.
+ *
+ * Основа — Apple Human Interface Guidelines: системный шрифт, серый grouped-фон и белые
+ * карточки без рамок, типографская шкала iOS, стеклянные панели навигации, кнопки-капсулы,
+ * пружинные кривые движения.
+ * Палитра — корпоративная ВСМ по итогам QA-сессии: синий, белый, серый. Корпоративный синий —
+ * форма проводника, ливрея поезда, бренд; интерактивный синий — всё, что нажимается.
+ * Красный — только критичное (таймер, ошибка безопасности), как красный нос поезда.
  */
 
 :root {
   color-scheme: light;
 
-  --font-sans: "Manrope Variable", "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Manrope Variable", "Manrope", "Segoe UI", Roboto, sans-serif;
+  --font-rounded: ui-rounded, "SF Pro Rounded", "Manrope Variable", "Manrope", sans-serif;
 
-  /* Поверхности */
-  --bg: #ffffff;
-  --bg-subtle: #fafafa;
-  --bg-muted: #f1f1f1;
-  --bg-hover: #f5f5f5;
-  --bg-inverse: #000000;
+  /* Фирменные */
+  --vsm-navy: #0b3d91;     /* корпоративный синий: форма, ливрея, бренд */
+  --vsm-navy-2: #123f8a;
+  --vsm-sky: #2aa7e8;      /* голубой: лояльность, свет в салоне */
+  --vsm-red: #d93025;      /* красный нос поезда: только критичное */
+  --vsm-steel: #8a94a6;    /* сталь вагона */
+
+  /* Поверхности (iOS grouped) */
+  --page-bg: #f2f2f7;
+  --bg: #ffffff;           /* карточка */
+  --bg-subtle: #f7f7fa;
+  --bg-muted: #e9e9ef;
+  --bg-hover: #eeeef3;
+  --bg-inverse: #1c1c1e;
 
   /* Текст */
-  --fg: #000000;
-  --fg-2: #4a4a4a;
-  --fg-3: #8a8a8a;
+  --fg: #1c1c1e;
+  --fg-2: #5e5e63;
+  --fg-3: #8e8e93;
   --fg-inverse: #ffffff;
 
-  /* Линии */
-  --line: #ebebeb;
-  --line-strong: #d4d4d4;
+  /* Разделители */
+  --line: #e3e3e8;
+  --line-strong: #c7c7cc;
 
-  /* Данные и статусы */
-  --blue: #0062d1;
-  --blue-soft: #ebf3ff;
-  --green: #117a3e;
-  --green-soft: #eaf7ef;
-  --red: #c9252d;
-  --red-soft: #fdeeee;
-  --amber: #a05000;
-  --amber-soft: #fff5e0;
+  /* Интерактив и статусы */
+  --blue: #0a64d8;
+  --blue-soft: #e6f0fc;
+  --green: #1e8e3e;
+  --green-soft: #e7f5ec;
+  --red: #d93025;
+  --red-soft: #fdecea;
+  --amber: #b26a00;
+  --amber-soft: #fff4e0;
 
-  --safety: var(--blue);
-  --loyalty: var(--fg);
+  --safety: #0a64d8;
+  --loyalty: #1f9bd8;
 
-  --focus: var(--blue);
-  --overlay: rgba(0, 0, 0, 0.32);
-  --shadow-pop: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 16px 40px -8px rgba(0, 0, 0, 0.14);
+  --focus: #0a64d8;
+  --overlay: rgba(0, 0, 0, 0.28);
+  --shadow-pop: 0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 12px 32px -8px rgba(15, 30, 60, 0.22);
+  --shadow-soft: 0 1px 2px rgba(15, 30, 60, 0.04), 0 6px 20px -8px rgba(15, 30, 60, 0.1);
 
-  /* Геометрия: чем крупнее контейнер, тем больше радиус */
-  --r-xs: 4px;
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
+  /* Материалы (стекло панелей навигации и таб-бара) */
+  --glass: rgba(249, 249, 251, 0.78);
+  --glass-strong: rgba(255, 255, 255, 0.86);
+  --glass-edge: rgba(255, 255, 255, 0.7);
+  --glass-blur: saturate(180%) blur(24px);
+
+  /* Геометрия: радиус растёт с размером контейнера (continuous corners) */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 22px;
+  --r-xl: 30px;
   --r-full: 999px;
 
-  /* Шкала отступов (4px) */
+  /* Отступы — ритм 4/8 */
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
@@ -63,104 +84,136 @@
   --s-12: 48px;
   --s-16: 64px;
 
-  /* Типографическая шкала */
-  --t-xs: 0.75rem;     /* 12 */
-  --t-sm: 0.8125rem;   /* 13 */
-  --t-base: 0.875rem;  /* 14 */
-  --t-md: 1rem;        /* 16 */
-  --t-lg: 1.25rem;     /* 20 */
-  --t-xl: 1.5rem;      /* 24 */
-  --t-2xl: 2rem;       /* 32 */
-  --t-3xl: 2.75rem;    /* 44 */
+  /* Типографика iOS (Large Title … Caption) */
+  --t-xs: 0.75rem;      /* 12 caption */
+  --t-sm: 0.8125rem;    /* 13 footnote */
+  --t-base: 0.9375rem;  /* 15 subheadline */
+  --t-md: 1.0625rem;    /* 17 body / headline */
+  --t-lg: 1.25rem;      /* 20 title 3 */
+  --t-xl: 1.375rem;     /* 22 title 2 */
+  --t-2xl: 1.75rem;     /* 28 title 1 */
+  --t-3xl: 2.125rem;    /* 34 large title */
 
-  /* Движение */
+  /* Движение: пружины iOS */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --dur-fast: 150ms;
-  --dur: 240ms;
-  --dur-slow: 700ms;
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);     /* лист (sheet) */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);  /* лёгкий перелёт */
+  --dur-fast: 160ms;
+  --dur: 260ms;
+  --dur-slow: 520ms;
 
-  --page-max: 1120px;
+  --page-max: 980px;
+  --tabbar-h: 64px;
 
-  /* Семантика оформления — эти токены переопределяют стили из variants.css. */
-  --page-bg: var(--bg);
-  --chrome-bg: color-mix(in srgb, var(--bg) 86%, transparent);
+  /* Семантика компонентов */
+  --chrome-bg: var(--glass);
   --panel-bg: var(--bg);
   --panel-bg-subtle: var(--bg-subtle);
-  --panel-border: var(--line);
+  --panel-border: transparent;
   --panel-radius: var(--r-lg);
   --panel-shadow: none;
   --panel-blur: none;
-  --pop-bg: var(--bg);
-  --ink: var(--fg);
-  --ink-fg: var(--bg);
-  --btn-bg: var(--fg);
-  --btn-fg: var(--bg);
-  --btn-radius: var(--r-sm);
-  --chip-radius: 6px;
-  --display-weight: 800;
-  --display-tracking: -0.045em;
-  --title-weight: 800;
+  --pop-bg: #ffffff;
+  --ink: var(--blue);
+  --ink-fg: #ffffff;
+  --btn-bg: var(--blue);
+  --btn-fg: #ffffff;
+  --btn-radius: var(--r-full);
+  --chip-radius: var(--r-full);
+  --display-weight: 700;
+  --display-tracking: -0.022em;
+  --title-weight: 700;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #000000;
-  --bg-subtle: #0a0a0a;
-  --bg-muted: #1c1c1c;
-  --bg-hover: #141414;
-  --bg-inverse: #ffffff;
+  --vsm-navy: #4c8df6;
+  --vsm-sky: #5ac8fa;
 
-  --fg: #ededed;
-  --fg-2: #a3a3a3;
-  --fg-3: #6f6f6f;
-  --fg-inverse: #000000;
+  --page-bg: #000000;
+  --bg: #1c1c1e;
+  --bg-subtle: #2c2c2e;
+  --bg-muted: #3a3a3c;
+  --bg-hover: #2c2c2e;
+  --bg-inverse: #f5f5f7;
 
-  --line: #242424;
-  --line-strong: #363636;
+  --fg: #f5f5f7;
+  --fg-2: #aeaeb2;
+  --fg-3: #8e8e93;
+  --fg-inverse: #1c1c1e;
 
-  --blue: #52a8ff;
-  --blue-soft: #0b1d33;
-  --green: #4cc38a;
-  --green-soft: #0d2418;
-  --red: #ff6166;
-  --red-soft: #2e1113;
-  --amber: #f1a10d;
-  --amber-soft: #2b1d05;
+  --line: #38383a;
+  --line-strong: #48484a;
 
-  --overlay: rgba(0, 0, 0, 0.66);
-  --shadow-pop: 0 0 0 1px #2a2a2a, 0 16px 40px -8px rgba(0, 0, 0, 0.8);
+  --blue: #3e8bff;
+  --blue-soft: #0f2847;
+  --green: #30d158;
+  --green-soft: #0f2a17;
+  --red: #ff5a4f;
+  --red-soft: #3a1512;
+  --amber: #ffb340;
+  --amber-soft: #33240a;
+
+  --safety: #3e8bff;
+  --loyalty: #5ac8fa;
+
+  --overlay: rgba(0, 0, 0, 0.56);
+  --shadow-pop: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 16px 40px -8px rgba(0, 0, 0, 0.7);
+  --shadow-soft: none;
+
+  --glass: rgba(28, 28, 30, 0.72);
+  --glass-strong: rgba(36, 36, 38, 0.86);
+  --glass-edge: rgba(255, 255, 255, 0.08);
+
+  --pop-bg: #2c2c2e;
+  --ink-fg: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --bg: #000000;
-    --bg-subtle: #0a0a0a;
-    --bg-muted: #1c1c1c;
-    --bg-hover: #141414;
-    --bg-inverse: #ffffff;
+    --vsm-navy: #4c8df6;
+    --vsm-sky: #5ac8fa;
 
-    --fg: #ededed;
-    --fg-2: #a3a3a3;
-    --fg-3: #6f6f6f;
-    --fg-inverse: #000000;
+    --page-bg: #000000;
+    --bg: #1c1c1e;
+    --bg-subtle: #2c2c2e;
+    --bg-muted: #3a3a3c;
+    --bg-hover: #2c2c2e;
+    --bg-inverse: #f5f5f7;
 
-    --line: #242424;
-    --line-strong: #363636;
+    --fg: #f5f5f7;
+    --fg-2: #aeaeb2;
+    --fg-3: #8e8e93;
+    --fg-inverse: #1c1c1e;
 
-    --blue: #52a8ff;
-    --blue-soft: #0b1d33;
-    --green: #4cc38a;
-    --green-soft: #0d2418;
-    --red: #ff6166;
-    --red-soft: #2e1113;
-    --amber: #f1a10d;
-    --amber-soft: #2b1d05;
+    --line: #38383a;
+    --line-strong: #48484a;
 
-    --overlay: rgba(0, 0, 0, 0.66);
-    --shadow-pop: 0 0 0 1px #2a2a2a, 0 16px 40px -8px rgba(0, 0, 0, 0.8);
+    --blue: #3e8bff;
+    --blue-soft: #0f2847;
+    --green: #30d158;
+    --green-soft: #0f2a17;
+    --red: #ff5a4f;
+    --red-soft: #3a1512;
+    --amber: #ffb340;
+    --amber-soft: #33240a;
+
+    --safety: #3e8bff;
+    --loyalty: #5ac8fa;
+
+    --overlay: rgba(0, 0, 0, 0.56);
+    --shadow-pop: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 16px 40px -8px rgba(0, 0, 0, 0.7);
+    --shadow-soft: none;
+
+    --glass: rgba(28, 28, 30, 0.72);
+    --glass-strong: rgba(36, 36, 38, 0.86);
+    --glass-edge: rgba(255, 255, 255, 0.08);
+
+    --pop-bg: #2c2c2e;
+    --ink-fg: #ffffff;
   }
 }

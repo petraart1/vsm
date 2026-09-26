@@ -2,30 +2,28 @@
 
 .trigger {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--panel-border);
+  border: none;
   border-radius: var(--r-full);
-  background: var(--panel-bg);
-  backdrop-filter: var(--panel-blur);
-  -webkit-backdrop-filter: var(--panel-blur);
-  color: var(--fg-2);
+  background: var(--bg-muted);
+  color: var(--fg);
   cursor: pointer;
-  transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
-.trigger:hover { color: var(--fg); border-color: var(--line-strong); }
+.trigger:active { transform: scale(0.92); }
 
 .badge {
   position: absolute;
-  top: 5px;
-  right: 6px;
-  width: 7px;
-  height: 7px;
+  top: 6px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--blue);
+  background: var(--red);
   box-shadow: 0 0 0 2px var(--bg);
 }
 

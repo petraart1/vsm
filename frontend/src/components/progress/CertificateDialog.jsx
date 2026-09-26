@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import Seal from "./Seal.jsx";
+import Medal from "../awards/Medal.jsx";
+import { moduleMedal, distinctionMedal, readFinish } from "../awards/awards.js";
 import Button from "../ui/Button.jsx";
 import Icon from "../ui/Icon.jsx";
 import { certificateNumber, formatDate, pluralRu } from "../../progress.js";
@@ -21,7 +22,7 @@ function ModuleContent({ q, playerId, displayName }) {
   return (
     <>
       <header className={styles.head}>
-        <Seal mark={q.code} state={q.status} progress={q.total ? q.completed / q.total : 0} size={104} />
+        <Medal {...moduleMedal(q, readFinish())} size={132} spin unlock={q.status === "certified"} />
         <div className={styles.headText}>
           <h2 className={styles.docTitle} id="certificate-title">
             {certified ? "Свидетельство о повышении квалификации" : "Программа учебного модуля"}
@@ -90,7 +91,7 @@ function DistinctionContent({ d }) {
   return (
     <>
       <header className={styles.head}>
-        <Seal mark={d.mark} caption="отличие" ring="ReactLab  •  служебное отличие  •  " state={d.earned ? "certified" : "not_started"} size={104} />
+        <Medal {...distinctionMedal(d, readFinish())} size={132} spin unlock={!!d.earned} />
         <div className={styles.headText}>
           <h2 className={styles.docTitle} id="certificate-title">{d.title}</h2>
           <p className={styles.number}>{d.earned ? `Отмечено ${formatDate(d.earnedAt)}` : "Ещё не получено"}</p>

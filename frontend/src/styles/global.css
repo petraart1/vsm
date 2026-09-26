@@ -15,7 +15,7 @@ html, body {
 
 /* Фон страницы — только у html: так фоновые слои стилей (фото, линии) под body остаются видны. */
 html { background: var(--page-bg); }
-body { background: transparent; font-size: var(--t-base); }
+body { background: transparent; font-size: var(--t-base); -webkit-tap-highlight-color: transparent; }
 
 #root { min-height: 100dvh; display: flex; flex-direction: column; }
 
@@ -43,11 +43,11 @@ button, input, select { font: inherit; color: inherit; }
   width: 100%;
   max-width: var(--page-max);
   margin: 0 auto;
-  padding: var(--s-10) var(--s-6) var(--s-16);
+  padding: var(--s-6) max(var(--s-5), env(safe-area-inset-right)) calc(var(--tabbar-h) + var(--s-12) + env(safe-area-inset-bottom)) max(var(--s-5), env(safe-area-inset-left));
 }
 
 @media (max-width: 600px) {
-  .app-main { padding: var(--s-6) var(--s-4) var(--s-12); }
+  .app-main { padding: var(--s-4) var(--s-4) calc(var(--tabbar-h) + var(--s-10) + env(safe-area-inset-bottom)); }
 }
 
 .app-play { flex: 1; display: flex; flex-direction: column; }

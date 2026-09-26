@@ -1,0 +1,11 @@
+.rings { display: block; transform: rotate(-90deg); flex: none; }
+.track, .fill { fill: none; }
+.fill { stroke-linecap: round; transition: stroke-dashoffset 1400ms var(--ease-spring); }
+.ring[data-tone="navy"] .fill { stroke: var(--vsm-navy); }
+.ring[data-tone="navy"] .track { stroke: color-mix(in srgb, var(--vsm-navy) 14%, transparent); }
+.ring[data-tone="blue"] .fill { stroke: var(--blue); }
+.ring[data-tone="blue"] .track { stroke: color-mix(in srgb, var(--blue) 14%, transparent); }
+.ring[data-tone="sky"] .fill { stroke: var(--loyalty); }
+.ring[data-tone="sky"] .track { stroke: color-mix(in srgb, var(--loyalty) 16%, transparent); }
+:global([data-theme="dark"]) .ring[data-tone="navy"] .fill { stroke: #5b8def; }
+:global([data-theme="dark"]) .ring[data-tone="navy"] .track { stroke: rgba(91, 141, 239, 0.2); }

@@ -377,15 +377,15 @@ export function pluralRu(n, one, few, many) {
 // =======================================================================
 
 const DISTINCTIONS = {
-  FIRST_SCENARIO: { title: "Вводный инструктаж", mark: "ВИ" },
-  FLAWLESS_SAFETY: { title: "Отличие за безопасность", mark: "Б" },
-  PASSENGER_FAVORITE: { title: "Отличие за сервис", mark: "С" },
-  VERSATILE: { title: "Широкий профиль подготовки", mark: "ШП" },
+  FIRST_SCENARIO: { title: "Вводный инструктаж", mark: "ВИ", glyph: "flag" },
+  FLAWLESS_SAFETY: { title: "Отличие за безопасность", mark: "Б", glyph: "shield" },
+  PASSENGER_FAVORITE: { title: "Отличие за сервис", mark: "С", glyph: "smile" },
+  VERSATILE: { title: "Широкий профиль подготовки", mark: "ШП", glyph: "sparkle" },
   VETERAN: { title: "Десять учебных рейсов", mark: "10" }
 };
 
 /** AchievementDto -> отличие для витрины: формальное название, монограмма для печати. */
 export function toDistinction(a) {
   const meta = DISTINCTIONS[a.code] || { title: a.title, mark: (a.title || "?").slice(0, 2).toUpperCase() };
-  return { ...a, title: meta.title, mark: meta.mark };
+  return { ...a, title: meta.title, mark: meta.mark, glyph: meta.glyph || null };
 }

@@ -1,127 +1,53 @@
-.page { display: flex; flex-direction: column; gap: var(--s-10); }
+.page { width: min(100%, 880px); margin: 0 auto; display: flex; flex-direction: column; gap: var(--s-8); }
+.page > header { margin-bottom: 0; }
 
-.totals {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  margin: 0;
-  border-bottom: 1px solid var(--line);
-  /* Стыкуется с нижней линией заголовка страницы: убираем его отступ и зазор страницы. */
-  margin-top: calc(-1 * (var(--s-10) + var(--ph-gap, var(--s-8))));
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-4); background: var(--bg); border-radius: var(--r-lg); padding: var(--s-4) var(--s-5); }
+.totals { margin: 0; display: flex; gap: var(--s-6); }
+.totals div { display: flex; flex-direction: column; }
+.totals dt { font-size: var(--t-xs); color: var(--fg-2); }
+.totals dd { margin: 0; font-size: var(--t-2xl); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.totals small { font-size: var(--t-sm); color: var(--fg-3); font-weight: 600; }
+
+/* iOS segmented control */
+.segmented { display: inline-flex; padding: 2px; border-radius: 9px; background: var(--bg-muted); }
+.segmented button { border: 0; background: none; padding: 6px 14px; border-radius: 7px; font-size: var(--t-sm); font-weight: 500; color: var(--fg); cursor: pointer; transition: background 250ms var(--ease-spring), box-shadow 250ms; }
+.segmented button[data-on] { background: var(--bg); font-weight: 600; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04); }
+:global([data-theme="dark"]) .segmented button[data-on] { background: #636366; }
+
+.sectionTitle { font-size: var(--t-xl); font-weight: 700; letter-spacing: -0.02em; margin-bottom: var(--s-4); }
+
+.featured { display: flex; align-items: center; gap: var(--s-6); padding: var(--s-6) var(--s-5); border-radius: var(--r-lg); background: linear-gradient(160deg, var(--bg), color-mix(in srgb, var(--blue) 8%, var(--bg))); }
+.featTitle { font-size: var(--t-lg); font-weight: 700; letter-spacing: -0.02em; }
+.featNote { font-size: var(--t-sm); color: var(--fg-2); margin-top: 4px; line-height: 1.4; }
+.featHint { font-size: var(--t-xs); color: var(--fg-3); margin-top: var(--s-3); }
+
+.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s-3); }
+.grid li { animation: rise 700ms var(--ease-spring) both; animation-delay: calc(var(--i, 0) * 45ms + 150ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+
+.award {
+  width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+  padding: var(--s-5) var(--s-3) var(--s-4); border: 0; border-radius: var(--r-lg); background: var(--bg); color: var(--fg); cursor: pointer;
+  transition: transform 300ms var(--ease-spring), box-shadow 300ms;
 }
+.award:hover { box-shadow: 0 10px 28px rgba(10, 30, 70, 0.1); }
+.award:active { transform: scale(0.97); }
+.award[data-highlighted] { box-shadow: 0 0 0 2px var(--blue); }
+.medalWrap { position: relative; display: grid; place-items: center; width: 112px; height: 112px; margin-bottom: 4px; }
+.awardTitle { font-weight: 600; font-size: var(--t-sm); line-height: 1.3; letter-spacing: -0.01em; }
+.award:not([data-earned]) .awardTitle { color: var(--fg-2); }
+.awardMeta { font-size: var(--t-xs); color: var(--fg-3); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-.totals div { display: flex; flex-direction: column; gap: 6px; padding: var(--s-5) var(--s-5) var(--s-5) 0; }
-.totals div + div { padding-left: var(--s-5); border-left: 1px solid var(--line); }
-.totals dt { font-size: var(--t-sm); color: var(--fg-2); }
-.totals dd {
-  margin: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  font-size: var(--t-2xl);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.045em;
-}
-.totals .of { font-size: var(--t-sm); font-weight: 600; color: var(--fg-3); letter-spacing: 0; }
-
-/* ---------- Ведомость: 10 ячеек-модулей ---------- */
-
-.transcript {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 6px;
-}
-
-.cell {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  padding: var(--s-3);
-  font: inherit;
-  text-align: left;
-  color: var(--fg-2);
-  background: var(--panel-bg);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--r-md);
-  backdrop-filter: var(--panel-blur);
-  -webkit-backdrop-filter: var(--panel-blur);
-  cursor: pointer;
-  transition: border-color var(--dur-fast) ease, transform var(--dur-fast) ease;
-}
-
-.cell:hover { border-color: var(--fg-3); transform: translateY(-2px); }
-
-.cellCode { font-weight: 800; font-variant-numeric: tabular-nums; font-size: var(--t-md); letter-spacing: -0.02em; }
-
-.cellBar { display: block; height: 3px; border-radius: 2px; background: var(--bg-muted); overflow: hidden; }
-.cellBar span { display: block; height: 100%; background: var(--ink); transform-origin: left; transition: transform 900ms var(--ease-out); }
-
-.cell[data-state="certified"] { background: var(--ink); border-color: var(--ink); color: var(--ink-fg); }
-.cell[data-state="certified"] .cellBar { background: color-mix(in srgb, var(--ink-fg) 30%, transparent); }
-.cell[data-state="certified"] .cellBar span { background: var(--ink-fg); }
-.cell[data-state="not_started"] { background: transparent; border-style: dashed; color: var(--fg-3); }
-
-/* ---------- Модули ---------- */
-
-.sectionHead { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-5); }
-.sectionTitle { font-size: var(--t-lg); font-weight: var(--title-weight); letter-spacing: -0.03em; }
-section > .sectionTitle { margin-bottom: var(--s-5); }
-
-.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-3); }
-
-/* ---------- Отличия: оттиски без карточек ---------- */
-
-.distinctions {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: var(--s-4);
-}
-
-.distinction {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-5) var(--s-3);
-  font: inherit;
-  color: inherit;
-  text-align: center;
-  background: none;
-  border: 1px solid transparent;
-  border-radius: var(--r-lg);
-  cursor: pointer;
-  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
-}
-
-.distinction:hover { background: var(--panel-bg); border-color: var(--panel-border); }
-.distinction svg { transition: transform 600ms var(--ease-out); }
-.distinction:hover svg { transform: rotate(-12deg) scale(1.04); }
-.distinction[data-highlighted] { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
-
-.distTitle { font-weight: 700; font-size: var(--t-base); line-height: 1.3; }
-.distinction:not([data-earned]) .distTitle { color: var(--fg-2); }
-.distMeta { font-size: var(--t-xs); color: var(--fg-3); line-height: 1.4; }
-
-@media (max-width: 900px) {
-  .totals { grid-template-columns: repeat(2, 1fr); }
-  .totals div:nth-child(3) { border-left: none; padding-left: 0; }
-  .totals div:nth-child(n + 3) { border-top: 1px solid var(--line); }
-  .transcript { grid-template-columns: repeat(5, 1fr); }
-  .grid { grid-template-columns: 1fr; }
-}
+.progress { position: absolute; inset: 0; transform: rotate(-90deg); }
+.progressTrack { fill: none; stroke: var(--bg-muted); stroke-width: 4; }
+.progressFill { fill: none; stroke: var(--blue); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 1.2s var(--ease-spring); }
 
 @media (max-width: 600px) {
-  .totals { --ph-gap: var(--s-6); }
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .toolbar { padding: var(--s-4); }
+  .totals { gap: var(--s-5); width: 100%; }
+  .segmented { width: 100%; }
+  .segmented button { flex: 1; }
+  .featured { gap: var(--s-4); }
 }
-
-@media (max-width: 480px) {
-  .distinctions { grid-template-columns: repeat(2, 1fr); }
-}
+@media (prefers-reduced-motion: reduce) { .grid li { animation: none; } }

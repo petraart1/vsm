@@ -96,7 +96,7 @@ export default function NotificationBell() {
         aria-expanded={open}
         aria-label={unreadCount > 0 ? `Уведомления, непрочитанных: ${unreadCount}` : "Уведомления"}
       >
-        <Icon name="bell" size={16} />
+        <Icon name="bell" size={17} />
         {unreadCount > 0 && <span className={styles.badge} aria-hidden="true" />}
       </button>
       {open && (

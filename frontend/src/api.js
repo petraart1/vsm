@@ -73,7 +73,10 @@ export function getPlayerId() {
  * в едином формате {error, message} (см. scenario/ScenarioExceptionHandler). */
 function apiFetch(path, options = {}) {
   const headers = { Accept: "application/json" };
-  if (options.requiresPlayer) headers["X-Player-Id"] = getPlayerId();
+  // Личность игрока нужна почти всем эндпоинтам: профиль, ачивки, уведомления, челленджи и
+  // разбор проверяют владельца (403 без заголовка), лидерборд по нему помечает строку "me".
+  // Поэтому заголовок уходит всегда, кроме явного publicCall.
+  if (!options.publicCall) headers["X-Player-Id"] = getPlayerId();
   return fetch(API_BASE + path, { method: options.method || "GET", headers }).then((res) => {
     if (res.status === 204) return null;
     return res.text().then((text) => {
@@ -254,9 +257,12 @@ function realListScenarios() {
   });
 }
 
-function realStartScenario(scenarioId) {
+/** carClass — STANDARD | COMFORT | BUSINESS | FIRST: один и тот же выбор по-разному влияет на
+ * лояльность в зависимости от класса вагона (портрет пассажира, см. README backend). */
+function realStartScenario(scenarioId, carClass) {
+  const qs = carClass ? `?carClass=${encodeURIComponent(carClass)}` : "";
   return apiFetch(`/api/scenarios/${scenarioId}`, { method: "GET" }).catch(() => null)
-    .then((summary) => apiFetch(`/api/scenarios/${scenarioId}/progress`, { method: "POST", requiresPlayer: true })
+    .then((summary) => apiFetch(`/api/scenarios/${scenarioId}/progress${qs}`, { method: "POST", requiresPlayer: true })
       .then((progressState) => {
         if (!progressState.currentNode) return { error: "not_found" };
         return loadCatalog().catch(() => null).then((catalog) => ({
@@ -266,6 +272,7 @@ function realStartScenario(scenarioId) {
             title: summary ? summary.title : progressState.scenarioCode,
             blockLabel: summary ? blockLabelFor(catalog, summary.block) : ""
           },
+          carClass: progressState.carClass || carClass || "STANDARD",
           scales: { loyalty: progressState.loyaltyScore, safety: progressState.safetyScore },
           node: realNodeView(progressState.currentNode)
         }));
@@ -306,9 +313,18 @@ function realGetProfile(playerId) {
   }));
 }
 
+/**
+ * Лидерборд без реальных playerId (см. «Безопасность» в README backend): у строки есть только
+ * publicId и признак me — «моя» строка определяется сервером по X-Player-Id запроса.
+ * Нормализуем в { top, me, total }, где у каждой строки есть стабильный key.
+ */
 function realGetLeaderboard(opts = {}) {
-  const qs = `?limit=${opts.limit || 20}&playerId=${encodeURIComponent(opts.playerId || getPlayerId())}`;
-  return apiFetch(`/api/gamification/leaderboard${qs}`, { method: "GET" });
+  return apiFetch(`/api/gamification/leaderboard?limit=${opts.limit || 50}`, { method: "GET" }).then((d) => {
+    const norm = (e) => (e ? { ...e, key: e.publicId || `${e.rank}-${e.displayName}`, me: !!e.me } : null);
+    const top = (d.top || []).map(norm);
+    const me = d.me ? { ...norm(d.me), me: true } : top.find((e) => e.me) || null;
+    return { top, me, total: d.total || top.length };
+  });
 }
 
 function realGetAchievements(playerId) {
@@ -541,7 +557,7 @@ function mockListScenarios() {
   });
 }
 
-function mockStartScenario(scenarioId) {
+function mockStartScenario(scenarioId, carClass) {
   return loadCatalog().then((catalog) => {
     const situation = catalog.situations.filter((s) => String(s.id) === String(scenarioId))[0];
     if (!situation) return delay({ error: "not_found" });
@@ -556,6 +572,7 @@ function mockStartScenario(scenarioId) {
     const node = graph.nodes[graph.startNode];
     return delay({
       sessionId,
+      carClass: carClass || "STANDARD",
       scenario: { id: situation.id, title: situation.title, blockLabel: blockLabelFor(catalog, situation.block) },
       scales: mockSessions[sessionId].scales,
       node: mockNodeView(node)
@@ -707,10 +724,18 @@ function mockGetProfile() {
 
 function mockGetLeaderboard() {
   return mockGetProfile().then((profile) => {
-    const me = profile.scenariosCompleted > 0
-      ? { rank: 1, playerId: profile.playerId, displayName: profile.displayName, totalScore: profile.totalScore, scenariosCompleted: profile.scenariosCompleted }
+    // Синтетические коллеги только для мок-режима (152-ФЗ: вымышленные имена).
+    const colleagues = [
+      ["Ковалёва Дарья", 1840, 34], ["Гусейнов Тимур", 1512, 29], ["Лаптева Ника", 1296, 27],
+      ["Орехов Семён", 1103, 22], ["Буранова Эльза", 922, 19], ["Щукин Вадим", 640, 14],
+      ["Мирзоева Алина", 410, 9], ["Фомичёв Глеб", 188, 5]
+    ].map(([displayName, totalScore, scenariosCompleted]) => ({ displayName, totalScore, scenariosCompleted, me: false }));
+    const mine = profile.scenariosCompleted > 0
+      ? { displayName: profile.displayName, totalScore: profile.totalScore, scenariosCompleted: profile.scenariosCompleted, me: true }
       : null;
-    return { top: me ? [me] : [], me };
+    const all = colleagues.concat(mine ? [mine] : []).sort((a, b) => b.totalScore - a.totalScore)
+      .map((e, i) => ({ ...e, rank: i + 1, key: `mock-${i}` }));
+    return { top: all, me: all.find((e) => e.me) || null, total: all.length };
   });
 }
 
@@ -809,7 +834,7 @@ function mockGetCompetencyAnalytics() {
 // =======================================================================================
 
 export function listScenarios() { return USE_MOCKS ? mockListScenarios() : realListScenarios(); }
-export function startScenario(scenarioId) { return USE_MOCKS ? mockStartScenario(scenarioId) : realStartScenario(scenarioId); }
+export function startScenario(scenarioId, carClass) { return USE_MOCKS ? mockStartScenario(scenarioId, carClass) : realStartScenario(scenarioId, carClass); }
 export function choose(sessionId, choiceId) { return USE_MOCKS ? mockChoose(sessionId, choiceId) : realChoose(sessionId, choiceId); }
 export function timeout(sessionId) { return USE_MOCKS ? mockTimeout(sessionId) : realTimeout(sessionId); }
 export function getDebrief(sessionId) { return USE_MOCKS ? mockGetDebrief(sessionId) : realGetDebrief(sessionId); }

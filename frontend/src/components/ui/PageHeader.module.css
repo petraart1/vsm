@@ -1,28 +1,28 @@
+/* Крупный заголовок в духе iOS Large Title: без разделителя, воздух вместо линий. */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   flex-wrap: wrap;
-  gap: var(--s-4) var(--s-8);
-  padding-bottom: var(--s-8);
-  margin-bottom: var(--s-8);
-  border-bottom: 1px solid var(--line);
+  gap: var(--s-3) var(--s-6);
+  padding: var(--s-2) 0 0;
+  margin-bottom: var(--s-6);
 }
 
-.text { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }
+.text { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
 
 .title {
   font-size: var(--t-3xl);
   font-weight: var(--display-weight);
-  letter-spacing: var(--display-tracking);
-  line-height: 1.05;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
 }
 
-.description { color: var(--fg-2); font-size: var(--t-md); max-width: 60ch; }
+.description { color: var(--fg-2); font-size: var(--t-md); line-height: 1.4; max-width: 60ch; }
 
 .actions { display: flex; align-items: center; gap: var(--s-2); }
 
 @media (max-width: 600px) {
-  .title { font-size: var(--t-2xl); }
-  .header { padding-bottom: var(--s-6); margin-bottom: var(--s-6); }
+  .title { font-size: 30px; }
+  .header { margin-bottom: var(--s-5); }
 }

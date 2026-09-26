@@ -8,11 +8,11 @@
 
 .mark { flex: none; display: block; }
 
-.tile { fill: var(--fg); }
+.tile { fill: var(--vsm-navy); }
 
 .brain path {
   fill: none;
-  stroke: var(--bg);
+  stroke: #ffffff;
   stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
