@@ -1,0 +1,9 @@
+.mark { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.ring { fill: var(--bg); }
+.edge { fill: none; stroke: var(--blue); stroke-width: 1.6; }
+.fill { fill: var(--blue); }
+.slash { stroke: var(--fg); stroke-width: 1.8; stroke-linecap: round; }
+.mark[data-level="none"] .edge { stroke: var(--line-strong); }
+.mark[data-level="0"] .edge { stroke: var(--fg); }
+.label { font-size: var(--t-xs); font-weight: 600; color: var(--fg-2); white-space: nowrap; }
+.mark[data-level="0"] .label { color: var(--fg); }

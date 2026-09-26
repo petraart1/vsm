@@ -1,5 +1,7 @@
-import { Fragment } from "react";
-import { TopBar, TabBar } from "./components/ui/Chrome.jsx";
+import { Fragment, useState } from "react";
+import DailyReward from "./components/engagement/DailyReward.jsx";
+import { recordVisit } from "./engagement.js";
+import { TopBar, TabBar, Sidebar } from "./components/ui/Chrome.jsx";
 import Button from "./components/ui/Button.jsx";
 import EmptyState from "./components/ui/EmptyState.jsx";
 import Splash from "./components/brand/Splash.jsx";
@@ -19,6 +21,8 @@ import Achievements from "./screens/Achievements.jsx";
  */
 export default function App() {
   const route = useHashRoute();
+  // Заход в приложение отмечается один раз за запуск; первая за день — шторка награды за вход.
+  const [visit] = useState(() => ({ ...recordVisit(), splash: !readSplashSeen() }));
   const screen = route.screen;
   const isPlay = screen === "scenarios" && route.segments[2] === "play";
   const isShift = screen === "shift";
@@ -46,10 +50,16 @@ export default function App() {
   return (
     <Fragment>
       <Splash />
+      {!immersive && <Sidebar activeScreen={screen} />}
       {!immersive && <TopBar activeScreen={screen} />}
       {/* key по пути: при переходе экран монтируется заново и проигрывает свой вход. */}
       <main key={route.path} className={immersive ? "app-play" : "app-main"}>{body}</main>
       {!immersive && <TabBar activeScreen={screen} />}
+      {!immersive && <DailyReward visit={visit} delay={visit.splash ? 2900 : 700} />}
     </Fragment>
   );
+}
+
+function readSplashSeen() {
+  try { return sessionStorage.getItem("reactlab.splashSeen.v1") === "1"; } catch (e) { return false; }
 }

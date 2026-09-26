@@ -29,3 +29,12 @@
 .cta { width: 100%; }
 
 @media (prefers-reduced-motion: reduce) { .hills, .conductor { animation: none; } }
+
+.debrief { display: flex; flex-direction: column; gap: var(--s-2); max-height: 46dvh; overflow-y: auto; }
+.debriefVerdict { font-weight: 700; font-size: var(--t-lg); letter-spacing: -0.02em; }
+.debriefList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.debriefList li { font-size: var(--t-sm); line-height: 1.45; color: var(--fg-2); padding-left: 10px; border-left: 2px solid var(--line-strong); }
+.debriefList li[data-best] { border-left-color: var(--blue); }
+.debriefList b { color: var(--fg); }
+.debriefNote { font-size: var(--t-sm); color: var(--fg-2); }
+.debriefActions { display: flex; flex-direction: column; gap: var(--s-2); margin-top: var(--s-2); }

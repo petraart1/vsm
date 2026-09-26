@@ -86,3 +86,31 @@
 .percentile { display: flex; align-items: center; gap: var(--s-4); padding: var(--s-5); margin-bottom: var(--s-5); border-radius: var(--r-lg); background: linear-gradient(135deg, var(--vsm-navy), var(--blue)); color: #fff; }
 .pctNum { font-size: 40px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
 .pctText { font-size: var(--t-sm); line-height: 1.4; opacity: 0.9; }
+
+/* iOS-оформление и раскладка */
+.table { background: var(--bg); border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; border-radius: var(--r-lg); }
+.head { background: transparent; border-bottom: 0.5px solid var(--line); }
+.row { border-top: 0.5px solid var(--line); cursor: pointer; transition: background var(--dur-fast); }
+.row:hover { background: var(--bg-hover); }
+.row[data-me] { background: var(--blue-soft); }
+.you { background: var(--blue); color: #fff; }
+.scoreBar span { background: var(--blue); }
+.rank { font-weight: 700; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
+.aside { display: flex; flex-direction: column; gap: var(--s-4); }
+.tableCol { min-width: 0; }
+@media (min-width: 1100px) {
+  .layout { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
+  .aside { order: 2; position: sticky; top: var(--s-8); }
+}
+.percentile { margin-bottom: 0; }
+.podium { display: grid; grid-template-columns: repeat(3, 1fr); align-items: end; gap: var(--s-2); padding: var(--s-5) var(--s-4) 0; background: var(--bg); border-radius: var(--r-lg); overflow: hidden; }
+.podiumCol { display: flex; flex-direction: column; align-items: center; gap: 6px; border: 0; background: none; cursor: pointer; color: var(--fg); padding: 0; }
+.podiumName { font-weight: 600; font-size: var(--t-sm); }
+.podiumScore { font-size: var(--t-xs); color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.podiumStep { width: 100%; border-radius: 10px 10px 0 0; background: linear-gradient(180deg, var(--blue-soft), color-mix(in srgb, var(--blue) 18%, var(--bg))); }
+.podiumCol[data-place="1"] .podiumStep { height: 64px; }
+.podiumCol[data-place="2"] .podiumStep { height: 44px; }
+.podiumCol[data-place="3"] .podiumStep { height: 30px; }
+.hint { font-size: var(--t-xs); color: var(--fg-2); padding: 0 var(--s-2); }

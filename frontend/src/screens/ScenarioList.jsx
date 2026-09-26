@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import * as api from "../api.js";
 import Badge from "../components/ui/Badge.jsx";
+import VerdictMark from "../components/ui/VerdictMark.jsx";
+import { STRESS_SCENARIOS } from "../shift/stressScenarios.js";
+import { SeatedPerson } from "../components/characters/People.jsx";
 import Button from "../components/ui/Button.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
@@ -29,9 +32,7 @@ function ScenarioRow({ situation, highlighted }) {
   return (
     <li ref={ref} className={styles.row} data-highlighted={highlighted || undefined}>
       <a className={styles.rowLink} href={`#/scenarios/${situation.id}/play`}>
-        <span className={styles.status} data-done={done || undefined} aria-label={done ? "Пройден" : "Не пройден"}>
-          {done && <Icon name="check" size={12} strokeWidth={3} />}
-        </span>
+        <VerdictMark verdict={done && r ? r.verdict : null} size={20} className={styles.statusMark} />
         <span className={styles.rowMain}>
           <span className={styles.rowTitle}>{situation.title}</span>
           <span className={styles.rowTags}>
@@ -142,8 +143,8 @@ export default function ScenarioList({ route }) {
   return (
     <div>
       <PageHeader
-        title="Сценарии"
-        description="51 ситуация на борту ВСМ Москва — Санкт-Петербург. Каждое решение меняет лояльность пассажира и рейтинг безопасности."
+        title="Тренировки"
+        description="Ситуации на борту ВСМ Москва — Санкт-Петербург вне смены: отработайте диалог, затем проверьте себя в рейсе."
         actions={nextUp && (
           <Button as="a" href={`#/scenarios/${nextUp.id}/play`}>
             <Icon name="play" size={14} />Следующий сценарий
@@ -161,7 +162,27 @@ export default function ScenarioList({ route }) {
         </div>
       </div>
 
-      <div className={`${styles.toolbar} rv`} style={{ "--i": 2 }}>
+      <section className={`${styles.stress} rv`} style={{ "--i": 2 }} aria-labelledby="stress-title">
+        <div className={styles.stressHead}>
+          <h2 id="stress-title">Стрессовые ситуации</h2>
+          <p>Нарушение порядка, опьянение, драка, приступ — что делает проводник и что делает полиция.</p>
+        </div>
+        <ul className={styles.stressList}>
+          {STRESS_SCENARIOS.map((sc, i) => (
+            <li key={sc.id}>
+              <a className={styles.stressCard} href={`#/scenarios/local-${sc.id}/play`}>
+                <span className={styles.stressArt} aria-hidden="true"><SeatedPerson variant={i * 3 + 1} size={64} mood={sc.mood} /></span>
+                <span className={styles.stressText}>
+                  <span className={styles.stressTitle}>{sc.title}</span>
+                  <span className={styles.stressMeta}>{sc.urgent ? "Срочно" : "Без спешки"} · {sc.blockLabel}</span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <div className={`${styles.toolbar} rv`} style={{ "--i": 3 }}>
         <label className={styles.search}>
           <Icon name="search" size={16} />
           <span className="visually-hidden">Поиск по названию</span>

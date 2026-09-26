@@ -175,7 +175,7 @@ function Bubble({ m, speaker }) {
 }
 
 function Portrait({ speaker, talking, size }) {
-  if (speaker.kind === "passenger") return <PassengerBust variant={speaker.variant} size={size} talking={talking} />;
+  if (speaker.kind === "passenger") return <PassengerBust variant={speaker.variant} size={size} talking={talking} mood={speaker.mood} />;
   return <PersonBust outfit={speaker.outfit} size={size} />;
 }
 

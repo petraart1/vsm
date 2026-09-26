@@ -8,6 +8,8 @@ import Medal from "../components/awards/Medal.jsx";
 import CarScene from "../components/shift/CarScene.jsx";
 import ChatDialog from "../components/dialog/ChatDialog.jsx";
 import useScenarioDialog from "../components/dialog/useScenarioDialog.js";
+import useLocalDialog from "../components/dialog/useLocalDialog.js";
+import { STRESS_SCENARIOS, MED_CONDITIONS, rollCondition, shuffled, findStress } from "../shift/stressScenarios.js";
 import { Person } from "../components/characters/People.jsx";
 import { CountUp, SplitText } from "../components/motion/Motion.jsx";
 import {
@@ -43,14 +45,18 @@ export default function Shift({ route }) {
   const [medLog, setMedLog] = useState([]);
   const [points, setPoints] = useState([]);
   const [incidents, setIncidents] = useState([]);
+  const [conditionMode, setConditionMode] = useState("random");
+  const [condition, setCondition] = useState("fit");
 
   useEffect(() => {
     api.listScenarios().then((d) => setSituations(d.situations || []), () => setSituations([]));
   }, []);
 
   function begin() {
-    setSeed(Date.now() % 100000);
+    const nextSeed = Date.now() % 100000;
+    setSeed(nextSeed);
     setMedLog([]);
+    setCondition(conditionMode === "random" ? rollCondition(rng(nextSeed + 17)) : conditionMode);
     setPhase("med");
   }
 
@@ -62,7 +68,38 @@ export default function Shift({ route }) {
   function toTrip(finalPoints) {
     setPoints(finalPoints);
     const extras = finalPoints.filter((p) => p.faulty && !p.checked && p.situationId).map((p) => p.situationId);
-    setIncidents(planIncidents(situations || [], passengers.length ? passengers : [{ seat: 0 }], rand, [...new Set(extras)]));
+    const pool = passengers.length ? passengers : [{ seat: 0 }];
+    const backend = planIncidents(situations || [], pool, rand, [...new Set(extras)]);
+    // Два стрессовых эпизода: один срочный и один любой, на местах, не занятых другими вызовами.
+    const urgent = STRESS_SCENARIOS.filter((x) => x.urgent);
+    // ?stress=<id> — принудительный сценарий для демонстрации (например, drunk-rowdy).
+    const forced = route.query && route.query.stress ? findStress(route.query.stress) : null;
+    const first = forced || urgent[Math.floor(rand() * urgent.length)];
+    const rest = STRESS_SCENARIOS.filter((x) => x.id !== first.id);
+    const second = rest[Math.floor(rand() * rest.length)];
+    const taken = new Set(backend.map((i) => i.seat));
+    const free = pool.filter((p) => !taken.has(p.seat));
+    const stress = [first, second].map((sc, i) => ({
+      key: `st-${i}`,
+      local: sc.id,
+      title: sc.title,
+      block: sc.block,
+      blockLabel: sc.blockLabel,
+      urgent: sc.urgent,
+      mood: sc.mood,
+      removal: !!sc.removal,
+      seat: (free[i] || pool[(i + 3) % pool.length]).seat,
+      x: sc.at === "vestibule" ? "vestibule" : undefined,
+      status: "pending",
+      remaining: sc.urgent ? 35 : 50,
+      result: null
+    }));
+    // Основные сценарии — 2 из backend + всплывшие после приёмки; вперемешку со стрессовыми.
+    const main = backend.filter((i) => !i.fromInspection).slice(0, 2);
+    const extra = backend.filter((i) => i.fromInspection);
+    const order = [main[0], stress[0], main[1], stress[1], ...extra].filter(Boolean);
+    const at = [0.07, 0.22, 0.4, 0.55, 0.7, 0.8, 0.88];
+    setIncidents(order.map((i, n) => ({ ...i, spawnAt: at[n] ?? 0.9 })));
     setPhase("trip");
   }
 
@@ -73,8 +110,9 @@ export default function Shift({ route }) {
 
   const exit = () => navigate("/today");
 
-  if (phase === "setup") return <Setup clsKey={clsKey} setClsKey={setClsKey} onStart={begin} ready={situations !== null} onBack={exit} />;
-  if (phase === "med") return <MedCheck cls={cls} onDone={(log) => { setMedLog(log); toInspection(); }} onExit={exit} />;
+  if (phase === "setup") return <Setup clsKey={clsKey} setClsKey={setClsKey} conditionMode={conditionMode} setConditionMode={setConditionMode} onStart={begin} ready={situations !== null} onBack={exit} />;
+  if (phase === "med") return <MedCheck cls={cls} condition={condition} onDone={(log, admitted) => { setMedLog(log); if (admitted) toInspection(); else setPhase("rejected"); }} onExit={exit} />;
+  if (phase === "rejected") return <NotAdmitted cls={cls} condition={condition} med={medLog} onAgain={() => setPhase("setup")} />;
   if (phase === "inspect") return <Inspection cls={cls} passengers={passengers} points={points} onDone={toTrip} onExit={exit} />;
   if (phase === "trip") return <Trip cls={cls} passengers={passengers} initial={incidents} onDone={finish} onExit={exit} />;
   return <Summary cls={cls} med={medLog} inspection={points} incidents={incidents} onAgain={() => setPhase("setup")} />;
@@ -84,8 +122,20 @@ export default function Shift({ route }) {
 // Выбор вагона
 // ---------------------------------------------------------------------------
 
-function Setup({ clsKey, setClsKey, onStart, ready, onBack }) {
+function Setup({ clsKey, setClsKey, conditionMode, setConditionMode, onStart, ready, onBack }) {
   return (
+    <div className={styles.setupWrap}>
+    <aside className={styles.setupArt} aria-hidden="true">
+      <img src={`${import.meta.env.BASE_URL}backgrounds/express.jpg`} alt="" />
+      <div className={styles.setupShade} />
+      <div className={styles.setupCrew}>
+        <Person outfit="medic" hair={1} size={210} />
+        <Person outfit="chief" hair={2} size={230} />
+        <Person outfit="conductor" size={250} />
+        <Person outfit="guard" hair={2} size={225} />
+      </div>
+      <p className={styles.setupQuote}>Бригада поезда Москва — Санкт-Петербург. Ваша смена начинается с медпункта.</p>
+    </aside>
     <div className={styles.setup}>
       <header className={styles.navBar}>
         <button type="button" className={styles.back} onClick={onBack}><Icon name="chevronLeft" size={20} />Сегодня</button>
@@ -114,6 +164,14 @@ function Setup({ clsKey, setClsKey, onStart, ready, onBack }) {
           })}
         </ul>
 
+        <h2 className={styles.groupLabel}>Самочувствие на заступе</h2>
+        <div className={styles.segmented} role="radiogroup" aria-label="Самочувствие на заступе">
+          {[["random", "Случайно"], ["fit", "Норма"], ["fever", "Температура"], ["alcohol", "Алкоголь"], ["substances", "Препараты"]].map(([k, label]) => (
+            <button key={k} type="button" role="radio" aria-checked={conditionMode === k} data-on={conditionMode === k || undefined} onClick={() => setConditionMode(k)}>{label}</button>
+          ))}
+        </div>
+        <p className={styles.groupNote}>«Случайно» — как в жизни: примерно каждая четвёртая смена начинается с проблемы на медосмотре.</p>
+
         <h2 className={styles.groupLabel}>Порядок смены</h2>
         <ol className={styles.steps}>
           <li><span className={styles.stepIcon}><Icon name="stethoscope" size={18} /></span><span><b>Заступ</b>Медосмотр и инструктаж у начальника поезда</span></li>
@@ -125,6 +183,7 @@ function Setup({ clsKey, setClsKey, onStart, ready, onBack }) {
       <div className={styles.cta}>
         <Button size="lg" className={styles.ctaBtn} onClick={onStart} disabled={!ready}>{ready ? "Начать смену" : "Готовим рейс…"}</Button>
       </div>
+    </div>
     </div>
   );
 }
@@ -150,8 +209,11 @@ function CarThumb({ cls }) {
 // Заступ: медосмотр и инструктаж (локальный сценарий)
 // ---------------------------------------------------------------------------
 
-function MedCheck({ cls, onDone, onExit }) {
-  const script = useMemo(() => medCheckScript(cls), [cls]);
+function MedCheck({ cls, condition, onDone, onExit }) {
+  const cond = condition !== "fit" ? MED_CONDITIONS[condition] : null;
+  const script = useMemo(() => (cond
+    ? cond.steps.map((st, i) => ({ id: `${condition}-${i}`, speaker: st.speaker, text: st.text, context: i === 0 ? `${cond.context} ${cond.measure}.` : undefined, choices: st.choices }))
+    : medCheckScript(cls)), [cls, cond, condition]);
   const [step, setStep] = useState(0);
   const [messages, setMessages] = useState(() => [npcMsg(script[0], 0)]);
   const [waiting, setWaiting] = useState(true);
@@ -160,6 +222,7 @@ function MedCheck({ cls, onDone, onExit }) {
   const [scales, setScales] = useState({ safety: 60, loyalty: 60 });
   const done = step >= script.length;
   const cur = script[Math.min(step, script.length - 1)];
+  const choices = useMemo(() => (step < script.length ? shuffled(script[step].choices, step + 5) : null), [script, step]);
 
   function choose(id) {
     if (!waiting) return;
@@ -169,7 +232,7 @@ function MedCheck({ cls, onDone, onExit }) {
     setWaiting(false);
     setBusy(true);
     setMessages((m) => [...m, { id: `me${step}`, from: "me", text: c.text }]);
-    setLog((l) => [...l, { step: s.id, choice: c.id, safety: c.safety, loyalty: c.loyalty, best, note: c.note, question: s.text }]);
+    setLog((l) => [...l, { step: s.id, choice: c.id, safety: c.safety, loyalty: c.loyalty, best, critical: !!c.critical, note: c.note, question: s.text }]);
     window.setTimeout(() => {
       setBusy(false);
       setScales((v) => ({ safety: clamp(v.safety + c.safety), loyalty: clamp(v.loyalty + c.loyalty) }));
@@ -193,22 +256,75 @@ function MedCheck({ cls, onDone, onExit }) {
         <div className={styles.roomWall}>
           <span className={styles.roomSign}>Медпункт · Ленинградский вокзал</span>
           <span className={styles.roomPoster}><Icon name="cross" size={22} /></span>
+          {cond && <span className={styles.readout} data-bad><Icon name={condition === "fever" ? "thermometer" : condition === "alcohol" ? "alert" : "stethoscope"} size={16} />{cond.measure}</span>}
         </div>
         <div className={styles.roomFloor} />
         <div className={styles.roomDesk} />
         <div className={styles.roomHero}><Person outfit="conductor" facing="right" size={170} talking={busy} /></div>
-        <div className={styles.roomNpc} key={cur.speaker}><Person outfit={cur.speaker} facing="left" hair={cur.speaker === "medic" ? 3 : 4} skin={cur.speaker === "medic" ? 4 : 1} size={170} talking={waiting} /></div>
+        <div className={styles.roomNpc} key={cur.speaker}><Person outfit={cur.speaker} facing="left" hair={cur.speaker === "medic" ? 1 : 2} skin={cur.speaker === "medic" ? 4 : 1} size={170} talking={waiting} /></div>
       </div>
       <ChatDialog
         speaker={speaker}
         messages={messages}
-        choices={waiting ? script[step].choices : null}
+        choices={waiting ? choices : null}
         onChoose={choose}
         busy={busy}
         scales={scales}
         className={styles.medSheet}
-        footer={done && !busy ? <Button size="lg" className={styles.ctaBtn} onClick={() => onDone(log)}>Выйти к вагону — приёмка</Button> : null}
+        footer={done && !busy ? (
+          cond
+            ? <Button size="lg" className={styles.ctaBtn} onClick={() => onDone(log, false)}>Итог заступа</Button>
+            : <Button size="lg" className={styles.ctaBtn} onClick={() => onDone(log, true)}>Выйти к вагону — приёмка</Button>
+        ) : null}
       />
+    </div>
+  );
+}
+
+/** Итог заступа при недопуске: смена не начинается, но честное поведение засчитывается. */
+function NotAdmitted({ cls, condition, med, onAgain }) {
+  const cond = MED_CONDITIONS[condition];
+  const critical = med.some((m) => m.critical);
+  const honest = med.every((m) => m.best);
+  const savedRef = useRef(false);
+  useEffect(() => {
+    if (savedRef.current) return;
+    savedRef.current = true;
+    saveShift({ cls: cls.key, score: 0, rings: { procedure: honest ? 1 : 0, reaction: 0, quality: 0 }, admitted: false, rejected: condition, safety: med.reduce((a, m) => a + m.safety, 0), loyalty: 0 });
+  }, [cls, condition, honest, med]);
+  return (
+    <div className={styles.summary}>
+      <div className={styles.summaryInner}>
+        <p className={`${styles.eyebrow} rv`}>Заступ на смену · Вагон {cls.car}</p>
+        <SplitText as="h1" text="Не допущен к смене" className={styles.largeTitle} />
+        <section className={`${styles.hr} ${styles.hrReject} rv`} style={{ "--i": 1 }}>
+          <span className={styles.rejectIcon}><Icon name={condition === "fever" ? "thermometer" : condition === "alcohol" ? "alert" : "stethoscope"} size={28} /></span>
+          <div className={styles.hrText}>
+            <p className={styles.hrLabel}>Решение медработника</p>
+            <p className={styles.hrTitle}>{cond.verdict}</p>
+            <p className={styles.hrNote}>{cond.law}</p>
+          </div>
+        </section>
+        <section className={`${styles.verdictCard} rv`} style={{ "--i": 2 }} data-ok={!critical || undefined}>
+          <p className={styles.hrLabel}>Оценка поведения</p>
+          <p className={styles.verdictTitle}>{critical ? "Грубое нарушение на медосмотре" : honest ? "Вы действовали правильно" : "Есть ошибки в поведении"}</p>
+          <p className={styles.verdictNote}>{critical
+            ? "Попытка скрыть состояние, подделать результат или выйти на смену вопреки решению медработника — повод для служебного расследования."
+            : "Недопуск — не провал тренировки. Проводник, который честно сообщает о своём состоянии, защищает пассажиров и бригаду."}</p>
+        </section>
+        <h2 className={styles.groupLabel}>Разбор</h2>
+        <ul className={styles.group}>
+          {med.map((m, i) => (
+            <li key={i} className={styles.factNote} data-best={m.best || undefined}>
+              <b className={styles.noteMark}>{m.best ? "Верно" : m.critical ? "Критично" : "Ошибка"}</b> {m.note}
+            </li>
+          ))}
+        </ul>
+        <div className={styles.summaryActions}>
+          <Button size="lg" className={styles.ctaBtn} onClick={onAgain}>Новая смена</Button>
+          <Button size="lg" variant="secondary" className={styles.ctaBtn} as="a" href="#/today">На главную</Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -317,14 +433,21 @@ function Trip({ cls, passengers, initial, onDone, onExit }) {
 
   const talkInc = incidents.find((i) => i.key === talk) || null;
   const talkPassenger = talkInc ? passengers.find((p) => p.seat === talkInc.seat) : null;
-  const dialog = useScenarioDialog({
-    speaker: talkInc
-      ? { kind: "passenger", variant: talkPassenger ? talkPassenger.variant : 3, name: `Пассажир, место ${talkInc.seat + 1}`, role: `Вагон ${cls.car} · ${cls.title}` }
-      : { kind: "passenger", variant: 0, name: "", role: "" },
-    onDone: (result) => {
-      setIncidents((list) => list.map((i) => (i.key === talkRef.current ? { ...i, status: "done", result } : i)));
+  const [removals, setRemovals] = useState([]);
+  const talkSpeaker = talkInc
+    ? { kind: "passenger", variant: talkPassenger ? talkPassenger.variant : 3, mood: talkInc.mood || "calm", name: talkInc.x === "vestibule" ? "Пассажир в тамбуре" : `Пассажир, место ${talkInc.seat + 1}`, role: `Вагон ${cls.car} · ${cls.title}` }
+    : { kind: "passenger", variant: 0, name: "", role: "" };
+  const finishIncident = (result) => {
+    const key = talkRef.current;
+    const inc = incRef.current.find((i) => i.key === key);
+    setIncidents((list) => list.map((i) => (i.key === key ? { ...i, status: "done", result } : i)));
+    if (inc && inc.removal && result.verdict !== "Критическая ошибка безопасности") {
+      setRemovals((r) => [...r, { seat: inc.seat, state: "pending" }]);
     }
-  });
+  };
+  const remoteDialog = useScenarioDialog({ speaker: talkSpeaker, onDone: finishIncident });
+  const localDialog = useLocalDialog({ speaker: talkSpeaker, onDone: finishIncident });
+  const dialog = talkInc && talkInc.local ? localDialog : remoteDialog;
   const talkRef = useRef(null);
   talkRef.current = talk;
 
@@ -406,14 +529,31 @@ function Trip({ cls, passengers, initial, onDone, onExit }) {
     if (!inc || inc.status !== "active") return;
     setIncidents((list) => list.map((i) => (i.key === key ? { ...i, status: "talking" } : i)));
     setTalk(key);
-    dialog.start(inc.scenarioId, cls.key);
+    if (inc.local) localDialog.start(findStress(inc.local), inc.seat + 11);
+    else remoteDialog.start(inc.scenarioId, cls.key);
   }
+
+  // Наряд полиции с охраной приходят на ближайшей стоянке и уводят нарушителя (п. 33 «а» ПП № 810).
+  useEffect(() => {
+    if (stop && stop.name !== STATIONS[0].name) {
+      setRemovals((r) => (r.some((x) => x.state === "pending") ? r.map((x) => (x.state === "pending" ? { ...x, state: "active" } : x)) : r));
+    } else if (!stop) {
+      setRemovals((r) => (r.some((x) => x.state === "active") ? r.map((x) => (x.state === "active" ? { ...x, state: "done" } : x)) : r));
+    }
+  }, [stop]);
+  useEffect(() => {
+    if (removals.some((x) => x.state === "active")) setToast({ text: "Наряд транспортной полиции в вагоне", icon: "shield", at: Date.now() });
+  }, [removals]);
 
   function closeDialog() {
     setTalk(null);
   }
 
-  const signals = incidents.filter((i) => i.status === "active").map((i) => ({ key: i.key, seat: i.seat, urgent: i.urgent, remaining: i.remaining, total: i.total }));
+  const signals = incidents.filter((i) => i.status === "active").map((i) => ({ key: i.key, seat: i.seat, x: i.x, urgent: i.urgent, remaining: i.remaining, total: i.total }));
+  const moods = {};
+  incidents.forEach((i) => { if (i.mood && i.x !== "vestibule" && (i.status === "active" || i.status === "talking")) moods[i.seat] = i.mood; });
+  const gone = new Set(removals.filter((x) => x.state === "done").map((x) => x.seat));
+  const visitors = removals.filter((x) => x.state === "active").flatMap((x) => [{ key: `p${x.seat}`, role: "police", seat: x.seat, offset: -46 }, { key: `g${x.seat}`, role: "guard", seat: x.seat, offset: 46 }]);
   const moving = !(stop && Date.now() < stop.until) && progress < 1;
   const doneCount = incidents.filter((i) => i.status === "done").length;
 
@@ -428,7 +568,9 @@ function Trip({ cls, passengers, initial, onDone, onExit }) {
       <div className={styles.scene}>
         <CarScene
           cls={cls}
-          passengers={passengers}
+          passengers={passengers.filter((p) => !gone.has(p.seat))}
+          moods={moods}
+          visitors={visitors}
           signals={signals}
           moving={moving}
           stationName={stop ? stop.name : null}
@@ -561,7 +703,10 @@ function Summary({ cls, med, inspection, incidents, onAgain }) {
               <span className={styles.incIcon} data-urgent={i.urgent || undefined}><Icon name={i.urgent ? "alert" : "hand"} size={16} /></span>
               <span className={styles.incText}>
                 <b>{i.title}</b>
-                <span>Место {i.seat + 1} · {i.status === "done" ? i.result?.verdict : "Не подошли вовремя"}{i.fromInspection ? " · из-за пропуска на приёмке" : ""}</span>
+                <span>{i.x === "vestibule" ? "Тамбур" : `Место ${i.seat + 1}`} · {i.status === "done" ? i.result?.verdict : "Не подошли вовремя"}{i.fromInspection ? " · из-за пропуска на приёмке" : ""}</span>
+                {i.result?.log && i.result.log.filter((l) => !l.best && l.note).map((l, k) => (
+                  <span key={k} className={styles.incNote}>{l.note}</span>
+                ))}
               </span>
               {i.status === "done" && i.result?.sessionId && (
                 <a className={styles.incLink} href={`#/debrief/${i.result.sessionId}`}>Разбор<Icon name="chevronRight" size={14} /></a>

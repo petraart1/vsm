@@ -1,4 +1,9 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import * as api from "../api.js";
+import StreakCard from "../components/engagement/StreakCard.jsx";
+import ShowcaseGrid from "../components/engagement/ShowcaseGrid.jsx";
+import { readShowcase } from "../engagement.js";
+import { readFinish } from "../components/awards/awards.js";
 import Icon from "../components/ui/Icon.jsx";
 import Rings from "../components/ui/Rings.jsx";
 import { Person } from "../components/characters/People.jsx";
@@ -18,11 +23,17 @@ export default function Today() {
   const avg = (key) => (week.length ? week.reduce((a, s) => a + (s.rings?.[key] ?? 0), 0) / week.length : 0);
   const date = new Date().toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" });
   const admittedIn = shifts.find((s) => s.admitted);
+  const showcase = readShowcase();
+  const [board, setBoard] = useState(null);
+  useEffect(() => { api.getLeaderboard({ limit: 5 }).then(setBoard, () => setBoard(null)); }, []);
+  const pct = board && board.me && board.total > 1 ? Math.round(((board.total - board.me.rank) / (board.total - 1)) * 100) : null;
 
   return (
     <div className={styles.page}>
       <p className={`${styles.date} rv`}>{date}</p>
       <SplitText as="h1" text="Сегодня" className={styles.title} />
+      <div className={styles.layout}>
+      <div className={styles.main}>
 
       <a href="#/shift" className={`${styles.hero} rv`} style={{ "--i": 1 }}>
         <img className={styles.heroImg} src={`${import.meta.env.BASE_URL}backgrounds/express.jpg`} alt="" />
@@ -83,6 +94,39 @@ export default function Today() {
           <Icon name="chevronRight" size={16} className={styles.chev} />
         </a></li>
       </ul>
+      </div>
+
+      <aside className={styles.aside}>
+        <div className="rv" style={{ "--i": 2 }}><StreakCard compact /></div>
+
+        <section className={`${styles.card} ${styles.sideCard} rv`} style={{ "--i": 3 }}>
+          <header className={styles.sideHead}>
+            <h2>Витрина</h2>
+            <a href="#/profile">Настроить</a>
+          </header>
+          <ShowcaseGrid items={showcase} finish={readFinish()} size={64} emptyText="Выставьте до шести наград — их увидят коллеги в рейтинге." />
+        </section>
+
+        {board && board.top.length > 0 && (
+          <section className={`${styles.card} ${styles.sideCard} rv`} style={{ "--i": 4 }}>
+            <header className={styles.sideHead}>
+              <h2>Рейтинг</h2>
+              <a href="#/leaderboard">Все</a>
+            </header>
+            {pct !== null && <p className={styles.pct}><b className="num">{pct}%</b> коллег — ниже вас</p>}
+            <ol className={styles.mini}>
+              {board.top.slice(0, 3).concat(board.me && !board.top.slice(0, 3).some((e) => e.me) ? [board.me] : []).map((e) => (
+                <li key={e.key} data-me={e.me || undefined}>
+                  <span className={styles.miniRank}>{e.rank}</span>
+                  <span className={styles.miniName}>{e.me ? "Вы" : e.displayName}</span>
+                  <span className={styles.miniScore}>{e.totalScore}</span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+      </aside>
+      </div>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import CertificateDialog from "../components/progress/CertificateDialog.jsx";
 import { FINISH_OPTIONS, readFinish, writeFinish, moduleMedal, distinctionMedal } from "../components/awards/awards.js";
 import { buildQualifications, toDistinction, formatDate } from "../progress.js";
 import { readShifts } from "../shift/shiftModel.js";
+import { STREAK_MILESTONES, claimedStreakRewards, streakMedal } from "../engagement.js";
 import styles from "./Achievements.module.css";
 
 /**
@@ -104,6 +105,27 @@ export default function Achievements({ route }) {
           </div>
         </section>
       )}
+
+      <section className="rv" style={{ "--i": 3 }}>
+        <div className={styles.sectionRow}>
+          <h2 className={styles.sectionTitle}>Серии входов</h2>
+          <a className={styles.sectionLink} href="#/profile">Витрина профиля</a>
+        </div>
+        <ul className={styles.grid}>
+          {STREAK_MILESTONES.map((m, i) => {
+            const got = claimedStreakRewards().includes(m.days);
+            return (
+              <li key={m.days} style={{ "--i": i }}>
+                <div className={styles.award} data-earned={got || undefined}>
+                  <span className={styles.medalWrap}><Medal {...streakMedal(m.days, finish, got)} size={92} spin={got} /></span>
+                  <span className={styles.awardTitle}>{m.title}</span>
+                  <span className={styles.awardMeta}>{got ? "Получено" : m.note}</span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
 
       <section className="rv" style={{ "--i": 3 }}>
         <h2 className={styles.sectionTitle}>Учебные модули</h2>

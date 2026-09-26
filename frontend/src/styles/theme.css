@@ -43,12 +43,13 @@
   /* Интерактив и статусы */
   --blue: #0a64d8;
   --blue-soft: #e6f0fc;
-  --green: #1e8e3e;
-  --green-soft: #e7f5ec;
+  /* Вместо «светофора» — фирменная сине-серая шкала: «хорошо» = синий, «внимание» = стальной. */
+  --green: #0a64d8;
+  --green-soft: #e8f0fc;
   --red: #d93025;
   --red-soft: #fdecea;
-  --amber: #b26a00;
-  --amber-soft: #fff4e0;
+  --amber: #5b6b82;
+  --amber-soft: #eef1f5;
 
   --safety: #0a64d8;
   --loyalty: #1f9bd8;
@@ -104,6 +105,7 @@
   --dur-slow: 520ms;
 
   --page-max: 980px;
+  --sidebar-w: 248px;
   --tabbar-h: 64px;
 
   /* Семантика компонентов */
@@ -149,12 +151,12 @@
 
   --blue: #3e8bff;
   --blue-soft: #0f2847;
-  --green: #30d158;
-  --green-soft: #0f2a17;
+  --green: #4b8ff0;
+  --green-soft: #13233d;
   --red: #ff5a4f;
   --red-soft: #3a1512;
-  --amber: #ffb340;
-  --amber-soft: #33240a;
+  --amber: #98a4b8;
+  --amber-soft: #23272e;
 
   --safety: #3e8bff;
   --loyalty: #5ac8fa;
@@ -195,12 +197,12 @@
 
     --blue: #3e8bff;
     --blue-soft: #0f2847;
-    --green: #30d158;
-    --green-soft: #0f2a17;
+    --green: #4b8ff0;
+    --green-soft: #13233d;
     --red: #ff5a4f;
     --red-soft: #3a1512;
-    --amber: #ffb340;
-    --amber-soft: #33240a;
+    --amber: #98a4b8;
+    --amber-soft: #23272e;
 
     --safety: #3e8bff;
     --loyalty: #5ac8fa;

@@ -2,6 +2,13 @@ import { useState, useEffect, useMemo } from "react";
 import * as api from "../api.js";
 import Button from "../components/ui/Button.jsx";
 import Badge from "../components/ui/Badge.jsx";
+import VerdictMark from "../components/ui/VerdictMark.jsx";
+import StreakCard from "../components/engagement/StreakCard.jsx";
+import ShowcaseGrid from "../components/engagement/ShowcaseGrid.jsx";
+import ShowcaseEditor from "../components/engagement/ShowcaseEditor.jsx";
+import { readShowcase, writeShowcase, claimedStreakRewards } from "../engagement.js";
+import { earnedAwards, readFinish } from "../components/awards/awards.js";
+import { readShifts } from "../shift/shiftModel.js";
 import Icon from "../components/ui/Icon.jsx";
 import Avatar from "../components/ui/Avatar.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
@@ -13,7 +20,7 @@ import CertificateDialog from "../components/progress/CertificateDialog.jsx";
 import { SplitText, CountUp } from "../components/motion/Motion.jsx";
 import {
   readActivity, currentStreak, longestStreak, weekSummary, recentAverages,
-  gradeFor, GRADES, buildQualifications, formatDate, pluralRu
+  gradeFor, GRADES, buildQualifications, toDistinction, formatDate, pluralRu
 } from "../progress.js";
 import styles from "./Profile.module.css";
 
@@ -88,7 +95,7 @@ function ActivityFeed({ activity }) {
               <span className={styles.feedTitle}>{title}</span>
               <span className={styles.feedMeta}>
                 {formatDate(e.at, { day: "numeric", month: "short" })}
-                {e.verdict && <Badge tone={VERDICT_TONE[e.verdict] || "neutral"}>{e.verdict}</Badge>}
+                {e.verdict && <VerdictMark verdict={e.verdict} size={14} withLabel />}
               </span>
             </span>
             <span className={styles.feedScores}>
@@ -175,6 +182,9 @@ function CompetenciesSection({ competencies, blockLabelOf }) {
 export default function Profile() {
   const [s, setS] = useState({ phase: "loading" });
   const [opened, setOpened] = useState(null);
+  const [showcase, setShowcase] = useState(readShowcase);
+  const [editing, setEditing] = useState(false);
+  const [shareNote, setShareNote] = useState(null);
   const activity = useMemo(() => readActivity(), [s.phase]);
 
   function load() {
@@ -182,9 +192,10 @@ export default function Profile() {
     Promise.all([
       api.getProfile(),
       api.getCompetencyAnalytics().catch(() => null),
-      api.listScenarios().catch(() => null)
+      api.listScenarios().catch(() => null),
+      api.getAchievements().catch(() => [])
     ]).then(
-      ([data, competencies, scenarios]) => setS({ phase: "ready", data, competencies, scenarios }),
+      ([data, competencies, scenarios, achievements]) => setS({ phase: "ready", data, competencies, scenarios, achievements }),
       () => setS({ phase: "error" })
     );
   }
@@ -224,6 +235,18 @@ export default function Profile() {
   const blockLabelOf = (code) => blockLabelMap[code] || code;
 
   const weekDelta = week.current - week.previous;
+  const awards = earnedAwards({
+    qualifications,
+    distinctions: (s.achievements || []).map(toDistinction),
+    cleanShifts: readShifts().filter((x) => x.admitted).length,
+    streakDays: claimedStreakRewards()
+  });
+  function saveShowcase(items) {
+    writeShowcase(items);
+    setShowcase(items);
+    setEditing(false);
+    api.saveShowcase(items, readFinish()).then((r) => setShareNote(r.shared ? "Витрина обновлена — её видят коллеги." : "Витрина сохранена на этом устройстве."));
+  }
   const sampleNote = averages
     ? `Среднее за ${averages.sample} ${pluralRu(averages.sample, "прохождение", "прохождения", "прохождений")}`
     : "Пока нет данных";
@@ -253,6 +276,18 @@ export default function Profile() {
           </p>
         </div>
       </section>
+
+      <div className={`${styles.showRow} rv`} style={{ "--i": 3 }}>
+        <section className={styles.showcaseCard} aria-labelledby="showcase-title">
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle} id="showcase-title">Витрина</h2>
+            <button type="button" className={styles.editBtn} onClick={() => setEditing(true)}>Изменить</button>
+          </div>
+          <ShowcaseGrid items={showcase} finish={readFinish()} size={76} editable onOpen={() => setEditing(true)} />
+          {shareNote && <p className={styles.shareNote}>{shareNote}</p>}
+        </section>
+        <StreakCard />
+      </div>
 
       <dl className={`${styles.stats} rv`} style={{ "--i": 3 }}>
         <Stat
@@ -329,6 +364,8 @@ export default function Profile() {
         </div>
         <CompetenciesSection competencies={s.competencies} blockLabelOf={blockLabelOf} />
       </section>
+
+      <ShowcaseEditor open={editing} awards={awards} selected={showcase} finish={readFinish()} onSave={saveShowcase} onClose={() => setEditing(false)} />
 
       <CertificateDialog
         item={opened}

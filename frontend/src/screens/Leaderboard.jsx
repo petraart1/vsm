@@ -8,6 +8,8 @@ import ErrorState from "../components/ui/ErrorState.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import { CountUp } from "../components/motion/Motion.jsx";
 import { gradeFor, pluralRu } from "../progress.js";
+import ColleagueSheet from "../components/engagement/ColleagueSheet.jsx";
+import Medal from "../components/awards/Medal.jsx";
 import styles from "./Leaderboard.module.css";
 
 function initials(name) {
@@ -15,10 +17,10 @@ function initials(name) {
   return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : String(name || "??").slice(0, 2).toUpperCase();
 }
 
-function Row({ entry, isMe, max, index }) {
+function Row({ entry, isMe, max, index, onOpen }) {
   const share = max ? entry.totalScore / max : 0;
   return (
-    <li className={`${styles.row} rv`} data-me={isMe || undefined} style={{ "--i": Math.min(index, 10) + 2 }}>
+    <li className={`${styles.row} rv`} data-me={isMe || undefined} style={{ "--i": Math.min(index, 10) + 2 }} onClick={() => onOpen(entry)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") onOpen(entry); }} aria-label={`Открыть витрину: ${entry.displayName}`}>
       <span className={styles.rank}>{entry.rank}</span>
       <span className={styles.person}>
         <Avatar initials={initials(entry.displayName)} size={32} tone={isMe ? "solid" : "soft"} />
@@ -42,6 +44,7 @@ function Row({ entry, isMe, max, index }) {
 /** Рейтинг проводников: топ-20 и закреплённая строка «вы», если игрок не в топе. */
 export default function Leaderboard() {
   const [s, setS] = useState({ phase: "loading" });
+  const [opened, setOpened] = useState(null);
 
   function load() {
     setS({ phase: "loading" });
@@ -78,13 +81,32 @@ export default function Leaderboard() {
         description="Проводники по сумме очков компетенций. Очки начисляются за каждое завершённое прохождение: больше за решения без ошибок безопасности."
       />
 
+      <div className={styles.layout}>
+      <aside className={styles.aside}>
       {percentile !== null && (
         <div className={`${styles.percentile} rv`} style={{ "--i": 1 }}>
           <span className={styles.pctNum}><CountUp value={percentile} />%</span>
           <span className={styles.pctText}>Ваш результат лучше, чем у {percentile}% проводников. Место {d.me.rank} из {d.total}.</span>
         </div>
       )}
-
+      {d.top.length >= 3 && (
+        <div className={`${styles.podium} rv`} style={{ "--i": 2 }}>
+          {[1, 0, 2].map((i) => {
+            const e = d.top[i];
+            return (
+              <button key={e.key} type="button" className={styles.podiumCol} data-place={i + 1} onClick={() => setOpened(e)}>
+                <Medal shape="circle" finish={["enamel", "metal", "glass"][i]} text={String(i + 1)} size={i === 0 ? 72 : 56} />
+                <span className={styles.podiumName}>{e.me ? "Вы" : e.displayName.split(" ")[0]}</span>
+                <span className={styles.podiumScore}>{e.totalScore}</span>
+                <span className={styles.podiumStep} />
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <p className={`${styles.hint} rv`} style={{ "--i": 3 }}>Нажмите на коллегу, чтобы посмотреть его витрину наград.</p>
+      </aside>
+      <div className={styles.tableCol}>
       {d.top.length === 0 ? (
         <EmptyState
           title="Рейтинг пока пуст"
@@ -102,16 +124,19 @@ export default function Leaderboard() {
           </div>
           <ol className={styles.list}>
             {d.top.map((entry, i) => (
-              <Row key={entry.key} entry={entry} index={i} max={max} isMe={!!entry.me} />
+              <Row key={entry.key} entry={entry} index={i} max={max} isMe={!!entry.me} onOpen={setOpened} />
             ))}
           </ol>
           {d.me && !meInTop && (
             <ol className={`${styles.list} ${styles.meList}`} start={d.me.rank}>
-              <Row entry={d.me} index={d.top.length} max={max} isMe />
+              <Row entry={d.me} index={d.top.length} max={max} isMe onOpen={setOpened} />
             </ol>
           )}
         </div>
       )}
+      </div>
+      </div>
+      <ColleagueSheet entry={opened} onClose={() => setOpened(null)} />
     </div>
   );
 }

@@ -206,3 +206,21 @@
 .verdict[data-tone="green"]::after { background: var(--green); }
 .verdict[data-tone="amber"]::after { background: var(--amber); }
 .verdict[data-tone="red"]::after { background: var(--red); }
+
+/* iOS-оформление: карточки, без линеек */
+.shell { gap: var(--s-6); width: 100%; }
+.verdict { font-weight: 700; letter-spacing: -0.03em; }
+.scores { border: 0; gap: var(--s-3); }
+.scores > div, .scores > div + div { padding: var(--s-4); border: 0 !important; background: var(--bg); border-radius: var(--r-lg); }
+.columns > * { min-width: 0; }
+.columns > section, .columns > div:first-child { padding: var(--s-5); background: var(--bg); border-radius: var(--r-lg); }
+.compare { border: 0; background: var(--bg); box-shadow: none; }
+.compareNode { background: var(--bg-muted); border-bottom: 0; }
+.actions { border-top: 0; padding-top: var(--s-2); }
+@media (max-width: 900px) { .columns { grid-template-columns: minmax(0, 1fr); gap: var(--s-4); } .side { position: static; } }
+@media (max-width: 560px) {
+  .scores { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-2); }
+  .columns > section, .columns > div:first-child { padding: var(--s-4); }
+  .verdict { font-size: 32px; }
+}
+.scores > div:nth-child(n) { padding: var(--s-4) !important; background: var(--bg); border-radius: var(--r-lg); }

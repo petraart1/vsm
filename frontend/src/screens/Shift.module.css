@@ -165,4 +165,46 @@
 @media (prefers-reduced-motion: reduce) {
   .toastCard, .coach, .banner, .roomHero, .roomNpc, .pauseSheet, .scrim { animation: none; }
 }
-.medSheet { max-height: 60%; }
+.medSheet { max-height: 52%; }
+
+/* ---------- Заступ: выбор самочувствия, недопуск ---------- */
+.segmented { display: flex; padding: 2px; border-radius: 9px; background: var(--bg-muted); overflow-x: auto; scrollbar-width: none; }
+.segmented::-webkit-scrollbar { display: none; }
+.segmented button { flex: 1 0 auto; border: 0; background: none; padding: 7px 12px; border-radius: 7px; font-size: var(--t-sm); font-weight: 500; color: var(--fg); cursor: pointer; white-space: nowrap; transition: background 250ms var(--ease-spring), box-shadow 250ms; }
+.segmented button[data-on] { background: var(--bg); font-weight: 600; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12); }
+:global([data-theme="dark"]) .segmented button[data-on] { background: #636366; }
+.groupNote { font-size: var(--t-xs); color: var(--fg-2); margin: var(--s-2) var(--s-4) 0; line-height: 1.4; }
+
+.readout {
+  position: absolute; top: 24%; left: 12%; display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 12px; background: var(--bg); font-size: var(--t-sm); font-weight: 700;
+  box-shadow: 0 4px 14px rgba(10, 30, 70, 0.12); animation: fade-up 600ms var(--ease-spring) 400ms both;
+}
+.readout[data-bad] { color: var(--red); }
+
+.hrReject { background: var(--bg); }
+.rejectIcon { flex: none; width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; background: var(--red-soft); color: var(--red); }
+.verdictCard { margin-top: var(--s-4); padding: var(--s-5); border-radius: var(--r-lg); background: var(--bg); }
+.verdictCard[data-ok] { background: linear-gradient(135deg, #0b3d91, #0a64d8); color: #fff; }
+.verdictTitle { font-size: var(--t-lg); font-weight: 700; letter-spacing: -0.02em; margin-top: 2px; }
+.verdictNote { font-size: var(--t-sm); opacity: 0.85; margin-top: 4px; line-height: 1.45; }
+.noteMark { font-weight: 700; color: var(--fg); margin-right: 4px; }
+.factNote[data-best] .noteMark { color: var(--blue); }
+.incNote { display: block; margin-top: 4px; font-size: var(--t-xs) !important; line-height: 1.4; color: var(--fg-2); padding-left: 10px; border-left: 2px solid var(--line-strong); }
+
+/* Выбор вагона на десктопе: слева иллюстрация бригады, справа форма */
+.setupWrap { flex: 1; display: flex; min-height: 100dvh; }
+.setupArt { display: none; }
+@media (min-width: 1024px) {
+  .setupArt { display: flex; flex-direction: column; justify-content: flex-end; position: sticky; top: 0; height: 100dvh; flex: 1 1 50%; overflow: hidden; color: #fff; padding: var(--s-10); }
+  .setupArt img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: kenburns 20s ease-in-out infinite alternate; }
+  .setupShade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8, 28, 66, 0.2), rgba(8, 28, 66, 0.9)); }
+  .setupCrew { position: relative; display: flex; align-items: flex-end; gap: var(--s-4); filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.35)); }
+  .setupCrew > * { animation: fade-up 800ms var(--ease-spring) both; }
+  .setupCrew > *:nth-child(2) { animation-delay: 120ms; }
+  .setupCrew > *:nth-child(3) { animation-delay: 240ms; }
+  .setupCrew > *:nth-child(4) { animation-delay: 360ms; }
+  .setupQuote { position: relative; margin-top: var(--s-6); font-size: var(--t-xl); font-weight: 600; letter-spacing: -0.02em; max-width: 28ch; line-height: 1.3; }
+  .setupWrap .setup { flex: 0 0 min(640px, 50%); margin: 0; }
+}
+@keyframes kenburns { to { transform: scale(1.1) translateX(-2%); } }

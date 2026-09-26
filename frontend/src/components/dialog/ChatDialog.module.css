@@ -96,3 +96,4 @@
 @media (prefers-reduced-motion: reduce) {
   .sheet, .row, .note, .choices li { animation: none; }
 }
+.note[data-tone="scene"] { font-style: italic; color: var(--fg); background: var(--bg-muted); border-radius: 14px; padding: 10px 14px; max-width: 100%; text-align: left; }

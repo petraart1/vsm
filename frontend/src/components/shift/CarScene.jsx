@@ -20,11 +20,12 @@ import styles from "./CarScene.module.css";
  *  - disabled: ввод выключен (открыт диалог), onInteract({ type: 'hotspot'|'signal', key })
  */
 const H = 300;
-const SPEED = 190; // px/с мира
+const SPEED = 140; // px/с мира
 const REACH = 58;
 
-export default function CarScene({ cls, passengers, hotspots = [], signals = [], moving = false, stationName, disabled = false, onInteract, focusSeat = null }) {
+export default function CarScene({ cls, passengers, hotspots = [], signals = [], moods = {}, visitors = [], moving = false, stationName, disabled = false, onInteract, focusSeat = null }) {
   const W = worldWidth(cls);
+  const sigX = (sg) => (sg.x === "vestibule" ? W - VESTIBULE * 0.62 : typeof sg.x === "number" ? sg.x : seatX(cls, sg.seat));
   const viewRef = useRef(null);
   const worldRef = useRef(null);
   const heroRef = useRef(null);
@@ -64,14 +65,14 @@ export default function CarScene({ cls, passengers, hotspots = [], signals = [],
     const cam = maxCam <= 0 ? maxCam / 2 : Math.max(0, Math.min(maxCam, want));
     st.cam += (cam - st.cam) * (st.last ? 0.14 : 1);
     if (worldRef.current) worldRef.current.style.transform = `translate3d(${(-st.cam * st.scale).toFixed(2)}px,${(st.oy || 0).toFixed(1)}px,0) scale(${st.scale})`;
-    if (heroRef.current) heroRef.current.style.transform = `translate3d(${(st.x - 27).toFixed(2)}px,0,0)`;
+    if (heroRef.current) heroRef.current.style.transform = `translate3d(${(st.x - 33).toFixed(2)}px,0,0)`;
   }
 
   function interactables() {
     const { hotspots: hs, signals: sg } = propsRef.current;
     return [
       ...hs.map((h) => ({ type: "hotspot", key: h.key, x: h.x, label: h.state === "idle" ? `Проверить: ${h.title.toLowerCase()}` : null })),
-      ...sg.map((s) => ({ type: "signal", key: s.key, x: seatX(cls, s.seat), label: s.urgent ? "Срочно: подойти к пассажиру" : "Подойти к пассажиру" }))
+      ...sg.map((s) => ({ type: "signal", key: s.key, x: sigX(s), label: s.urgent ? "Срочно: подойти к пассажиру" : "Подойти к пассажиру" }))
     ].filter((i) => i.label);
   }
 
@@ -110,7 +111,7 @@ export default function CarScene({ cls, passengers, hotspots = [], signals = [],
       // Вызовы за краем экрана — стрелки по бокам, чтобы не искать пассажира вслепую.
       const e = { left: null, right: null };
       propsRef.current.signals.forEach((sg) => {
-        const sx = seatX(cls, sg.seat);
+        const sx = sigX(sg);
         const side = sx < st.cam + 10 ? "left" : sx > st.cam + st.viewW - 10 ? "right" : null;
         if (side && (!e[side] || sg.urgent)) e[side] = { key: sg.key, urgent: sg.urgent, x: sx };
       });
@@ -216,7 +217,7 @@ export default function CarScene({ cls, passengers, hotspots = [], signals = [],
 
         {passengers.map((p) => (
           <div key={`p${p.seat}`} className={styles.passenger} data-focus={focusSeat === p.seat || undefined} style={{ left: seatX(cls, p.seat) - 35 * (p.kid ? 0.72 : 1), top: p.kid ? 170 : 142 }}>
-            <SeatedPerson variant={p.variant} kid={p.kid} phone={p.phone} size={100} />
+            <SeatedPerson variant={p.variant} kid={p.kid} phone={p.phone && !moods[p.seat]} mood={moods[p.seat] || "calm"} size={100} />
           </div>
         ))}
 
@@ -248,7 +249,7 @@ export default function CarScene({ cls, passengers, hotspots = [], signals = [],
         ))}
 
         {signals.map((s) => {
-          const x = seatX(cls, s.seat);
+          const x = sigX(s);
           const p = Math.max(0, Math.min(1, s.remaining / s.total));
           return (
             <button
@@ -269,6 +270,10 @@ export default function CarScene({ cls, passengers, hotspots = [], signals = [],
             </button>
           );
         })}
+
+        {visitors.map((v) => (
+          <Visitor key={v.key} role={v.role} from={seatX(cls, v.seat) > W / 2 ? W - 40 : 40} to={seatX(cls, v.seat) + v.offset} faceRight={v.offset < 0} />
+        ))}
 
         <div className={styles.hero} ref={heroRef} style={{ top: 138 }}>
           <Person outfit="conductor" walking={pose.walking} facing={pose.facing} size={150} />
@@ -297,6 +302,24 @@ export default function CarScene({ cls, passengers, hotspots = [], signals = [],
         ) : <span className={styles.hint}>{disabled ? "" : "Тапните, куда идти"}</span>}
         <button type="button" className={styles.pad} {...hold(1)} aria-label="Идти вправо"><Icon name="chevronRight" size={22} /></button>
       </div>
+    </div>
+  );
+}
+
+/** Сотрудник, который входит из тамбура и подходит к месту (наряд полиции, охрана). */
+function Visitor({ role, from, to, faceRight }) {
+  const [x, setX] = useState(from);
+  const [walking, setWalking] = useState(true);
+  useEffect(() => {
+    const t = window.setTimeout(() => setX(to), 60);
+    const dur = Math.abs(to - from) / 110 * 1000;
+    const t2 = window.setTimeout(() => setWalking(false), dur + 80);
+    return () => { window.clearTimeout(t); window.clearTimeout(t2); };
+  }, [from, to]);
+  const dur = Math.abs(to - from) / 110;
+  return (
+    <div className={styles.visitor} style={{ transform: `translate3d(${x - 33}px,0,0)`, transitionDuration: `${dur}s`, top: 138 }}>
+      <Person outfit={role} walking={walking} facing={walking ? (to > from ? "right" : "left") : (faceRight ? "right" : "left")} size={150} hair={2} />
     </div>
   );
 }

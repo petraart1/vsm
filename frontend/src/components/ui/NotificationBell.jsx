@@ -20,7 +20,7 @@ function formatTime(iso) {
  * (см. notificationsBus.js — например, после завершения сценария) и лёгкий опрос раз в 30с,
  * который приостанавливается, пока вкладка не видна (page visibility).
  */
-export default function NotificationBell() {
+export default function NotificationBell({ placement } = {}) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +87,7 @@ export default function NotificationBell() {
   }
 
   return (
-    <div className={styles.root} ref={rootRef}>
+    <div className={styles.root} ref={rootRef} data-placement={placement}>
       <button
         type="button"
         className={styles.trigger}

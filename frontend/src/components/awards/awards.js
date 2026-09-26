@@ -45,3 +45,21 @@ export function distinctionMedal(d, finish) {
     backNote: d.earned ? formatDate(d.earnedAt, { day: "numeric", month: "short", year: "numeric" }) : "ещё не получено"
   };
 }
+
+/**
+ * Все полученные награды в виде «снимков» для витрины: { id, title, shape, glyph, text }.
+ * Снимок самодостаточен — его можно показать другому пользователю без каталога.
+ */
+export function earnedAwards({ qualifications = [], distinctions = [], cleanShifts = 0, streakDays = [] }) {
+  const out = [];
+  if (cleanShifts > 0) out.push({ id: "shift:clean", title: "Смена без замечаний", shape: "circle", glyph: "train" });
+  qualifications.filter((q) => q.status === "certified").forEach((q) => {
+    const m = moduleMedal(q, "enamel");
+    out.push({ id: `module:${q.block}`, title: q.title, shape: m.shape, glyph: m.glyph });
+  });
+  distinctions.filter((d) => d.earned).forEach((d) => {
+    out.push({ id: `dist:${d.code}`, title: d.title, shape: "hexagon", glyph: d.glyph || null, text: d.glyph ? null : d.mark });
+  });
+  streakDays.forEach((n) => out.push({ id: `streak:${n}`, title: `Серия ${n} дней`, shape: "circle", text: String(n) }));
+  return out;
+}

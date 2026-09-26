@@ -77,7 +77,8 @@ function apiFetch(path, options = {}) {
   // разбор проверяют владельца (403 без заголовка), лидерборд по нему помечает строку "me".
   // Поэтому заголовок уходит всегда, кроме явного publicCall.
   if (!options.publicCall) headers["X-Player-Id"] = getPlayerId();
-  return fetch(API_BASE + path, { method: options.method || "GET", headers }).then((res) => {
+  if (options.body) headers["Content-Type"] = "application/json";
+  return fetch(API_BASE + path, { method: options.method || "GET", headers, body: options.body }).then((res) => {
     if (res.status === 204) return null;
     return res.text().then((text) => {
       let body = null;
@@ -852,6 +853,38 @@ export function markAllNotificationsRead(playerId) {
 }
 export function getCompetencyAnalytics(playerId) {
   return USE_MOCKS ? mockGetCompetencyAnalytics() : realGetCompetencyAnalytics(playerId || getPlayerId());
+}
+
+// =======================================================================
+// Витрина наград. Backend-контракт: PUT /api/gamification/showcase (тело — массив снимков,
+// владелец по X-Player-Id), GET /api/gamification/showcase/{publicId}. Если endpoint не
+// поднят, витрина остаётся локальной и в рейтинге показывается только в демо-режиме.
+// =======================================================================
+
+const MOCK_SHOWCASES = [
+  [{ id: "shift:clean", title: "Смена без замечаний", shape: "circle", glyph: "train" }, { id: "module:medical", title: "Медицинские ситуации", shape: "circle", glyph: "cross" }, { id: "dist:FLAWLESS_SAFETY", title: "Отличие за безопасность", shape: "hexagon", glyph: "shield" }, { id: "streak:14", title: "Серия 14 дней", shape: "circle", text: "14" }],
+  [{ id: "module:conflict", title: "Урегулирование конфликтов", shape: "circle", glyph: "users" }, { id: "dist:PASSENGER_FAVORITE", title: "Отличие за сервис", shape: "hexagon", glyph: "smile" }, { id: "streak:7", title: "Серия 7 дней", shape: "circle", text: "7" }],
+  [{ id: "dist:VETERAN", title: "Десять учебных рейсов", shape: "hexagon", text: "10" }, { id: "module:boarding", title: "Посадка и документы", shape: "circle", glyph: "ticket" }],
+  []
+];
+
+export function saveShowcase(items, finish) {
+  if (USE_MOCKS) return delay({ ok: true, shared: true });
+  const body = {
+    finish: finish || "enamel",
+    items: items.map((it) => ({ id: it.id, title: it.title, shape: it.shape, glyph: it.glyph || null, text: it.text || null }))
+  };
+  return apiFetch("/api/gamification/showcase", { method: "PUT", requiresPlayer: true, body: JSON.stringify(body) })
+    .then(() => ({ ok: true, shared: true }), () => ({ ok: true, shared: false }));
+}
+
+export function getShowcase(entry) {
+  if (USE_MOCKS || !entry.publicId) {
+    const n = String(entry.displayName || entry.key || "").length;
+    return delay({ items: entry.me ? null : MOCK_SHOWCASES[n % MOCK_SHOWCASES.length], finish: ["metal", "enamel", "glass"][n % 3] });
+  }
+  return apiFetch(`/api/gamification/showcase/${encodeURIComponent(entry.publicId)}`, { method: "GET" })
+    .then((d) => ({ items: (d && d.items) || [], finish: (d && d.finish) || "enamel" }), () => ({ items: null, finish: "enamel" }));
 }
 
 export const api = {

@@ -1,57 +1,122 @@
 .person, .seated { display: block; overflow: visible; }
 
-.shadow { fill: rgba(15, 30, 60, 0.18); }
+.shadow { fill: rgba(15, 30, 60, 0.16); }
 
-/* Ходьба: ноги и руки качаются вокруг бедра/плеча, корпус слегка подпрыгивает. */
-.legL, .legR, .armL, .armR { transform-box: fill-box; transform-origin: 50% 0; }
-.body { transform-box: view-box; }
+/* ---------- Стоя: дыхание, моргание, речь ---------- */
+.torso, .armL, .armR, .head, .body { transform-box: view-box; }
+.idle .torso { transform-origin: 40px 107px; animation: breath 3.6s ease-in-out infinite; }
+.idle .head { transform-origin: 40px 50px; animation: idle-head 7s ease-in-out infinite; }
+.idle .armL { transform-origin: 21px 60px; animation: sway-l 3.6s ease-in-out infinite; }
+.idle .armR { transform-origin: 59px 60px; animation: sway-r 3.6s ease-in-out infinite; }
+@keyframes breath { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.012) translateY(-0.4px); } }
+@keyframes idle-head { 0%, 60%, 100% { transform: rotate(0); } 70%, 85% { transform: rotate(-2.5deg); } }
+@keyframes sway-l { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(1.4deg); } }
+@keyframes sway-r { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-1.4deg); } }
 
-.walking .legL { animation: swing 520ms ease-in-out infinite; }
-.walking .legR { animation: swing 520ms ease-in-out infinite reverse; }
-.walking .armL { animation: swing-arm 520ms ease-in-out infinite reverse; }
-.walking .armR { animation: swing-arm 520ms ease-in-out infinite; }
-.walking .body { animation: bob 260ms ease-in-out infinite alternate; }
+.talking .head { animation: nod 1.3s ease-in-out infinite; }
+.talking .armR { animation: gesture 2.6s ease-in-out infinite; }
+@keyframes nod { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-2.5deg); } 60% { transform: rotate(1.5deg); } }
+@keyframes gesture { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-24deg); } 45% { transform: rotate(-16deg); } 65% { transform: rotate(-26deg); } }
 
-@keyframes swing { 0% { transform: rotate(16deg); } 50% { transform: rotate(-16deg); } 100% { transform: rotate(16deg); } }
-@keyframes swing-arm { 0% { transform: rotate(12deg); } 50% { transform: rotate(-12deg); } 100% { transform: rotate(12deg); } }
-@keyframes bob { from { transform: translateY(0); } to { transform: translateY(-2px); } }
-
-/* Моргание и речь */
-.eyes { transform-box: fill-box; transform-origin: 50% 50%; animation: blink 4.2s infinite; }
-@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+.eyes { transform-box: fill-box; transform-origin: 50% 50%; animation: blink 4.4s infinite; }
+@keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 95.5% { transform: scaleY(0.1); } }
 
 .mouth { transform-box: fill-box; transform-origin: 50% 0; }
-.talking .mouth { animation: talk 280ms ease-in-out infinite alternate; }
-@keyframes talk { from { transform: scaleY(0.6); } to { transform: scaleY(1.8); } }
+.talking .mouth { animation: talk 260ms ease-in-out infinite alternate; }
+@keyframes talk { from { transform: scaleY(0.6); } to { transform: scaleY(2); } }
 
-.head { transform-box: fill-box; transform-origin: 50% 90%; }
-.talking .head { animation: nod 1.4s ease-in-out infinite; }
-@keyframes nod { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-3deg); } }
+/* ---------- Ходьба в профиль ----------
+   Цикл шага 620 мс. Бедро, голень и стопа вращаются вокруг своих суставов (тазобедренный 40,102;
+   коленный 40,135; голеностоп 40,165 в координатах viewBox). Вторая нога и рука — в противофазе
+   (задержка на полцикла). Корпус ниже всего в фазе двойной опоры (0% и 50%), выше — в середине опоры. */
+.thigh, .shin, .foot, .upper, .fore, .lean, .headSide { transform-box: view-box; }
+.thigh { transform-origin: 40px 102px; }
+.shin { transform-origin: 40px 135px; }
+.foot { transform-origin: 40px 165px; }
+.upper { transform-origin: 41px 61px; }
+.fore { transform-origin: 41px 86px; }
+.lean { transform-origin: 40px 172px; transform: rotate(3deg); }
+.headSide { transform-origin: 43px 50px; }
 
-/* Пассажир: дыхание и телефон */
-.torso { transform-box: fill-box; transform-origin: 50% 100%; animation: breath 3.8s ease-in-out infinite; animation-delay: var(--breath-delay, 0s); }
-@keyframes breath { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.015); } }
+.walking .thigh { animation: thigh 620ms linear infinite; }
+.walking .shin { animation: shin 620ms linear infinite; }
+.walking .foot { animation: foot 620ms linear infinite; }
+.walking .upper { animation: arm 620ms ease-in-out infinite; }
+.walking .fore { animation: fore 620ms ease-in-out infinite; }
+.walking .back.thigh, .walking .back.shin, .walking .back.foot { animation-delay: -310ms; }
+.walking .back.upper, .walking .back.fore { animation-delay: -310ms; }
+.walking .body { animation: step-bob 310ms ease-in-out infinite; }
+.walking .headSide { animation: head-bob 310ms ease-in-out infinite; }
+
+@keyframes thigh {
+  0% { transform: rotate(-23deg); }
+  12% { transform: rotate(-16deg); }
+  25% { transform: rotate(-6deg); }
+  38% { transform: rotate(8deg); }
+  50% { transform: rotate(16deg); }
+  62% { transform: rotate(9deg); }
+  75% { transform: rotate(-8deg); }
+  88% { transform: rotate(-21deg); }
+  100% { transform: rotate(-23deg); }
+}
+@keyframes shin {
+  0% { transform: rotate(4deg); }
+  12% { transform: rotate(16deg); }
+  25% { transform: rotate(7deg); }
+  38% { transform: rotate(4deg); }
+  50% { transform: rotate(24deg); }
+  62% { transform: rotate(60deg); }
+  75% { transform: rotate(44deg); }
+  88% { transform: rotate(10deg); }
+  100% { transform: rotate(4deg); }
+}
+@keyframes foot {
+  0% { transform: rotate(-16deg); }
+  12% { transform: rotate(0deg); }
+  25% { transform: rotate(2deg); }
+  38% { transform: rotate(-2deg); }
+  50% { transform: rotate(24deg); }
+  62% { transform: rotate(14deg); }
+  75% { transform: rotate(-6deg); }
+  88% { transform: rotate(-12deg); }
+  100% { transform: rotate(-16deg); }
+}
+@keyframes arm { 0%, 100% { transform: rotate(18deg); } 50% { transform: rotate(-22deg); } }
+@keyframes fore { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(-30deg); } }
+@keyframes step-bob { 0%, 100% { transform: translateY(0.6px); } 50% { transform: translateY(-2.2px); } }
+@keyframes head-bob { 0%, 100% { transform: rotate(0.8deg); } 50% { transform: rotate(-0.8deg); } }
+
+/* ---------- Пассажир в кресле ---------- */
+.torsoSeat { transform-box: fill-box; transform-origin: 50% 100%; animation: breath-seat 3.8s ease-in-out infinite; animation-delay: var(--breath-delay, 0s); }
+@keyframes breath-seat { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.015); } }
 
 .seatHead { transform-box: fill-box; transform-origin: 50% 100%; animation: look 9s ease-in-out infinite; animation-delay: var(--breath-delay, 0s); }
 @keyframes look { 0%, 70%, 100% { transform: rotate(0); } 78%, 90% { transform: rotate(6deg); } }
 
+.angry .seatHead { animation: shake 0.5s ease-in-out infinite; }
+@keyframes shake { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+.angry .torsoSeat { animation: agitated 0.9s ease-in-out infinite; }
+@keyframes agitated { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
+.unwell .seatHead { animation: slump 3s ease-in-out infinite; }
+@keyframes slump { 0%, 100% { transform: rotate(8deg) translateY(1px); } 50% { transform: rotate(11deg) translateY(2px); } }
+
 .phone { animation: glow 3s ease-in-out infinite; }
 @keyframes glow { 0%, 100% { fill: #1c1c1e; } 50% { fill: #2c3e62; } }
 
-/* Портрет в кружке */
+/* ---------- Портрет в кружке ---------- */
 .bust {
   flex: none;
   position: relative;
   display: inline-block;
   overflow: hidden;
   border-radius: 50%;
-  background: linear-gradient(180deg, #dfe8f6, #c8d6ec);
+  background: linear-gradient(180deg, #e3eaf6, #cad7ec);
 }
 
 .bust > svg { position: absolute; left: 50%; top: 4%; transform: translateX(-50%); }
+.bustPerson > svg { top: -2%; }
 .bustTalking { box-shadow: 0 0 0 2px var(--page-bg), 0 0 0 4px var(--blue); }
 
 @media (prefers-reduced-motion: reduce) {
-  .walking .legL, .walking .legR, .walking .armL, .walking .armR, .walking .body,
-  .eyes, .talking .mouth, .talking .head, .torso, .seatHead, .phone { animation: none !important; }
+  .person *, .seated * { animation: none !important; }
 }
