@@ -168,7 +168,7 @@ private fun TripContent(state: ShiftUiState, viewModel: ShiftViewModel) {
         return
     }
     if (state.tripError) {
-        ErrorState(message = "Не удалось получить ситуации рейса — нет связи с сервером.") { viewModel.retryLoadTrip() }
+        ErrorState(message = "Не удалось получить ситуации рейса — нет связи с сервером.", onRetry = { viewModel.retryLoadTrip() })
         return
     }
     LazyColumn(

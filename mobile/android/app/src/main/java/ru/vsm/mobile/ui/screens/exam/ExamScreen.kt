@@ -221,7 +221,7 @@ private fun ExamRunningContent(state: ExamUiState, viewModel: ExamViewModel) {
         }
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             when {
-                state.itemError -> ErrorState(message = "Не удалось получить ситуацию — нет связи с сервером.") { viewModel.retryStartCurrentItem() }
+                state.itemError -> ErrorState(message = "Не удалось получить ситуацию — нет связи с сервером.", onRetry = { viewModel.retryStartCurrentItem() })
                 state.itemStarting || state.advancing -> LoadingState()
                 else -> Text(
                     "Открываем прохождение…",

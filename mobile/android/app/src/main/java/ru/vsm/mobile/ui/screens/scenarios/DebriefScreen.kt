@@ -250,6 +250,7 @@ private fun KeyMomentCard(moment: KeyMoment) {
     }
 }
 
+@Composable
 private fun colorForOutcome(outcome: ScenarioOutcome?): androidx.compose.ui.graphics.Color = when (outcome) {
     ScenarioOutcome.SUCCESS -> VsmPalette.success
     ScenarioOutcome.PARTIAL -> VsmPalette.warning
