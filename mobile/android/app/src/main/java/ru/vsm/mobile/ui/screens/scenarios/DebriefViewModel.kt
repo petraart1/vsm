@@ -10,6 +10,7 @@ import ru.vsm.mobile.domain.error.DomainError
 import ru.vsm.mobile.domain.error.isDebriefUnavailableDuringExam
 import ru.vsm.mobile.domain.model.Debrief
 import ru.vsm.mobile.domain.repository.FeedbackRepository
+import ru.vsm.mobile.domain.repository.PlayerRepository
 
 /** Состояние экрана разбора прохождения. */
 sealed interface DebriefUiState {
@@ -27,6 +28,7 @@ sealed interface DebriefUiState {
 class DebriefViewModel(
     private val progressId: String,
     private val feedbackRepository: FeedbackRepository,
+    private val playerRepository: PlayerRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<DebriefUiState>(DebriefUiState.Loading)
@@ -39,7 +41,8 @@ class DebriefViewModel(
     fun load() {
         _state.value = DebriefUiState.Loading
         viewModelScope.launch {
-            feedbackRepository.getDebrief(progressId).fold(
+            val playerId = playerRepository.getOrCreatePlayerId()
+            feedbackRepository.getDebrief(progressId, playerId).fold(
                 onSuccess = { debrief -> _state.value = DebriefUiState.Content(debrief) },
                 onFailure = { error ->
                     _state.value = if (error is DomainError.Api && error.isDebriefUnavailableDuringExam()) {

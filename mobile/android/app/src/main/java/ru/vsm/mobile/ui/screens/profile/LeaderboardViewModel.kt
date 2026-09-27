@@ -79,10 +79,9 @@ class LeaderboardViewModel(
 
     private fun loadTeams() {
         viewModelScope.launch {
-            val playerId = _state.value.playerId ?: playerRepository.getOrCreatePlayerId()
-            val teams = gamificationRepository.getTeamLeaderboard(limit = 20, playerId = playerId).getOrNull().orEmpty()
+            val teams = gamificationRepository.getTeamLeaderboard().getOrNull().orEmpty()
             val available = if (teams.none { it.teamId == _state.value.myTeamId }) {
-                gamificationRepository.listTeams().getOrNull().orEmpty()
+                gamificationRepository.getTeams().getOrNull().orEmpty()
             } else {
                 emptyList()
             }

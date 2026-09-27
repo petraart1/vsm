@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 /** Карточка-секция контента (заголовок опционален) в едином стиле по всему приложению. */
 @Composable
 fun SectionCard(
-    title: String?,
+    title: String? = null,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {

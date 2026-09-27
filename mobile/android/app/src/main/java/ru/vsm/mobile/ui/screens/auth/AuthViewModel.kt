@@ -1,5 +1,6 @@
 package ru.vsm.mobile.ui.screens.auth
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,14 +12,8 @@ import ru.vsm.mobile.domain.repository.AuthRepository
 
 enum class AuthTab { LOGIN, REGISTER }
 
-/** Демо-гражданин для входа через Госуслуги (демо-ЕСИА без реального портала). */
-data class EsiaDemoCitizen(val fullName: String, val snils: String, val login: String, val password: String)
-
-val ESIA_DEMO_CITIZENS = listOf(
-    EsiaDemoCitizen("Иванов Иван Иванович", "112-233-445 95", "esia.ivanov", "esia-demo-pass"),
-    EsiaDemoCitizen("Петрова Мария Сергеевна", "223-344-556 06", "esia.petrova", "esia-demo-pass"),
-    EsiaDemoCitizen("Сидоров Пётр Алексеевич", "334-455-667 17", "esia.sidorov", "esia-demo-pass"),
-)
+/** Своя схема приложения для перехвата редиректа демо-ЕСИА (см. [AuthRepository.esiaAuthorizeUrl]). */
+const val ESIA_REDIRECT_URI = "vsm://esia-callback"
 
 data class AuthUiState(
     val tab: AuthTab = AuthTab.LOGIN,
@@ -28,14 +23,19 @@ data class AuthUiState(
     val email: String = "",
     val busy: Boolean = false,
     val error: String? = null,
+    /** Открыта веб-вьюха демо-Госуслуг — [esiaAuthorizeUrl] загружен в неё. */
     val esiaOpen: Boolean = false,
-    val esiaVerifiedName: String? = null,
+    val esiaAuthorizeUrl: String? = null,
+    /** Идёт обмен кода редиректа на сессию ([AuthRepository.loginWithEsia]). */
+    val esiaExchanging: Boolean = false,
     val done: Boolean = false,
 )
 
 /**
- * Вход / регистрация по логину и паролю, демо-вход через Госуслуги (без реального портала — набор
- * фиксированных тестовых граждан) и анонимное продолжение (playerId устройства уже существует).
+ * Вход / регистрация по логину и паролю, демо-вход через Госуслуги (веб-вьюха на
+ * [AuthRepository.esiaAuthorizeUrl], редирект перехватывается по схеме [ESIA_REDIRECT_URI] и
+ * обменивается на сессию через [AuthRepository.loginWithEsia]) и анонимное продолжение (playerId
+ * устройства уже существует).
  */
 class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
@@ -79,36 +79,42 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
         }
     }
 
-    fun openEsiaDemo() = _state.update { it.copy(esiaOpen = true) }
-    fun closeEsiaDemo() = _state.update { it.copy(esiaOpen = false) }
-
-    /**
-     * Демо-вход через Госуслуги: пытается войти под фиксированной тестовой учёткой гражданина,
-     * при первом использовании регистрирует её тем же логином/паролем. Реального портала ЕСИА
-     * здесь нет — это демонстрационная заглушка для стенда.
-     */
-    fun confirmEsiaDemo(citizen: EsiaDemoCitizen) {
-        if (_state.value.busy) return
-        _state.update { it.copy(busy = true, error = null) }
-        viewModelScope.launch {
-            val loginResult = authRepository.login(citizen.login, citizen.password)
-            val result = if (loginResult.isSuccess) {
-                loginResult
-            } else {
-                authRepository.register(
-                    login = citizen.login,
-                    email = "${citizen.login}@esia-demo.local",
-                    password = citizen.password,
-                    displayName = citizen.fullName,
-                )
-            }
-            result.onSuccess {
-                _state.update { it.copy(busy = false, esiaOpen = false, esiaVerifiedName = citizen.fullName) }
-            }.onFailure { err ->
-                _state.update { it.copy(busy = false, error = err.message ?: "Не удалось подтвердить через Госуслуги") }
-            }
+    /** Открывает веб-вьюху демо-Госуслуг на URL, который отдаёт [AuthRepository.esiaAuthorizeUrl]. */
+    fun openEsia() {
+        _state.update {
+            it.copy(esiaOpen = true, error = null, esiaAuthorizeUrl = authRepository.esiaAuthorizeUrl(ESIA_REDIRECT_URI))
         }
     }
 
-    fun dismissEsiaVerified() = _state.update { it.copy(esiaVerifiedName = null, done = true) }
+    fun closeEsia() = _state.update { it.copy(esiaOpen = false, esiaAuthorizeUrl = null) }
+
+    /**
+     * Веб-вьюха вызывает при переходе на [ESIA_REDIRECT_URI] — извлекает `code` из редиректа и
+     * обменивает его на сессию. Возвращает `true`, если url был перехвачен (страница демо-Госуслуг
+     * дальше не грузится в веб-вьюхе).
+     */
+    fun onEsiaRedirect(url: String): Boolean {
+        if (!url.startsWith(ESIA_REDIRECT_URI)) return false
+        val code = runCatching { Uri.parse(url).getQueryParameter("code") }.getOrNull()
+        if (code.isNullOrBlank()) {
+            _state.update { it.copy(esiaOpen = false, esiaAuthorizeUrl = null, error = "Госуслуги не вернули код авторизации.") }
+            return true
+        }
+        _state.update { it.copy(esiaExchanging = true, error = null) }
+        viewModelScope.launch {
+            authRepository.loginWithEsia(code).onSuccess {
+                _state.update { it.copy(esiaExchanging = false, esiaOpen = false, esiaAuthorizeUrl = null, done = true) }
+            }.onFailure { err ->
+                _state.update {
+                    it.copy(
+                        esiaExchanging = false,
+                        esiaOpen = false,
+                        esiaAuthorizeUrl = null,
+                        error = err.message ?: "Не удалось подтвердить через Госуслуги",
+                    )
+                }
+            }
+        }
+        return true
+    }
 }

@@ -2,6 +2,8 @@ package ru.vsm.mobile.ui.screens.settings
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 
 /** Выбор темы приложения, сохраняемый на устройстве. */
 enum class ThemeChoice { SYSTEM, LIGHT, DARK }
@@ -12,14 +14,28 @@ private const val KEY_API_BASE_URL = "api_base_url_override"
 
 /**
  * Настройки, хранящиеся локально на устройстве: тема оформления и (для демо-стендов) адрес
- * backend поверх значения по умолчанию из сборки. Корневой экран приложения (вне этого модуля)
- * может читать [themeChoice] при построении темы; смена адреса сервера применяется при следующем
- * запуске процесса — DI-контейнер собирается один раз при старте.
+ * backend поверх значения по умолчанию из сборки. [themeChoiceState] — реактивное Compose-состояние
+ * поверх сохранённого выбора темы, которое читает корневой экран приложения при построении
+ * [ru.vsm.mobile.ui.theme.VsmTheme], поэтому смена темы применяется сразу, без перезапуска;
+ * смена адреса сервера по-прежнему применяется только при следующем запуске процесса — DI-контейнер
+ * собирается один раз при старте.
  */
 object SettingsPreferences {
 
     private fun prefs(context: Context): SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    private val _themeChoiceState = mutableStateOf(ThemeChoice.SYSTEM)
+
+    /** Текущий выбор темы — читать в составе Compose-дерева, чтобы реагировать на смену без перезапуска. */
+    val themeChoiceState: State<ThemeChoice> get() = _themeChoiceState
+
+    /** Читает сохранённый выбор темы и синхронизирует [themeChoiceState] — вызывать один раз при старте процесса. */
+    fun loadThemeChoice(context: Context): ThemeChoice {
+        val value = themeChoice(context)
+        _themeChoiceState.value = value
+        return value
+    }
 
     fun themeChoice(context: Context): ThemeChoice =
         when (prefs(context).getString(KEY_THEME, null)) {
@@ -37,6 +53,7 @@ object SettingsPreferences {
                 ThemeChoice.SYSTEM -> "system"
             },
         ).apply()
+        _themeChoiceState.value = choice
     }
 
     fun apiBaseUrlOverride(context: Context): String? = prefs(context).getString(KEY_API_BASE_URL, null)

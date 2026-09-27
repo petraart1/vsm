@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ru.vsm.mobile.domain.model.Notification
+import ru.vsm.mobile.domain.model.NotificationType
 import ru.vsm.mobile.ui.common.appContainer
 import ru.vsm.mobile.ui.common.viewModel
 import ru.vsm.mobile.ui.components.EmptyState
@@ -47,37 +48,37 @@ import ru.vsm.mobile.ui.components.LoadingState
 import ru.vsm.mobile.ui.navigation.AppNavigator
 
 /** Иконка для каждого типа уведомления геймификации, fallback — обычный колокольчик. */
-private fun iconFor(type: String): ImageVector = when (type) {
-    "ACHIEVEMENT_UNLOCKED" -> Icons.Filled.EmojiEvents
-    "NEW_PERSONAL_BEST" -> Icons.Filled.Star
-    "LEADERBOARD_RANK_UP" -> Icons.Filled.TrendingUp
-    "RECOMMENDED_SCENARIO" -> Icons.Filled.School
-    "CHALLENGE_COMPLETED" -> Icons.Filled.MilitaryTech
-    "TEAM_RANK_UP" -> Icons.Filled.Groups
-    "EXAM_COMPLETED" -> Icons.Filled.CheckCircle
-    "LEVEL_UP" -> Icons.Filled.TrendingUp
-    "NEW_SCENARIO" -> Icons.Filled.School
-    "NEW_CHALLENGE" -> Icons.Filled.MilitaryTech
-    "POINTS_EXPIRING" -> Icons.Filled.Timer
-    "POINTS_EXPIRED" -> Icons.Filled.TrendingDown
-    else -> Icons.Filled.Notifications
+private fun iconFor(type: NotificationType): ImageVector = when (type) {
+    NotificationType.ACHIEVEMENT_UNLOCKED -> Icons.Filled.EmojiEvents
+    NotificationType.NEW_PERSONAL_BEST -> Icons.Filled.Star
+    NotificationType.LEADERBOARD_RANK_UP -> Icons.Filled.TrendingUp
+    NotificationType.RECOMMENDED_SCENARIO -> Icons.Filled.School
+    NotificationType.CHALLENGE_COMPLETED -> Icons.Filled.MilitaryTech
+    NotificationType.TEAM_RANK_UP -> Icons.Filled.Groups
+    NotificationType.EXAM_COMPLETED -> Icons.Filled.CheckCircle
+    NotificationType.LEVEL_UP -> Icons.Filled.TrendingUp
+    NotificationType.NEW_SCENARIO -> Icons.Filled.School
+    NotificationType.NEW_CHALLENGE -> Icons.Filled.MilitaryTech
+    NotificationType.POINTS_EXPIRING -> Icons.Filled.Timer
+    NotificationType.POINTS_EXPIRED -> Icons.Filled.TrendingDown
+    NotificationType.UNKNOWN -> Icons.Filled.Notifications
 }
 
 /** Подпись типа уведомления для второстепенной строки под заголовком. */
-private fun typeLabel(type: String): String = when (type) {
-    "ACHIEVEMENT_UNLOCKED" -> "Новая ачивка"
-    "NEW_PERSONAL_BEST" -> "Личный рекорд"
-    "LEADERBOARD_RANK_UP" -> "Рост в рейтинге"
-    "RECOMMENDED_SCENARIO" -> "Рекомендация"
-    "CHALLENGE_COMPLETED" -> "Челлендж выполнен"
-    "TEAM_RANK_UP" -> "Рост бригады"
-    "EXAM_COMPLETED" -> "Экзамен завершён"
-    "LEVEL_UP" -> "Новый разряд"
-    "NEW_SCENARIO" -> "Новый сценарий"
-    "NEW_CHALLENGE" -> "Новый челлендж"
-    "POINTS_EXPIRING" -> "Очки сгорают"
-    "POINTS_EXPIRED" -> "Очки сгорели"
-    else -> "Уведомление"
+private fun typeLabel(type: NotificationType): String = when (type) {
+    NotificationType.ACHIEVEMENT_UNLOCKED -> "Новая ачивка"
+    NotificationType.NEW_PERSONAL_BEST -> "Личный рекорд"
+    NotificationType.LEADERBOARD_RANK_UP -> "Рост в рейтинге"
+    NotificationType.RECOMMENDED_SCENARIO -> "Рекомендация"
+    NotificationType.CHALLENGE_COMPLETED -> "Челлендж выполнен"
+    NotificationType.TEAM_RANK_UP -> "Рост бригады"
+    NotificationType.EXAM_COMPLETED -> "Экзамен завершён"
+    NotificationType.LEVEL_UP -> "Новый разряд"
+    NotificationType.NEW_SCENARIO -> "Новый сценарий"
+    NotificationType.NEW_CHALLENGE -> "Новый челлендж"
+    NotificationType.POINTS_EXPIRING -> "Очки сгорают"
+    NotificationType.POINTS_EXPIRED -> "Очки сгорели"
+    NotificationType.UNKNOWN -> "Уведомление"
 }
 
 /** Список уведомлений игрока: прочитать одно по нажатию, отметить все прочитанными. */

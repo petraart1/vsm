@@ -54,7 +54,9 @@ import ru.vsm.mobile.ui.theme.VsmPalette
 @Composable
 fun DebriefScreen(progressId: String, navigator: AppNavigator) {
     val container = appContainer()
-    val viewModel: DebriefViewModel = viewModel { DebriefViewModel(progressId, container.feedbackRepository) }
+    val viewModel: DebriefViewModel = viewModel {
+        DebriefViewModel(progressId, container.feedbackRepository, container.playerRepository)
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(

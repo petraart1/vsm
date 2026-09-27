@@ -79,10 +79,10 @@ private fun PlayersTab(state: LeaderboardUiState) {
         return
     }
     val max = state.playersTop.maxOf { it.totalScore }.coerceAtLeast(1)
-    val meInTop = state.playersTop.any { it.playerId == state.myEntry?.playerId }
+    val meInTop = state.playersTop.any { it.me }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(state.playersTop) { entry ->
-            PlayerRow(entry = entry, max = max, isMe = entry.playerId == state.myEntry?.playerId)
+            PlayerRow(entry = entry, max = max, isMe = entry.me)
         }
         if (state.myEntry != null && !meInTop) {
             item { PlayerRow(entry = state.myEntry, max = max, isMe = true) }

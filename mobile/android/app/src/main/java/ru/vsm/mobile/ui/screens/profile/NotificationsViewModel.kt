@@ -49,8 +49,9 @@ class NotificationsViewModel(
     }
 
     fun markRead(notificationId: String) {
+        val playerId = _state.value.playerId ?: return
         viewModelScope.launch {
-            gamificationRepository.markRead(notificationId).onSuccess { updated ->
+            gamificationRepository.markRead(notificationId, playerId).onSuccess { updated ->
                 _state.value = _state.value.copy(
                     notifications = _state.value.notifications.map { if (it.id == updated.id) updated else it },
                 )

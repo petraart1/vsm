@@ -1,21 +1,25 @@
 package ru.vsm.mobile.ui.screens.auth
 
+import android.annotation.SuppressLint
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -24,6 +28,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.vsm.mobile.ui.common.appContainer
@@ -55,17 +61,27 @@ fun LoginScreen(navigator: AppNavigator) {
         if (state.done) navigator.openTab(Routes.TODAY)
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Вход") }) }) { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (state.esiaOpen) "Госуслуги" else "Вход") },
+                navigationIcon = {
+                    if (state.esiaOpen) {
+                        IconButton(onClick = viewModel::closeEsia) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                        }
+                    }
+                },
+            )
+        },
+    ) { padding ->
         if (state.esiaOpen) {
-            EsiaDemoPicker(
-                busy = state.busy,
-                error = state.error,
-                onPick = viewModel::confirmEsiaDemo,
-                onCancel = viewModel::closeEsiaDemo,
+            EsiaWebView(
+                url = state.esiaAuthorizeUrl,
+                exchanging = state.esiaExchanging,
+                onRedirect = viewModel::onEsiaRedirect,
                 modifier = Modifier.padding(padding),
             )
-        } else if (state.esiaVerifiedName != null) {
-            EsiaVerified(name = state.esiaVerifiedName!!, onContinue = viewModel::dismissEsiaVerified, modifier = Modifier.padding(padding))
         } else {
             AuthForm(state, viewModel, navigator, modifier = Modifier.padding(padding))
         }
@@ -91,7 +107,7 @@ private fun AuthForm(state: AuthUiState, viewModel: AuthViewModel, navigator: Ap
             }
         }
 
-        OutlinedButton(onClick = viewModel::openEsiaDemo, modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(onClick = viewModel::openEsia, modifier = Modifier.fillMaxWidth()) {
             Text("Войти через Госуслуги (демо)")
         }
 
@@ -156,50 +172,42 @@ private fun AuthForm(state: AuthUiState, viewModel: AuthViewModel, navigator: Ap
     }
 }
 
+/**
+ * Веб-вьюха демо-портала Госуслуг: грузит [url] от [ru.vsm.mobile.domain.repository.AuthRepository.esiaAuthorizeUrl]
+ * и перехватывает редирект на схему приложения через [onRedirect] — сама страница дальше не
+ * догружается, поверх показывается индикатор обмена кода на сессию.
+ */
+@SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun EsiaDemoPicker(
-    busy: Boolean,
-    error: String?,
-    onPick: (EsiaDemoCitizen) -> Unit,
-    onCancel: () -> Unit,
+private fun EsiaWebView(
+    url: String?,
+    exchanging: Boolean,
+    onRedirect: (String) -> Boolean,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
-            Text("Госуслуги · демо", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(
-                "Демонстрационный вход: выберите тестового гражданина. Это не настоящий портал и не проверка реальных учётных записей.",
-                style = MaterialTheme.typography.bodyMedium,
+    Box(modifier.fillMaxSize()) {
+        if (url != null) {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { context ->
+                    WebView(context).apply {
+                        settings.javaScriptEnabled = true
+                        webViewClient = object : WebViewClient() {
+                            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
+                                onRedirect(request.url.toString())
+                        }
+                        loadUrl(url)
+                    }
+                },
             )
         }
-        items(ESIA_DEMO_CITIZENS) { citizen ->
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(citizen.fullName, fontWeight = FontWeight.Medium)
-                    Text("СНИЛС ${citizen.snils}", style = MaterialTheme.typography.bodySmall)
-                    Button(onClick = { onPick(citizen) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                        Text(if (busy) "Проверяем…" else "Выбрать")
-                    }
-                }
+        if (exchanging) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
             }
         }
-        error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
-        item {
-            OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text("Отмена") }
-        }
-    }
-}
-
-@Composable
-private fun EsiaVerified(name: String, onContinue: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = VsmPalette.success)
-        Text("Личность подтверждена", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("$name — теперь полноценный участник: очки без коэффициента и официальные награды.")
-        Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) { Text("Продолжить") }
     }
 }
