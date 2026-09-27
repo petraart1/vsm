@@ -18,7 +18,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
@@ -49,7 +48,8 @@ object VsmMotion {
  * композиции, использует один и тот же durationMillis/easing, что и веб (`--ease-out`, 900ms →
  * упрощено до `DUR_SLOW` для отзывчивости на мобильном).
  */
-fun Modifier.appearIn(index: Int = 0, stepMs: Int = 45): Modifier = androidx.compose.ui.composed {
+@Composable
+fun Modifier.appearIn(index: Int = 0, stepMs: Int = 45): Modifier {
     val progress = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay(VsmMotion.staggerDelay(index, stepMs).toLong())
@@ -58,7 +58,7 @@ fun Modifier.appearIn(index: Int = 0, stepMs: Int = 45): Modifier = androidx.com
             animationSpec = tween(durationMillis = VsmMotion.DUR_SLOW, easing = VsmMotion.easeOut),
         )
     }
-    this.graphicsLayer {
+    return this.graphicsLayer {
         alpha = progress.value
         translationY = (1f - progress.value) * 28f
     }
@@ -68,15 +68,15 @@ fun Modifier.appearIn(index: Int = 0, stepMs: Int = 45): Modifier = androidx.com
  * Лёгкое уменьшение при нажатии (0.94×) — как `.tab:active { transform: scale(0.94) }` /
  * `:active` на кнопках сайта. Вешается поверх `clickable`/`Button` модификатора.
  */
-fun Modifier.pressScale(pressedScale: Float = 0.94f, interactionSource: MutableInteractionSource): Modifier =
-    androidx.compose.ui.composed {
+@Composable
+fun Modifier.pressScale(pressedScale: Float = 0.94f, interactionSource: MutableInteractionSource): Modifier {
         val pressed by interactionSource.collectIsPressedAsState()
         val scale by animateFloatAsState(
             targetValue = if (pressed) pressedScale else 1f,
             animationSpec = tween(durationMillis = VsmMotion.DUR_FAST, easing = VsmMotion.easeOut),
             label = "pressScale",
         )
-        this.graphicsLayer {
+        return this.graphicsLayer {
             scaleX = scale
             scaleY = scale
             transformOrigin = TransformOrigin.Center
