@@ -67,7 +67,7 @@ export default function Leaderboard() {
   }
 
   if (s.phase === "error") {
-    return <ErrorState message="Сервер тренажёра не вернул рейтинг." onRetry={load} />;
+    return <ErrorState message="Не удалось загрузить рейтинг. Проверьте подключение к интернету и попробуйте ещё раз." onRetry={load} />;
   }
 
   const d = s.data;

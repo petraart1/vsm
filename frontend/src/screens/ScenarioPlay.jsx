@@ -43,7 +43,7 @@ export default function ScenarioPlay({ route }) {
   if (dialog.phase === "error" && dialog.messages.length === 0) {
     return (
       <div className={styles.center}>
-        <EmptyState title="Сценарий не найден" message="Возможно, он удалён или нет связи с сервером." action={<Button as="a" href="#/scenarios">Открыть каталог</Button>} />
+        <EmptyState title="Сценарий не найден" message="Возможно, он удалён, или нет подключения к интернету." action={<Button as="a" href="#/scenarios">Открыть каталог</Button>} />
       </div>
     );
   }

@@ -67,7 +67,7 @@ export default function Achievements({ route }) {
   }
 
   if (s.phase === "error") {
-    return <ErrorState message="Сервер тренажёра не вернул каталог модулей. Проверьте, что backend запущен, и повторите." onRetry={load} />;
+    return <ErrorState message="Не удалось загрузить модули. Проверьте подключение к интернету и попробуйте ещё раз." onRetry={load} />;
   }
 
   const { qualifications, distinctions, profile } = s;

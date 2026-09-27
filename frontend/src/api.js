@@ -99,13 +99,20 @@ function apiFetch(path, options = {}) {
         try { body = JSON.parse(text); } catch (e) { body = null; }
       }
       if (!res.ok) {
-        const err = new Error((body && body.message) || `${res.status} ${res.statusText}`);
+        const fallback = res.status >= 500 ? "Сервис временно недоступен." : "Не удалось выполнить запрос.";
+        const err = new Error((body && body.message) || fallback);
         err.code = body && body.error;
         err.status = res.status;
         throw err;
       }
       return body;
     });
+  }, () => {
+    // Сеть недоступна, CORS или сервис не отвечает — исходное сообщение fetch техническое и на
+    // английском (например «Failed to fetch»), пользователю такое не показываем.
+    const err = new Error("Не удалось загрузить данные. Проверьте подключение к интернету и попробуйте ещё раз.");
+    err.code = "network_error";
+    throw err;
   });
 }
 

@@ -24,8 +24,7 @@ const SECTIONS = [
   { key: "players", label: "Проводники", icon: "users", title: "Проводники", description: "Результаты обучения по каждому проводнику." },
   { key: "scenarios", label: "Сценарии", icon: "list", title: "Сценарии", description: "Каталог ситуаций: доступность для проводников, статистика, импорт и экспорт." },
   { key: "events", label: "События", icon: "flag", title: "События", description: "Временные цели для проводников с наградой за выполнение." },
-  { key: "awards", label: "Награды", icon: "medal", title: "Награды", description: "Награды программы, которые выдаются вручную." },
-  { key: "stand", label: "Стенд", icon: "server", title: "Стенд", description: "Параметры симулятора и сведения о демо-стенде." }
+  { key: "awards", label: "Награды", icon: "medal", title: "Награды", description: "Награды программы, которые выдаются вручную." }
 ];
 
 export default function Admin({ route }) {
@@ -102,7 +101,6 @@ export default function Admin({ route }) {
           {key === "scenarios" && <Scenarios notify={notify} />}
           {key === "events" && <Events notify={notify} />}
           {key === "awards" && <Awards notify={notify} />}
-          {key === "stand" && <Stand />}
         </div>
       </div>
 
@@ -1048,17 +1046,3 @@ function Awards({ notify }) {
 // ---------------------------------------------------------------------------
 // Стенд
 
-function Stand() {
-  return (
-    <div className={styles.split}>
-      <Panel title="Сведения о стенде">
-        <dl className={styles.facts}>
-          <dt>Режим данных</dt><dd>{api.USE_MOCKS ? "Демо-данные в браузере (без сервера)" : "Сервер тренажёра"}</dd>
-          <dt>Документация API</dt><dd><a className={styles.link} href="/swagger-ui.html" target="_blank" rel="noreferrer">Swagger UI</a></dd>
-          <dt>Начисление очков</dt><dd>Неподтверждённым учётным записям — с коэффициентом 0,5; суточный лимит на игрока. Настраивается на сервере.</dd>
-          <dt>Вход через Госуслуги</dt><dd>Демо-провайдер с тестовыми гражданами; для реальной интеграции нужна регистрация ИС в ЕСИА и ГОСТ-криптография.</dd>
-        </dl>
-      </Panel>
-    </div>
-  );
-}

@@ -269,7 +269,7 @@ export const BLOCK_TITLES = {
 export function blockTitle(key) {
   if (!key) return "";
   const k = String(key).toLowerCase();
-  return BLOCK_TITLES[k] || (MODULES[k] && MODULES[k].title) || String(key);
+  return BLOCK_TITLES[k] || (MODULES[k] && MODULES[k].title) || "Другое";
 }
 
 /** Иконка для каждого блока ситуаций (имена из components/ui/Icon.jsx). */

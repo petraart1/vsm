@@ -119,7 +119,7 @@ export default function ScenarioList({ route }) {
   }
 
   if (loadState.error) {
-    return <ErrorState message="Сервер тренажёра не ответил. Проверьте, что backend запущен, и повторите." onRetry={load} />;
+    return <ErrorState message="Не удалось загрузить каталог ситуаций. Проверьте подключение к интернету и попробуйте ещё раз." onRetry={load} />;
   }
 
   const data = loadState.data;

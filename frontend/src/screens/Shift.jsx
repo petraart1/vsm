@@ -851,7 +851,7 @@ function Trip({ cls, passengers, initial, tripSeconds, onDone, onExit }) {
             scales={dialog.scales}
             footer={
               dialog.phase === "final" ? <Button size="lg" className={styles.ctaBtn} onClick={closeDialog}>Вернуться к работе</Button>
-                : dialog.phase === "error" ? <Button size="lg" variant="secondary" className={styles.ctaBtn} onClick={() => { setIncidents((l) => l.map((i) => (i.key === talk ? { ...i, status: "done", result: { safety: 0, loyalty: 0, verdict: "Нет связи с сервером" } } : i))); closeDialog(); }}>Нет связи — продолжить смену</Button>
+                : dialog.phase === "error" ? <Button size="lg" variant="secondary" className={styles.ctaBtn} onClick={() => { setIncidents((l) => l.map((i) => (i.key === talk ? { ...i, status: "done", result: { safety: 0, loyalty: 0, verdict: "Не удалось сохранить результат" } } : i))); closeDialog(); }}>Нет связи — продолжить смену</Button>
                   : null
             }
           />

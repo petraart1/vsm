@@ -105,10 +105,10 @@ export default function Settings() {
 
           <h2 className={styles.label}>Данные</h2>
           <section className={styles.group}>
-            <div className={styles.row}><span className={styles.rowIcon}><Icon name="clipboard" size={16} /></span><span className={styles.rowText}><b>Хранение</b><span>История смен, серия входов и витрина — на этом устройстве; прохождения и очки — на сервере</span></span></div>
+            <div className={styles.row}><span className={styles.rowIcon}><Icon name="clipboard" size={16} /></span><span className={styles.rowText}><b>Хранение</b><span>История смен, серия входов и витрина — на этом устройстве; прохождения и очки — в учётной записи</span></span></div>
             {confirmReset ? (
               <div className={styles.confirm}>
-                <p>Удалить локальные данные: историю смен, серию входов и витрину? Прогресс на сервере останется.</p>
+                <p>Удалить локальные данные: историю смен, серию входов и витрину? Прогресс в учётной записи останется.</p>
                 <div className={styles.actions}>
                   <Button variant="secondary" onClick={() => setConfirmReset(false)}>Отмена</Button>
                   <Button onClick={resetLocal}>Удалить</Button>

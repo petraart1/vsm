@@ -217,7 +217,7 @@ export default function Profile() {
   }
 
   if (s.phase === "error") {
-    return <ErrorState message="Сервер тренажёра не вернул профиль. Проверьте, что backend запущен, и повторите." onRetry={load} />;
+    return <ErrorState message="Не удалось загрузить профиль. Проверьте подключение к интернету и попробуйте ещё раз." onRetry={load} />;
   }
 
   const p = s.data;

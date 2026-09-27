@@ -179,7 +179,7 @@ function ExamIntro() {
                   ))}
                 </div>
               </div>
-              {error && <p className={styles.error} role="alert">Не удалось начать экзамен. Проверьте связь с сервером и попробуйте ещё раз.</p>}
+              {error && <p className={styles.error} role="alert">Не удалось начать экзамен. Проверьте подключение к интернету и попробуйте ещё раз.</p>}
               <Button size="lg" className={styles.cta} onClick={begin} disabled={creating}>
                 {creating ? "Готовим ситуации…" : "Начать экзамен"}
               </Button>
@@ -281,7 +281,7 @@ function ExamRun({ examId }) {
         <div className={styles.center}>
           <EmptyState
             title="Экзамен не найден"
-            message="Возможно, он уже завершён или нет связи с сервером."
+            message="Возможно, он уже завершён, или нет подключения к интернету."
             action={<Button as="a" href="#/exam" onClick={() => clearCurrent(examId)}>К экзамену</Button>}
           />
         </div>
@@ -300,7 +300,7 @@ function ExamRun({ examId }) {
       <div className={styles.between}>
         <p className={styles.betweenTitle}><Icon name="check" size={16} />Ситуация завершена</p>
         <p className={styles.betweenNote}>{isLast ? "Это была последняя ситуация. Итог готов." : "Результаты будут показаны в конце экзамена."}</p>
-        {advanceErr && <p className={styles.error} role="alert">Нет связи с сервером. Попробуйте ещё раз.</p>}
+        {advanceErr && <p className={styles.error} role="alert">Не удалось сохранить результат. Проверьте подключение к интернету и попробуйте ещё раз.</p>}
         <Button size="lg" className={styles.cta} onClick={next} disabled={advancing}>
           {advancing ? "Загрузка…" : isLast ? "Узнать результат" : "Следующая ситуация"}
         </Button>
@@ -309,7 +309,7 @@ function ExamRun({ examId }) {
   } else if (dialog.phase === "error") {
     footer = (
       <div className={styles.between}>
-        <p className={styles.betweenNote}>Не удалось получить ситуацию — нет связи с сервером.</p>
+        <p className={styles.betweenNote}>Не удалось загрузить ситуацию. Проверьте подключение к интернету.</p>
         <Button size="lg" variant="secondary" className={styles.cta} onClick={next} disabled={advancing}>{advancing ? "Загрузка…" : "Повторить"}</Button>
       </div>
     );

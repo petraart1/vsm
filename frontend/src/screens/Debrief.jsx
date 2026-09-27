@@ -124,7 +124,7 @@ export default function Debrief({ route }) {
   }
 
   if (s.phase === "error") {
-    return <ErrorState message="Сервер тренажёра не вернул разбор прохождения." onRetry={load} />;
+    return <ErrorState message="Не удалось загрузить разбор прохождения. Проверьте подключение к интернету и попробуйте ещё раз." onRetry={load} />;
   }
 
   const d = s.debrief;
