@@ -3,11 +3,15 @@ package ru.vsm.mobile.ui.screens.shift
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -31,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -107,18 +112,42 @@ private fun ShiftSetupContent(state: ShiftUiState, viewModel: ShiftViewModel) {
             style = MaterialTheme.typography.bodyLarge,
         )
         SectionCard(title = "Класс вагона") {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CarClass.entries.forEach { cls ->
-                    FilterChip(
-                        selected = state.carClass == cls,
-                        onClick = { viewModel.selectCarClass(cls) },
-                        label = { Text(CAR_CLASS_TITLES.getValue(cls)) },
-                    )
-                }
-            }
+            CarClassSelector(selected = state.carClass, onSelect = viewModel::selectCarClass)
         }
         Button(onClick = viewModel::startShift, modifier = Modifier.fillMaxWidth()) {
             Text("Заступить на смену")
+        }
+    }
+}
+
+/**
+ * Выбор класса вагона: сетка 2×2 с чипами одинаковой ширины и высоты, подпись всегда в одну
+ * строку — иначе на узких экранах самая длинная подпись («Первый») переносится и ломает высоту ряда.
+ */
+@Composable
+private fun CarClassSelector(selected: CarClass, onSelect: (CarClass) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        CarClass.entries.chunked(2).forEach { rowClasses ->
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                rowClasses.forEach { cls ->
+                    FilterChip(
+                        selected = selected == cls,
+                        onClick = { onSelect(cls) },
+                        label = {
+                            Text(
+                                CAR_CLASS_TITLES.getValue(cls),
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        },
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                    )
+                }
+            }
         }
     }
 }
@@ -197,9 +226,15 @@ private fun TripContent(state: ShiftUiState, viewModel: ShiftViewModel) {
 private fun TripTimelineCard(number: Int, item: TripItem, isCurrent: Boolean, onPlay: () -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("$number", style = MaterialTheme.typography.titleMedium)
+            Text("$number", style = MaterialTheme.typography.titleMedium, modifier = Modifier.width(24.dp))
             Column(Modifier.weight(1f)) {
-                Text(item.scenario.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                Text(
+                    item.scenario.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 Text(item.scenario.block, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             when {
@@ -220,8 +255,13 @@ private fun ShiftSummaryContent(state: ShiftUiState, navigator: AppNavigator) {
         Text("Смена завершена", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         SectionCard(title = "Заступ на смену") {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Безопасность: ${state.preShiftSafety}", color = VsmPalette.safety)
-                Text("Лояльность: ${state.preShiftLoyalty}", color = VsmPalette.loyalty)
+                Text("Безопасность: ${state.preShiftSafety}", color = VsmPalette.safety, modifier = Modifier.weight(1f))
+                Text(
+                    "Лояльность: ${state.preShiftLoyalty}",
+                    color = VsmPalette.loyalty,
+                    modifier = Modifier.weight(1f),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                )
             }
         }
         SectionCard(title = "Рейс") {

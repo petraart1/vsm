@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
@@ -90,7 +93,14 @@ fun LoginScreen(navigator: AppNavigator) {
 
 @Composable
 private fun AuthForm(state: AuthUiState, viewModel: AuthViewModel, navigator: AppNavigator, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .imePadding()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         TabRow(selectedTabIndex = if (state.tab == AuthTab.LOGIN) 0 else 1) {
             Tab(selected = state.tab == AuthTab.LOGIN, onClick = { viewModel.selectTab(AuthTab.LOGIN) }, text = { Text("Вход") })
             Tab(selected = state.tab == AuthTab.REGISTER, onClick = { viewModel.selectTab(AuthTab.REGISTER) }, text = { Text("Регистрация") })
@@ -116,6 +126,7 @@ private fun AuthForm(state: AuthUiState, viewModel: AuthViewModel, navigator: Ap
                 value = state.displayName,
                 onValueChange = viewModel::setDisplayName,
                 label = { Text("Имя и фамилия (необязательно)") },
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -123,6 +134,7 @@ private fun AuthForm(state: AuthUiState, viewModel: AuthViewModel, navigator: Ap
             value = state.login,
             onValueChange = viewModel::setLogin,
             label = { Text("Логин") },
+            singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
         if (state.tab == AuthTab.REGISTER) {
@@ -131,6 +143,7 @@ private fun AuthForm(state: AuthUiState, viewModel: AuthViewModel, navigator: Ap
                 onValueChange = viewModel::setEmail,
                 label = { Text("Почта") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -140,6 +153,7 @@ private fun AuthForm(state: AuthUiState, viewModel: AuthViewModel, navigator: Ap
             label = { Text("Пароль") },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
 

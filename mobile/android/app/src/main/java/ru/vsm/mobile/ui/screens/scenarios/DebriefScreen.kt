@@ -3,6 +3,7 @@ package ru.vsm.mobile.ui.screens.scenarios
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,8 +27,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -104,8 +107,8 @@ private fun DebriefContent(debrief: Debrief, navigator: AppNavigator) {
 
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                ScoreTile(label = "Безопасность", value = debrief.finalSafetyScore, color = VsmPalette.safety)
-                ScoreTile(label = "Лояльность", value = debrief.finalLoyaltyScore, color = VsmPalette.loyalty)
+                ScoreTile(label = "Безопасность", value = debrief.finalSafetyScore, color = VsmPalette.safety, modifier = Modifier.weight(1f))
+                ScoreTile(label = "Лояльность", value = debrief.finalLoyaltyScore, color = VsmPalette.loyalty, modifier = Modifier.weight(1f))
             }
         }
 
@@ -150,9 +153,15 @@ private fun DebriefContent(debrief: Debrief, navigator: AppNavigator) {
 @Composable
 private fun DebriefHeader(debrief: Debrief) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AssistChip(onClick = {}, label = { Text(debrief.scenarioBlock) })
-            Text(debrief.scenarioTitle, style = MaterialTheme.typography.bodyMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            AssistChip(onClick = {}, label = { Text(debrief.scenarioBlock, maxLines = 1, overflow = TextOverflow.Ellipsis) })
+            Text(
+                debrief.scenarioTitle,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
         }
         Text(
             text = debrief.verdict,
@@ -171,8 +180,8 @@ private fun DebriefHeader(debrief: Debrief) {
 }
 
 @Composable
-private fun ScoreTile(label: String, value: Int, color: androidx.compose.ui.graphics.Color) {
-    Column {
+private fun ScoreTile(label: String, value: Int, color: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier) {
+    Column(modifier) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value.toString(), style = MaterialTheme.typography.headlineMedium, color = color, fontWeight = FontWeight.Bold)
     }
@@ -185,8 +194,16 @@ private fun DebriefStepCard(step: DebriefStep) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("${step.sequenceIndex + 1}.", fontWeight = FontWeight.Bold)
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    "${step.sequenceIndex + 1}.",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
                 if (step.nodeType == NodeType.ESCALATION) {
                     AssistChip(onClick = {}, label = { Text("Эскалация") })
                 }

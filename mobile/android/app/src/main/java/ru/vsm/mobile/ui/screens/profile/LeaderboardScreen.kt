@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -22,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ru.vsm.mobile.domain.model.LeaderboardEntry
@@ -101,27 +103,38 @@ private fun PlayerRow(entry: LeaderboardEntry, max: Int, isMe: Boolean) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 Text(
                     text = "${entry.rank}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    maxLines = 1,
                     modifier = Modifier.padding(end = 12.dp),
                 )
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = if (isMe) "Вы" else entry.displayName,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = if (isMe) FontWeight.SemiBold else FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         text = "${entry.scenariosCompleted} сценариев",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
-            Text(text = "${entry.totalScore}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "${entry.totalScore}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
         }
     }
 }
@@ -161,23 +174,38 @@ private fun TeamRow(entry: TeamLeaderboardEntry, isMine: Boolean) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                 Text(
                     text = "${entry.rank}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    maxLines = 1,
                     modifier = Modifier.padding(end = 12.dp),
                 )
-                Column {
-                    Text(text = entry.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = entry.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     Text(
                         text = "${entry.depot} · ${entry.memberCount} чел.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
-            Text(text = "${entry.averageScore.toInt()}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "${entry.averageScore.toInt()}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
         }
     }
 }
@@ -192,16 +220,19 @@ private fun JoinTeamRow(team: Team, joining: Boolean, onJoin: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Column {
-                Text(text = team.name, style = MaterialTheme.typography.bodyLarge)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = team.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
                     text = "${team.depot} · ${team.memberCount} чел.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+            Spacer(modifier = Modifier.width(8.dp))
             Button(onClick = onJoin, enabled = !joining) {
-                Text(if (joining) "Вступаем…" else "Вступить")
+                Text(if (joining) "Вступаем…" else "Вступить", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }

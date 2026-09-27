@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -102,10 +103,11 @@ private fun AchievementTile(achievement: Achievement) {
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
-    Card(colors = CardDefaults.cardColors(containerColor = containerColor)) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = containerColor)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(min = 156.dp)
                 .padding(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -129,6 +131,8 @@ private fun AchievementTile(achievement: Achievement) {
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 color = contentColor,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 8.dp),
             )
             Text(

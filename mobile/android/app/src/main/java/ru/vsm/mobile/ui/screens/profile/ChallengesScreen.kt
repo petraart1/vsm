@@ -25,7 +25,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ru.vsm.mobile.domain.model.Challenge
@@ -71,7 +73,15 @@ private fun ChallengeCard(challenge: Challenge) {
     Card(colors = CardDefaults.cardColors(containerColor = containerColor)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(text = challenge.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = challenge.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Icon(
                     imageVector = if (challenge.completed) Icons.Filled.CheckCircle else Icons.Filled.MilitaryTech,
                     contentDescription = null,
@@ -99,11 +109,16 @@ private fun ChallengeCard(challenge: Challenge) {
                     text = if (challenge.completed) "Выполнено" else "${challenge.current} из ${challenge.targetCount}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "+${challenge.rewardPoints} очков",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
+                    maxLines = 1,
                 )
             }
         }

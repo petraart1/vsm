@@ -4,13 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -37,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -134,6 +139,38 @@ fun ExamScreen(navigator: AppNavigator) {
     }
 }
 
+/**
+ * Выбор класса вагона: сетка 2×2 с чипами одинаковой ширины и высоты, подпись в одну строку —
+ * иначе на узких экранах самая длинная подпись («Первый») переносится и ломает высоту ряда.
+ */
+@Composable
+private fun CarClassSelector(selected: CarClass, onSelect: (CarClass) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        CarClass.entries.chunked(2).forEach { rowClasses ->
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                rowClasses.forEach { cls ->
+                    FilterChip(
+                        selected = selected == cls,
+                        onClick = { onSelect(cls) },
+                        label = {
+                            Text(
+                                CAR_CLASS_TITLES.getValue(cls),
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        },
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun ExamIntroContent(state: ExamUiState, viewModel: ExamViewModel) {
     LazyColumn(
@@ -149,25 +186,28 @@ private fun ExamIntroContent(state: ExamUiState, viewModel: ExamViewModel) {
         }
         item {
             SectionCard(title = "Класс вагона") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CarClass.entries.forEach { cls ->
-                        FilterChip(
-                            selected = state.carClass == cls,
-                            onClick = { viewModel.selectCarClass(cls) },
-                            label = { Text(CAR_CLASS_TITLES.getValue(cls)) },
-                        )
-                    }
-                }
+                CarClassSelector(selected = state.carClass, onSelect = viewModel::selectCarClass)
             }
         }
         item {
             SectionCard(title = "Длина экзамена") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     EXAM_SIZES.forEach { n ->
                         FilterChip(
                             selected = state.size == n,
                             onClick = { viewModel.selectSize(n) },
-                            label = { Text("$n ситуаций") },
+                            label = {
+                                Text(
+                                    "$n ситуаций",
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            },
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
                         )
                     }
                 }
@@ -274,9 +314,9 @@ private fun ExamResultsContent(exam: Exam, navigator: AppNavigator) {
         }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                StatColumn(label = "Безопасность", value = res.avgSafetyScore.toInt().toString(), tint = VsmPalette.safety)
-                StatColumn(label = "Лояльность", value = res.avgLoyaltyScore.toInt().toString(), tint = VsmPalette.loyalty)
-                StatColumn(label = "Решено", value = "${(res.successRate * 100).toInt()}%", tint = VsmPalette.success)
+                StatColumn(label = "Безопасность", value = res.avgSafetyScore.toInt().toString(), tint = VsmPalette.safety, modifier = Modifier.weight(1f))
+                StatColumn(label = "Лояльность", value = res.avgLoyaltyScore.toInt().toString(), tint = VsmPalette.loyalty, modifier = Modifier.weight(1f))
+                StatColumn(label = "Решено", value = "${(res.successRate * 100).toInt()}%", tint = VsmPalette.success, modifier = Modifier.weight(1f))
             }
         }
         item {
@@ -309,10 +349,10 @@ private fun ExamResultsContent(exam: Exam, navigator: AppNavigator) {
 }
 
 @Composable
-private fun StatColumn(label: String, value: String, tint: androidx.compose.ui.graphics.Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun StatColumn(label: String, value: String, tint: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(value, style = MaterialTheme.typography.headlineSmall, color = tint, fontWeight = FontWeight.Bold)
-        Text(label, style = MaterialTheme.typography.labelMedium)
+        Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
@@ -323,9 +363,9 @@ private fun ExamResultRow(number: Int, item: ExamScenarioItem, navigator: AppNav
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("$number", style = MaterialTheme.typography.labelLarge)
+        Text("$number", style = MaterialTheme.typography.labelLarge, modifier = Modifier.width(20.dp))
         Column(Modifier.weight(1f)) {
-            Text(item.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            Text(item.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Text(item.block, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item.outcome?.let { outcome ->

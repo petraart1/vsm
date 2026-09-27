@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -36,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ru.vsm.mobile.domain.model.Notification
@@ -101,9 +104,13 @@ fun NotificationsScreen(navigator: AppNavigator) {
                     text = if (state.unreadCount > 0) "Непрочитанных: ${state.unreadCount}" else "Всё прочитано",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
                 if (state.unreadCount > 0) {
-                    TextButton(onClick = viewModel::markAllRead) { Text("Прочитать все") }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = viewModel::markAllRead) { Text("Прочитать все", maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 }
             }
         }
@@ -156,10 +163,22 @@ private fun NotificationRow(notification: Notification, onClick: () -> Unit) {
                     modifier = Modifier.size(18.dp),
                 )
             }
-            Column(modifier = Modifier.padding(start = 12.dp).fillMaxWidth()) {
-                Text(text = typeLabel(notification.type), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(text = notification.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                Text(text = notification.body, style = MaterialTheme.typography.bodyMedium)
+            Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                Text(
+                    text = typeLabel(notification.type),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = notification.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(text = notification.body, style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
             }
         }
     }

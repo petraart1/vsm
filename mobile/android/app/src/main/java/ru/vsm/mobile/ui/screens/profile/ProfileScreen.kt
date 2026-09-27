@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -27,8 +28,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ru.vsm.mobile.domain.model.BlockProgress
@@ -96,12 +99,20 @@ private fun IdentityCard(profile: Profile) {
                 Text(text = initials, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
         }
-        Column(modifier = Modifier.padding(start = 16.dp)) {
-            Text(text = profile.displayName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
+            Text(
+                text = profile.displayName,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Text(
                 text = "${profile.totalScore} очков · ${profile.scenariosCompleted} из ${profile.totalScenariosAvailable} освоено",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -148,21 +159,27 @@ private fun BlockProgressCard(blocks: List<BlockProgress>) {
             Column(modifier = Modifier.padding(bottom = 10.dp)) {
                 Text(text = blockLabel(block.block), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
                     Text(
                         text = "Пройдено: ${block.scenariosCompleted}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
                     )
                     Text(
                         text = "Безопасность: ${block.safetyPoints}",
                         style = MaterialTheme.typography.bodySmall,
                         color = VsmPalette.safety,
+                        maxLines = 1,
                     )
                     Text(
                         text = "Лояльность: ${block.loyaltyPoints}",
                         style = MaterialTheme.typography.bodySmall,
                         color = VsmPalette.loyalty,
+                        maxLines = 1,
                     )
                 }
             }
@@ -190,10 +207,17 @@ private fun ShortcutRow(icon: androidx.compose.ui.graphics.vector.ImageVector, t
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Text(text = title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 12.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 12.dp),
+            )
         }
+        Spacer(modifier = Modifier.width(8.dp))
         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
@@ -242,12 +266,22 @@ private fun CompetenciesCard(competencies: CompetencyAnalytics?, navigator: AppN
                         .clickable { navigator.open(Routes.play(rec.scenarioId)) }
                         .padding(vertical = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text = rec.title, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = rec.title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = recommendationReasonLabel(rec.reason),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }

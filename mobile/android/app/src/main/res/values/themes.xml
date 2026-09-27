@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Mobile" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Базовая системная тема окна; фактические цвета контента — MaterialTheme в ui/theme (Compose). -->
+    <style name="Theme.Mobile" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">@color/vsm_blue</item>
+        <item name="android:colorPrimaryDark">@color/vsm_navy</item>
+        <item name="android:windowBackground">@color/vsm_page_bg_light</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
 </resources>
