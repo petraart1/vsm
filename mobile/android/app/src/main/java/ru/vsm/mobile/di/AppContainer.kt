@@ -19,6 +19,7 @@ import ru.vsm.mobile.data.local.NetworkMonitor
 import ru.vsm.mobile.data.local.OfflineQueueStore
 import ru.vsm.mobile.data.local.PlayerIdDataStore
 import ru.vsm.mobile.data.remote.AuthInterceptor
+import ru.vsm.mobile.data.remote.ConnectionChecker
 import ru.vsm.mobile.data.remote.SafeApiCall
 import ru.vsm.mobile.data.remote.api.AuthApi
 import ru.vsm.mobile.data.remote.api.ExamApi
@@ -89,6 +90,12 @@ class AppContainer(
 
     private val safeApiCall = SafeApiCall(json)
     private val wsClient = ProgressWebSocketClient(okHttpClient, json, baseUrl)
+
+    /** Адрес, на который реально настроен этот контейнер — экран настроек показывает его как текущий. */
+    val activeBaseUrl: String = baseUrl
+
+    /** Диагностика произвольного адреса (не обязательно [activeBaseUrl]) для экрана настроек. */
+    val connectionChecker: ConnectionChecker = ConnectionChecker(okHttpClient)
 
     /** Живёт весь процесс приложения — держит фоновую отправку офлайн-очереди ([OfflineQueueSyncer]). */
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

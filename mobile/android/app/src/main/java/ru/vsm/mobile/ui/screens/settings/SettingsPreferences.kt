@@ -59,6 +59,18 @@ object SettingsPreferences {
     fun apiBaseUrlOverride(context: Context): String? = prefs(context).getString(KEY_API_BASE_URL, null)
 
     fun setApiBaseUrlOverride(context: Context, value: String?) {
-        prefs(context).edit().putString(KEY_API_BASE_URL, value?.ifBlank { null }).apply()
+        prefs(context).edit().putString(KEY_API_BASE_URL, value?.let(::normalizeBaseUrl)).apply()
+    }
+
+    /**
+     * Retrofit требует, чтобы базовый URL заканчивался `/` (иначе `IllegalArgumentException` при
+     * сборке [retrofit2.Retrofit] в [ru.vsm.mobile.di.AppContainer]) — сохранённое человеком
+     * значение может прийти без него. `null`/пустая строка после `trim()` — сброс к значению по
+     * умолчанию из сборки.
+     */
+    fun normalizeBaseUrl(raw: String): String? {
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) return null
+        return if (trimmed.endsWith("/")) trimmed else "$trimmed/"
     }
 }
