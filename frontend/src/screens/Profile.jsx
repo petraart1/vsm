@@ -4,6 +4,7 @@ import Button from "../components/ui/Button.jsx";
 import Badge from "../components/ui/Badge.jsx";
 import VerdictMark from "../components/ui/VerdictMark.jsx";
 import StreakCard from "../components/engagement/StreakCard.jsx";
+import GosuslugiMark from "../components/ui/GosuslugiMark.jsx";
 import VerifiedBadge from "../components/ui/VerifiedBadge.jsx";
 import { useAccount } from "../account.js";
 import ShowcaseGrid from "../components/engagement/ShowcaseGrid.jsx";
@@ -272,7 +273,7 @@ export default function Profile() {
           </p>
           {!(account && account.verified) && (
             <a className={`${styles.verifyNote} rv`} style={{ "--i": 2 }} href={account ? (api.USE_MOCKS ? "#/auth/esia-demo" : api.esiaAuthorizeUrl()) : "#/login?next=/profile"}>
-              <Icon name="shield" size={14} />{account ? "Подтвердите личность через Госуслуги — очки начисляются полностью, откроются официальные награды" : "Войдите и подтвердите личность, чтобы очки начислялись полностью"}
+              <GosuslugiMark size={18} />{account ? "Подтвердите личность через Госуслуги — очки начисляются полностью, откроются официальные награды" : "Войдите и подтвердите личность, чтобы очки начислялись полностью"}
             </a>
           )}
         </div>

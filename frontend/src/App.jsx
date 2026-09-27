@@ -18,6 +18,12 @@ import Achievements from "./screens/Achievements.jsx";
 import Auth from "./screens/Auth.jsx";
 import Settings from "./screens/Settings.jsx";
 import Admin from "./screens/Admin.jsx";
+import Exam from "./screens/Exam.jsx";
+import { useAccount } from "./account.js";
+import { prefersReducedMotion } from "./components/motion/Motion.jsx";
+import { LogoMark } from "./components/brand/Logo.jsx";
+import { logout } from "./api.js";
+import { navigate } from "./router.js";
 
 /**
  * Каркас приложения. Навигация — как в iOS-приложении: стеклянная шапка сверху и плавающий
@@ -25,18 +31,45 @@ import Admin from "./screens/Admin.jsx";
  */
 export default function App() {
   const route = useHashRoute();
+  const account = useAccount();
+  const wide = useWide();
   // Заход в приложение отмечается один раз за запуск; первая за день — шторка награды за вход.
   const [visit] = useState(() => ({ ...recordVisit(), splash: !readSplashSeen() }));
   useEffect(() => { refreshAccount(); }, []);
   const screen = route.screen;
+  const isAuth = screen === "login" || screen === "register" || screen === "auth";
+  const isAdmin = !!(account && account.role === "ADMIN");
+
+  // Администратор только администрирует: игровые разделы ему не показываются, консоль — только на компьютере.
+  useEffect(() => {
+    if (isAdmin && !isAuth && screen !== "admin" && screen !== "settings") navigate("/admin");
+  }, [isAdmin, isAuth, screen]);
+
+  if (isAdmin && !isAuth) {
+    if (!wide) return <AdminMobileStub account={account} />;
+    if (screen === "settings") {
+      return (
+        <Fragment>
+          <main key={route.path} className="app-main app-admin-settings">
+            <a className="admin-back" href="#/admin">← Администрирование</a>
+            <Settings route={route} />
+          </main>
+        </Fragment>
+      );
+    }
+    return <main className="app-admin"><Admin route={route} /></main>;
+  }
+
   const isPlay = screen === "scenarios" && route.segments[2] === "play";
   const isShift = screen === "shift";
-  const isAuth = screen === "login" || screen === "register" || screen === "auth";
-  const immersive = isPlay || isShift || isAuth;
+  const isExam = screen === "exam";
+  const immersive = isPlay || isShift || isAuth || isExam;
+  const withSidebar = !immersive || isShift || isPlay || isExam;
 
   let body;
   if (isPlay) body = <ScenarioPlay route={route} />;
   else if (isShift) body = <Shift route={route} />;
+  else if (isExam) body = <Exam route={route} />;
   else if (isAuth) body = <Auth route={route} />;
   else if (screen === "settings") body = <Settings route={route} />;
   else if (screen === "admin") body = <Admin route={route} />;
@@ -59,13 +92,40 @@ export default function App() {
   return (
     <Fragment>
       <Splash />
-      {(!immersive || isShift || isPlay) && <Sidebar activeScreen={isPlay ? "scenarios" : screen} />}
+      {withSidebar && <Sidebar activeScreen={isPlay || isExam ? "scenarios" : screen} />}
       {!immersive && <TopBar activeScreen={screen} />}
       {/* key по пути: при переходе экран монтируется заново и проигрывает свой вход. */}
-      <main key={route.path} className={immersive ? `app-play${isShift || isPlay ? " app-play-nav" : ""}` : "app-main"}>{body}</main>
+      <main key={route.path} className={immersive ? `app-play${withSidebar ? " app-play-nav" : ""}` : "app-main"}>{body}</main>
       {!immersive && <TabBar activeScreen={screen} />}
-      {!immersive && <DailyReward visit={visit} delay={visit.splash ? 2900 : 700} />}
+      {/* Награда за вход — только для авторизованных: серия привязана к учётной записи. */}
+      {!immersive && account && <DailyReward visit={visit} delay={visit.splash && !prefersReducedMotion() ? 2900 : 700} />}
     </Fragment>
+  );
+}
+
+/** Широкий экран (≥ 1024 px) — там, где доступна консоль администратора. */
+function useWide() {
+  const q = "(min-width: 1024px)";
+  const [wide, setWide] = useState(() => (window.matchMedia ? window.matchMedia(q).matches : true));
+  useEffect(() => {
+    if (!window.matchMedia) return undefined;
+    const m = window.matchMedia(q);
+    const on = () => setWide(m.matches);
+    if (m.addEventListener) m.addEventListener("change", on); else m.addListener(on);
+    return () => { if (m.removeEventListener) m.removeEventListener("change", on); else m.removeListener(on); };
+  }, []);
+  return wide;
+}
+
+function AdminMobileStub({ account }) {
+  return (
+    <main className="admin-stub">
+      <LogoMark size={44} />
+      <h1>Администрирование — на компьютере</h1>
+      <p>Консоль администратора рассчитана на большой экран. Откройте тренажёр на компьютере, чтобы управлять учётными записями, сценариями, событиями и наградами.</p>
+      <p className="admin-stub-who">{account.displayName || account.login} · администратор</p>
+      <Button variant="secondary" onClick={() => { logout(); navigate("/login"); }}>Выйти</Button>
+    </main>
   );
 }
 

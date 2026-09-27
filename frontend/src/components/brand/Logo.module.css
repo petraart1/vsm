@@ -40,6 +40,4 @@
 .react { font-weight: 800; }
 .lab { font-weight: 400; }
 
-@media (prefers-reduced-motion: reduce) {
-  .draw .brain path { animation: none; stroke-dashoffset: 0; }
-}
+:global(:root[data-motion="reduce"]) .draw .brain path { animation: none; stroke-dashoffset: 0; }

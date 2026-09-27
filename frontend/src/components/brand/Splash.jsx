@@ -17,11 +17,16 @@ function markSeen() {
 
 /**
  * Заставка при первом открытии за сессию: знак прорисовывается, вордмарк выезжает из-за знака,
- * затем появляется слоган и заставка уходит вверх. Пропускается кликом, клавишей и при
- * prefers-reduced-motion.
+ * затем появляется слоган и заставка уходит вверх. Пропускается кликом, клавишей и в режиме
+ * «меньше движения» (настройка приложения или системная prefers-reduced-motion).
  */
 export default function Splash() {
-  const [phase, setPhase] = useState(() => (alreadySeen() || prefersReducedMotion() ? "done" : "show"));
+  const [phase, setPhase] = useState(() => {
+    if (alreadySeen()) return "done";
+    // «Меньше движения»: заставку не показываем вовсе (и считаем увиденной за сессию).
+    if (prefersReducedMotion()) { markSeen(); return "done"; }
+    return "show";
+  });
 
   useEffect(() => {
     if (phase !== "show") return undefined;

@@ -7,7 +7,7 @@ import { connectProgressChannel } from "../../ws.js";
  * из разбора. Сообщения копятся лентой для ChatDialog.
  * onDone({ sessionId, safety, loyalty, verdict, scales }) — вызывается один раз по завершении.
  */
-export default function useScenarioDialog({ speaker, onDone }) {
+export default function useScenarioDialog({ speaker, onDone, exam = false }) {
   const [state, setState] = useState({ phase: "idle", messages: [], choices: null, node: null, scales: null, busy: false });
   const ref = useRef({ sessionId: null, sum: { safety: 0, loyalty: 0 }, lock: false, seq: 0 });
 
@@ -38,14 +38,15 @@ export default function useScenarioDialog({ speaker, onDone }) {
 
   const npcMessage = (node) => ({ id: id(), from: "npc", text: node.situationText, context: node.contextNote, speaker: node.avatarInitials === "НП" ? { kind: "person", outfit: "chief", name: "Начальник поезда" } : null });
 
-  const start = useCallback((scenarioId, carClass) => {
+  /** starter — функция, возвращающая промис старта (по умолчанию обычный сценарий; для экзамена — пункт экзамена). */
+  const start = useCallback((scenarioId, carClass, starter) => {
     ref.current = { sessionId: null, sum: { safety: 0, loyalty: 0 }, lock: false, seq: 0 };
     setState({ phase: "loading", messages: [], choices: null, node: null, scales: null, busy: true });
-    api.startScenario(scenarioId, carClass).then((res) => {
+    (starter ? starter() : api.startScenario(scenarioId, carClass)).then((res) => {
       if (!res || res.error) { setState((s) => ({ ...s, phase: "error", busy: false })); return; }
       ref.current.sessionId = res.sessionId;
       setSessionId(res.sessionId);
-      setState({ phase: "playing", messages: [npcMessage(res.node)], choices: res.node.choices, node: res.node, scales: res.scales, busy: false });
+      setState({ phase: "playing", messages: [npcMessage(res.node)], choices: res.node.choices, node: res.node, scales: exam ? null : res.scales, busy: false });
     }, () => setState((s) => ({ ...s, phase: "error", busy: false })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -63,18 +64,22 @@ export default function useScenarioDialog({ speaker, onDone }) {
       const d = res.reaction.deltas;
       ref.current.sum.safety += d.safety || 0;
       ref.current.sum.loyalty += d.loyalty || 0;
-      const notes = [{ id: id(), from: "note", text: res.reaction.escalation ? "Подключается начальник поезда" : null, deltas: d, tone: d.safety < 0 ? "bad" : undefined }];
+      // На экзамене влияние решений не раскрывается — ни дельт, ни шкал до итога.
+      const notes = exam
+        ? (res.reaction.escalation ? [{ id: id(), from: "note", text: "Подключается начальник поезда" }] : [])
+        : [{ id: id(), from: "note", text: res.reaction.escalation ? "Подключается начальник поезда" : null, deltas: d, tone: d.safety < 0 ? "bad" : undefined }];
       if (res.isFinal) {
-        notes.unshift({ id: id(), from: "npc", text: res.reaction.text });
-        setState((s) => ({ ...s, phase: "final", busy: false, scales: res.scales, messages: [...s.messages, ...notes] }));
+        notes.unshift({ id: id(), from: "npc", text: exam ? (res.node && res.node.situationText) || "Ситуация завершена." : res.reaction.text });
+        setState((s) => ({ ...s, phase: "final", busy: false, scales: exam ? null : res.scales, messages: [...s.messages, ...notes] }));
         const finish = (verdict) => onDone && onDone({ sessionId: ref.current.sessionId, safety: ref.current.sum.safety, loyalty: ref.current.sum.loyalty, verdict, scales: res.scales });
+        if (exam) { finish(null); return; }
         api.getDebrief(ref.current.sessionId).then((db) => finish(db && db.verdict), () => finish(fallbackVerdict(res.scales)));
         return;
       }
       // Пауза «собеседник печатает», затем следующая реплика.
       window.setTimeout(() => {
         ref.current.lock = false;
-        setState((s) => ({ ...s, busy: false, scales: res.scales, node: res.node, choices: res.node.choices, messages: [...s.messages, ...notes, npcMessage(res.node)] }));
+        setState((s) => ({ ...s, busy: false, scales: exam ? null : res.scales, node: res.node, choices: res.node.choices, messages: [...s.messages, ...notes, npcMessage(res.node)] }));
       }, 650);
     }, () => setState((s) => ({ ...s, phase: "error", busy: false })));
   }

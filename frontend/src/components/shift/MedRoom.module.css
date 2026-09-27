@@ -1,0 +1,227 @@
+/* Медпункт / нарядная. Сцена 800×700 масштабируется --s (MedRoom.jsx) от нижней кромки по центру. */
+.root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+
+  --mr-ceil: #f7f9fb;
+  --mr-wall: #eef2f7;
+  --mr-wainscot: #e1e7ef;
+  --mr-rail: #d3dbe6;
+  --mr-tile: #e7eef5;
+  --mr-tile-line: #d6dfea;
+  --mr-floor: #c4ccd8;
+  --mr-floor-line: #b5bfcd;
+  --mr-base: #b3bdcb;
+  --mr-furn: #ffffff;
+  --mr-furn-2: #e6ebf2;
+  --mr-furn-3: #cfd7e2;
+  --mr-metal: #9aa4b4;
+  --mr-sky-1: #9fc6f0;
+  --mr-sky-2: #e3eefa;
+  --mr-canopy: #b9c4d3;
+  --mr-platform: #aeb8c6;
+  --mr-train: #fbfcfe;
+  --mr-train-win: #33415c;
+  --mr-screen: #eaf3ff;
+  --mr-display: #10231b;
+  background: var(--mr-wall);
+}
+
+:global([data-theme="dark"]) .root {
+  --mr-ceil: #2c3037;
+  --mr-wall: #2f333b;
+  --mr-wainscot: #292d34;
+  --mr-rail: #3a3f48;
+  --mr-tile: #2b3037;
+  --mr-tile-line: #353a43;
+  --mr-floor: #1e2126;
+  --mr-floor-line: #25292f;
+  --mr-base: #3a3f48;
+  --mr-furn: #454a54;
+  --mr-furn-2: #3a3f48;
+  --mr-furn-3: #30343c;
+  --mr-metal: #6b7383;
+  --mr-sky-1: #08122a;
+  --mr-sky-2: #1d2f52;
+  --mr-canopy: #262c37;
+  --mr-platform: #2a2f38;
+  --mr-train: #c9d0db;
+  --mr-train-win: #ffd98a;
+  --mr-screen: #1d3354;
+  --mr-display: #0a1712;
+}
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .root {
+    --mr-ceil: #2c3037;
+    --mr-wall: #2f333b;
+    --mr-wainscot: #292d34;
+    --mr-rail: #3a3f48;
+    --mr-tile: #2b3037;
+    --mr-tile-line: #353a43;
+    --mr-floor: #1e2126;
+    --mr-floor-line: #25292f;
+    --mr-base: #3a3f48;
+    --mr-furn: #454a54;
+    --mr-furn-2: #3a3f48;
+    --mr-furn-3: #30343c;
+    --mr-metal: #6b7383;
+    --mr-sky-1: #08122a;
+    --mr-sky-2: #1d2f52;
+    --mr-canopy: #262c37;
+    --mr-platform: #2a2f38;
+    --mr-train: #c9d0db;
+    --mr-train-win: #ffd98a;
+    --mr-screen: #1d3354;
+    --mr-display: #0a1712;
+  }
+}
+
+.stage {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+}
+.scene { position: absolute; inset: 0; overflow: visible; display: block; font-family: var(--font-sans); }
+
+/* Оболочка */
+.ceil { fill: var(--mr-ceil); }
+.wall { fill: var(--mr-wall); }
+.cornice { fill: var(--mr-rail); opacity: 0.6; }
+.wainscot { fill: var(--mr-wainscot); }
+.rail { fill: var(--mr-rail); }
+.tile { fill: var(--mr-tile); }
+.tileLine { stroke: var(--mr-tile-line); stroke-width: 1.5; }
+.floor { fill: var(--mr-floor); }
+.floorLine { stroke: var(--mr-floor-line); stroke-width: 2; }
+.baseboard { fill: var(--mr-base); }
+.floorShade { fill: #000; opacity: 0.05; }
+.lampBody { fill: var(--mr-furn-3); }
+.lampLight { fill: #fffdf6; }
+.handle { fill: var(--mr-metal); }
+
+/* Табличка */
+.plate { fill: #0b3d91; }
+.plateText { fill: #fff; font-size: 17px; font-weight: 600; letter-spacing: 0.01em; }
+
+/* Часы */
+.clockRim { fill: var(--mr-furn-3); }
+.clockFace { fill: #ffffff; }
+.clockTick, .clockHand { fill: #2a2d33; }
+.clockSec, .clockSecDot { fill: #d93025; }
+.second { transform-box: fill-box; transform-origin: 50% 50%; animation: tick 60s steps(60) infinite; }
+@keyframes tick { to { transform: rotate(360deg); } }
+
+/* Окно */
+.winFrame { fill: var(--mr-furn); stroke: var(--mr-furn-3); stroke-width: 1.5; }
+.sill { fill: var(--mr-furn); stroke: var(--mr-furn-3); stroke-width: 1; }
+.canopy { fill: var(--mr-canopy); }
+.column { fill: var(--mr-canopy); opacity: 0.8; }
+.train { fill: var(--mr-train); }
+.trainStripe { fill: #1c3170; }
+.trainWin { fill: var(--mr-train-win); }
+.trainCab { fill: #1b2436; }
+.trainDoor { fill: none; stroke: #b9c2d0; stroke-width: 2; }
+.headlight { fill: #fff6d0; }
+.platform { fill: var(--mr-platform); }
+.platformEdge { fill: #e8c64a; }
+.pot { fill: #e9e3d8; }
+.potRim { fill: #d8d0c2; }
+
+/* Медпункт */
+.cabinet { fill: var(--mr-furn); stroke: var(--mr-furn-3); stroke-width: 1.5; }
+.cabGlass { fill: #dfeaf5; }
+.cabShelf { fill: #c9d4e2; }
+.cabDoor { fill: var(--mr-furn); stroke: var(--mr-furn-3); stroke-width: 1.5; }
+.paper { fill: #ffffff; stroke: var(--mr-furn-3); stroke-width: 1.5; }
+.chart { fill: #1d1f24; font-weight: 700; letter-spacing: 0.08em; }
+.couch { fill: #5b86c5; }
+.couchHead { fill: #4a74b2; }
+.couchShade { fill: #4a74b2; }
+.couchLeg { fill: var(--mr-metal); }
+.sheet { fill: #ffffff; stroke: #d9dee6; stroke-width: 1; }
+.pillow { fill: #f4f7fb; stroke: #d9dee6; stroke-width: 1; }
+.poster { fill: #ffffff; stroke: var(--mr-furn-3); stroke-width: 1.5; }
+.posterHead { fill: #0a64d8; }
+.posterTitle { fill: #fff; font-size: 11.5px; font-weight: 700; }
+.posterDot { fill: #0a64d8; }
+.posterNum { fill: #fff; font-size: 9px; font-weight: 700; }
+.posterText { fill: #2a2d33; font-size: 11px; font-weight: 500; }
+.mirror { fill: #cfe0ef; stroke: var(--mr-furn-3); stroke-width: 4; }
+.mirrorShine { stroke: #fff; stroke-width: 4; stroke-linecap: round; opacity: 0.7; }
+.sink { fill: #ffffff; stroke: #d5dbe4; stroke-width: 1.5; }
+.tap { fill: #b8c0cc; }
+.dispenser { fill: #ffffff; stroke: #d5dbe4; stroke-width: 1.5; }
+.deskTop { fill: var(--mr-furn-2); stroke: var(--mr-furn-3); stroke-width: 1.5; }
+.deskLeg { fill: var(--mr-metal); }
+.deskDrawer { fill: var(--mr-furn); stroke: var(--mr-furn-3); stroke-width: 1.5; }
+.monitor { fill: #2a2d33; }
+.screen { fill: var(--mr-screen); }
+.screenLine { fill: #0a64d8; }
+.screenDim { fill: #9fb4d0; }
+.cursor { fill: #0a64d8; animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.devBody { fill: #f4f6f9; stroke: #cfd6e0; stroke-width: 1.5; }
+.display { fill: var(--mr-display); }
+.display[data-bad] { fill: #2a0d0b; }
+.displayText { fill: #7fe0a6; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.displayUnit { font-size: 13px; font-weight: 600; letter-spacing: 0; }
+.displayText[data-bad] { fill: #ff6b5f; }
+.devBtn { fill: #0a64d8; }
+.devBtnAlt { fill: #cfd6e0; }
+.devSlot { fill: #dfe4ec; }
+.hose { fill: none; stroke: #3a3f48; stroke-width: 3; stroke-linecap: round; }
+.cuff { fill: #2e3a52; }
+.gauge { fill: #ffffff; stroke: #3a3f48; stroke-width: 2; }
+.thermo { fill: #ffffff; stroke: #c8d0dc; stroke-width: 1.2; }
+.thermoTip { fill: #7fa3cf; }
+
+/* Нарядная */
+.locker { fill: #c6d0dd; stroke: #aeb9c8; stroke-width: 1.5; }
+.lockerVent { fill: #9fabbb; }
+.lockerTag { fill: #ffffff; }
+.lockerNum { fill: #2a2d33; font-size: 9px; font-weight: 700; }
+.map { fill: #ffffff; stroke: var(--mr-furn-3); stroke-width: 1.5; }
+.mapTitle { fill: #5e5e63; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+.mapWater { stroke: #a8cbef; stroke-width: 10; stroke-linecap: round; }
+.mapLine { fill: none; stroke: #0a64d8; stroke-width: 5; stroke-linecap: round; }
+.mapStop { fill: #ffffff; stroke: #0b3d91; stroke-width: 3; }
+.mapLineDot { fill: #0b3d91; }
+.mapLabel { fill: #1d1f24; font-size: 12px; font-weight: 600; }
+.board { fill: #15181e; }
+.boardDim { fill: #aab4c3; font-size: 11px; font-weight: 500; }
+.boardBig { fill: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: 0.02em; }
+.boardTime { fill: #ffc94a; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.boardRule { fill: #3a3f48; }
+.rack { fill: #6b7383; }
+.rackArm { stroke: #6b7383; stroke-width: 5; stroke-linecap: round; }
+.tablet { fill: #2a2d33; }
+.tabletScreen { fill: var(--mr-screen); }
+.tabletScreen[data-bad] { fill: #fdecea; }
+.tabletText { fill: #0a64d8; font-size: 14px; font-weight: 700; }
+.tabletText[data-bad] { fill: #d93025; }
+
+/* Свет: в тёмной теме комната приглушена, над столом тёплое пятно от светильника */
+.dim, .warm { display: none; pointer-events: none; }
+:global([data-theme="dark"]) .dim, :global([data-theme="dark"]) .warm { display: inline; }
+:global([data-theme="dark"]) .warm { mix-blend-mode: screen; }
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .dim, :global(:root:not([data-theme="light"])) .warm { display: inline; }
+  :global(:root:not([data-theme="light"])) .warm { mix-blend-mode: screen; }
+}
+
+/* Персонажи */
+.hero, .npc { position: absolute; filter: drop-shadow(0 10px 12px rgba(10, 30, 70, 0.14)); }
+.hero { animation: hero-in 900ms var(--ease-spring, ease-out) both; }
+.npc { animation: npc-in 640ms var(--ease-spring, ease-out) 120ms both; }
+@keyframes hero-in { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: none; } }
+@keyframes npc-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+/* «Меньше движения»: ничего не движется, всё сразу в конечном состоянии. */
+:global(:root[data-motion="reduce"]) .hero,
+:global(:root[data-motion="reduce"]) .npc,
+:global(:root[data-motion="reduce"]) .second,
+:global(:root[data-motion="reduce"]) .cursor { animation: none; }

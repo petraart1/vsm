@@ -27,7 +27,7 @@ export function setTheme(theme) {
     try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* приватный режим */ }
     listeners.forEach((fn) => fn());
   };
-  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = document.documentElement.getAttribute("data-motion") === "reduce";
   if (document.startViewTransition && !reduce) document.startViewTransition(apply);
   else apply();
 }

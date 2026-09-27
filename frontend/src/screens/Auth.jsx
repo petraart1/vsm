@@ -4,6 +4,7 @@ import { navigate } from "../router.js";
 import Button from "../components/ui/Button.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import VerifiedBadge from "../components/ui/VerifiedBadge.jsx";
+import GosuslugiMark from "../components/ui/GosuslugiMark.jsx";
 import { LogoMark } from "../components/brand/Logo.jsx";
 import { Person } from "../components/characters/People.jsx";
 import styles from "./Auth.module.css";
@@ -86,7 +87,7 @@ function EsiaButton() {
   }
   return (
     <button type="button" className={styles.esia} onClick={go}>
-      <span className={styles.esiaIcon}><Icon name="shield" size={18} /></span>
+      <GosuslugiMark size={38} />
       <span>
         <b>Войти через Госуслуги</b>
         <small>Подтверждает личность · демо-стенд</small>
@@ -196,6 +197,7 @@ function Verified({ account }) {
     <div className={`${styles.card} ${styles.success}`}>
       <span className={styles.bigBadge}><VerifiedBadge size={72} /></span>
       <h1 className={styles.title}>Личность подтверждена</h1>
+      <p className={styles.via}><GosuslugiMark size={20} />Подтверждено через Госуслуги</p>
       <p className={styles.lead}>{account ? account.displayName : "Учётная запись"} — теперь полноценный участник: очки без коэффициента и официальные награды.</p>
       <Button size="lg" className={styles.submit} onClick={() => navigate("/today")}>Продолжить</Button>
       <a className={styles.skip} href="#/achievements">Посмотреть награды</a>
@@ -209,6 +211,7 @@ function EsiaDemo() {
   if (done) return <Verified account={done} />;
   return (
     <div className={styles.card}>
+      <span className={styles.esiaHead}><GosuslugiMark size={48} /></span>
       <h1 className={styles.title}>Госуслуги · демо</h1>
       <p className={styles.lead}>Демонстрационный вход: выберите тестового гражданина. Это не настоящий портал и не проверка реальных учётных записей.</p>
       <ul className={styles.citizens}>

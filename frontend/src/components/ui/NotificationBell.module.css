@@ -95,3 +95,4 @@
 .itemBody { color: var(--fg-2); font-size: var(--t-sm); margin-top: 2px; }
 .itemTime { color: var(--fg-3); font-size: var(--t-xs); margin-top: 4px; font-variant-numeric: tabular-nums; }
 .root[data-placement="sidebar"] .dropdown { right: auto; left: 0; top: auto; bottom: calc(100% + 8px); transform-origin: bottom left; }
+.root[data-placement="sidebar-top"] .dropdown { right: auto; left: 0; transform-origin: top left; }

@@ -130,10 +130,10 @@
 }
 .hint { font-size: var(--t-xs); color: var(--fg-2); text-align: center; background: var(--glass); padding: 4px 10px; border-radius: 999px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 
-@media (prefers-reduced-motion: reduce) {
-  .layer { animation: none; }
-  .signal, .hotspot[data-state="idle"] { animation: none; }
-}
+/* «Меньше движения»: пейзаж стоит, вызовы и точки осмотра не пульсируют и не парят. */
+:global(:root[data-motion="reduce"]) .layer,
+:global(:root[data-motion="reduce"]) .signal,
+:global(:root[data-motion="reduce"]) .hotspot[data-state="idle"] { animation: none; }
 
 /* Вызов за краем экрана */
 .edge {
@@ -145,6 +145,11 @@
 .edge[data-side="right"] { right: 0; border-radius: 999px 0 0 999px; flex-direction: row-reverse; --dx: -4px; }
 .edge[data-urgent] { background: var(--red); box-shadow: 0 6px 16px rgba(217, 48, 37, 0.35); }
 @keyframes nudge { 50% { transform: translateX(var(--dx)); } }
-@media (prefers-reduced-motion: reduce) { .edge { animation: none; } }
+:global(:root[data-motion="reduce"]) .edge { animation: none; }
 .visitor { position: absolute; left: 0; pointer-events: none; transition-property: transform; transition-timing-function: linear; filter: drop-shadow(0 6px 8px rgba(10, 30, 70, 0.12)); animation: fade 400ms ease both; }
 .visitor[data-gone] { opacity: 0 !important; transition: opacity 400ms ease; }
+
+/* «Меньше движения»: сотрудники и пассажиры, идущие по вагону, — это часть игры (видно, кто и
+   куда подошёл), поэтому перемещение сохраняется: равномерное, без шага и покачивания
+   (их снимает People.module.css). Появление и исчезновение — мгновенные. */
+:global(:root[data-motion="reduce"]) .visitor:not([data-gone]) { transition-duration: var(--walk-dur, 0s) !important; }

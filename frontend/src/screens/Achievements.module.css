@@ -50,7 +50,7 @@
   .segmented button { flex: 1; }
   .featured { gap: var(--s-4); }
 }
-@media (prefers-reduced-motion: reduce) { .grid li { animation: none; } }
+:global(:root[data-motion="reduce"]) .grid li { animation: none; }
 
 .sectionRow { display: flex; justify-content: space-between; align-items: baseline; }
 .sectionLink { color: var(--blue); font-weight: 600; font-size: var(--t-sm); text-decoration: none; }

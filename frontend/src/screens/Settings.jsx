@@ -6,6 +6,7 @@ import Button from "../components/ui/Button.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import Avatar from "../components/ui/Avatar.jsx";
 import VerifiedBadge from "../components/ui/VerifiedBadge.jsx";
+import GosuslugiMark from "../components/ui/GosuslugiMark.jsx";
 import { useAccount, initialsOf } from "../account.js";
 import { getSettings, setSetting } from "../settings.js";
 import { getThemeChoice, setTheme, setSystemTheme } from "../appearance.js";
@@ -53,10 +54,10 @@ export default function Settings() {
                   </div>
                 </div>
                 {account.verified ? (
-                  <div className={styles.row}><span className={styles.rowIcon} data-tone="blue"><Icon name="shield" size={16} /></span><span className={styles.rowText}><b>Личность подтверждена</b><span>Полные очки, официальные награды и учёт в решении для HR</span></span></div>
+                  <div className={styles.row}><GosuslugiMark size={29} /><span className={styles.rowText}><b>Личность подтверждена</b><span>Полные очки, официальные награды и учёт в решении для HR</span></span></div>
                 ) : (
                   <a className={styles.row} href={api.USE_MOCKS ? "#/auth/esia-demo" : api.esiaAuthorizeUrl()}>
-                    <span className={styles.rowIcon} data-tone="blue"><Icon name="shield" size={16} /></span>
+                    <GosuslugiMark size={29} />
                     <span className={styles.rowText}><b>Подтвердить через Госуслуги</b><span>Сейчас очки начисляются с коэффициентом 0,5, часть наград недоступна</span></span>
                     <Icon name="chevronRight" size={16} className={styles.chev} />
                   </a>
@@ -64,7 +65,7 @@ export default function Settings() {
                 {account.role === "ADMIN" && (
                   <a className={styles.row} href="#/admin"><span className={styles.rowIcon}><Icon name="clipboard" size={16} /></span><span className={styles.rowText}><b>Администрирование</b><span>Статистика, сценарии, события и награды</span></span><Icon name="chevronRight" size={16} className={styles.chev} /></a>
                 )}
-                <button type="button" className={`${styles.row} ${styles.danger}`} onClick={() => { api.logout(); navigate("/today"); }}>Выйти</button>
+                <button type="button" className={`${styles.row} ${styles.danger}`} onClick={() => { api.logout(); navigate(account.role === "ADMIN" ? "/login" : "/today"); }}>Выйти</button>
               </>
             ) : (
               <>
@@ -85,14 +86,21 @@ export default function Settings() {
           </section>
         </div>
 
-        <div className={styles.col}>
+        {!(account && account.role === "ADMIN") && <div className={styles.col}>
           <h2 className={styles.label}>Тренажёр</h2>
           <section className={styles.group}>
             <Segment label="Скорость рейса по умолчанию" value={String(s.tripSpeed)} onChange={(v) => set("tripSpeed")(Number(v))} options={[["1", "1×"], ["2", "2×"], ["4", "4×"]]} />
             <Toggle label="Озвучивать реплики" note="Голос для реплик пассажиров в диалогах" value={readVoice()} onChange={(v) => { try { localStorage.setItem("reactlab.voice", v ? "1" : "0"); } catch (e) { /* ignore */ } setS({ ...s }); }} />
             <Toggle label="Ответ голосом" note="Кнопка микрофона под вариантами ответа" value={s.voiceReplies} onChange={set("voiceReplies")} />
             <Toggle label="Вибрация при вызове" note="На телефонах с поддержкой вибрации" value={s.haptics} onChange={set("haptics")} />
-            <Toggle label="Окно награды за вход" note="Показывать серию входов раз в сутки" value={s.dailyReward} onChange={set("dailyReward")} />
+            {account && <Toggle label="Окно награды за вход" note="Показывать серию входов раз в сутки" value={s.dailyReward} onChange={set("dailyReward")} />}
+          </section>
+
+          <h2 className={styles.label}>Свободная смена</h2>
+          <section className={styles.group}>
+            <Range label="Длительность рейса при скорости 1×" value={s.simTripSeconds} min={60} max={300} step={10} format={(v) => `${v} с`} onChange={set("simTripSeconds")} />
+            <Range label="Сложных ситуаций за рейс" value={s.simStressCount} min={0} max={3} step={1} format={(v) => String(v)} onChange={set("simStressCount")} />
+            <Range label="Проблема на медосмотре при «Случайно»" value={s.simMedProblemRate} min={0} max={1} step={0.05} format={(v) => `${Math.round(v * 100)}%`} onChange={set("simMedProblemRate")} />
           </section>
 
           <h2 className={styles.label}>Данные</h2>
@@ -110,7 +118,7 @@ export default function Settings() {
               <button type="button" className={`${styles.row} ${styles.danger}`} onClick={() => setConfirmReset(true)}>Очистить данные на устройстве</button>
             )}
           </section>
-        </div>
+        </div>}
       </div>
       <p className={styles.version}>ReactLab Тренажёр проводника ВСМ</p>
     </div>
@@ -131,6 +139,15 @@ function Segment({ label, value, onChange, options }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function Range({ label, value, min, max, step, format, onChange }) {
+  return (
+    <label className={styles.rangeRow}>
+      <span className={styles.rangeHead}><b>{label}</b><span className="num">{format(value)}</span></span>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </label>
   );
 }
 

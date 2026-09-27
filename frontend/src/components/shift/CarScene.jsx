@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Icon from "../ui/Icon.jsx";
 import { Person, SeatedPerson } from "../characters/People.jsx";
+import { useReducedMotion } from "../motion/Motion.jsx";
 import { VESTIBULE, seatX, worldWidth } from "../../shift/shiftModel.js";
 import styles from "./CarScene.module.css";
 
@@ -33,8 +34,9 @@ export default function CarScene({ cls, passengers, hotspots = [], signals = [],
   const [pose, setPose] = useState({ walking: false, facing: "right" });
   const [near, setNear] = useState(null);
   const [edges, setEdges] = useState({ left: null, right: null });
+  const reduceMotion = useReducedMotion();
   const propsRef = useRef({});
-  propsRef.current = { hotspots, signals, disabled, onInteract };
+  propsRef.current = { hotspots, signals, disabled, onInteract, reduceMotion };
 
   // Масштаб сцены под высоту контейнера.
   useLayoutEffect(() => {
@@ -63,7 +65,8 @@ export default function CarScene({ cls, passengers, hotspots = [], signals = [],
     const maxCam = W - st.viewW;
     const want = st.x - st.viewW / 2;
     const cam = maxCam <= 0 ? maxCam / 2 : Math.max(0, Math.min(maxCam, want));
-    st.cam += (cam - st.cam) * (st.last ? 0.14 : 1);
+    // Камера догоняет проводника плавно; в режиме «меньше движения» — без доводки, сразу.
+    st.cam += (cam - st.cam) * (st.last && !propsRef.current.reduceMotion ? 0.14 : 1);
     if (worldRef.current) worldRef.current.style.transform = `translate3d(${(-st.cam * st.scale).toFixed(2)}px,${(st.oy || 0).toFixed(1)}px,0) scale(${st.scale})`;
     if (heroRef.current) heroRef.current.style.transform = `translate3d(${(st.x - 33).toFixed(2)}px,0,0)`;
   }
@@ -329,7 +332,7 @@ function Visitor({ role, variant = 0, mood, from, to, faceRight, delay = 0, vani
   }, [from, to, delay, vanish, pace]);
   const dur = Math.abs(to - from) / pace;
   return (
-    <div className={styles.visitor} data-gone={gone || undefined} style={{ transform: `translate3d(${x - 33}px,0,0)`, transitionDuration: gone ? "400ms" : `${dur}s`, top: 138, opacity: delay && !walking && x === from ? 0 : undefined }}>
+    <div className={styles.visitor} data-gone={gone || undefined} style={{ transform: `translate3d(${x - 33}px,0,0)`, transitionDuration: gone ? "400ms" : `${dur}s`, "--walk-dur": `${dur}s`, top: 138, opacity: delay && !walking && x === from ? 0 : undefined }}>
       <Person outfit={role} variant={variant} mood={mood} walking={walking} facing={walking ? (to > from ? "right" : "left") : (faceRight ? "right" : "left")} size={150} hair={role === "passenger" ? variant % 4 : 2} />
     </div>
   );

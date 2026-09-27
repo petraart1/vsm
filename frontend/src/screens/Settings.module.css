@@ -37,3 +37,9 @@ a.row:hover, button.row:hover { background: var(--bg-hover); }
 .version { margin-top: auto; padding: var(--s-10) 0 var(--s-2); width: 100%; text-align: center; color: var(--fg-3); font-size: var(--t-xs); }
 @media (max-width: 480px) { .segRow { flex-direction: column; align-items: stretch; } .segmented { display: flex; } .segmented button { flex: 1; } }
 @media (max-width: 1023px) { .page { min-height: calc(100dvh - 190px); } }
+.rangeRow { display: flex; flex-direction: column; gap: 8px; padding: 12px var(--s-4); }
+.group > .rangeRow + .rangeRow { box-shadow: inset 0 0.5px 0 var(--line); }
+.rangeHead { display: flex; justify-content: space-between; gap: var(--s-3); font-size: var(--t-base); }
+.rangeHead b { font-weight: 500; }
+.rangeHead span { color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.rangeRow input[type="range"] { width: 100%; accent-color: var(--blue); }

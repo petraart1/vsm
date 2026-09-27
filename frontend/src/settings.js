@@ -23,7 +23,26 @@ export function subscribeSettings(fn) {
   return () => listeners.delete(fn);
 }
 
-/** «Меньше движения» внутри приложения — независимо от системной настройки. */
+/**
+ * «Меньше движения». Единый источник для CSS и JS — атрибут data-motion на <html>:
+ * "reduce", если включена настройка приложения или системная prefers-reduced-motion
+ * (настройка по умолчанию выключена и тогда следует системе), иначе "full".
+ */
+let motionQuery = null;
 export function applyMotion(s = getSettings()) {
-  document.documentElement.toggleAttribute("data-reduce-motion", !!s.reduceMotion);
+  let system = false;
+  try {
+    if (!motionQuery && window.matchMedia) {
+      motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const onChange = () => applyMotion();
+      if (motionQuery.addEventListener) motionQuery.addEventListener("change", onChange);
+      else if (motionQuery.addListener) motionQuery.addListener(onChange);
+    }
+    system = !!(motionQuery && motionQuery.matches);
+  } catch (e) { /* нет matchMedia */ }
+  const reduce = !!s.reduceMotion || system;
+  const root = document.documentElement;
+  root.setAttribute("data-motion", reduce ? "reduce" : "full");
+  // Старое имя атрибута — для стилей, которые ещё проверяют его.
+  root.toggleAttribute("data-reduce-motion", reduce);
 }

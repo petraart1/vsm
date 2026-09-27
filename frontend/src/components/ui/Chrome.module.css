@@ -164,3 +164,6 @@
 .sideWho b { font-size: var(--t-sm); display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sideWho span { font-size: var(--t-xs); color: var(--fg-2); }
 .sideLogin { display: flex; align-items: center; gap: 8px; margin-top: var(--s-3); height: 40px; padding: 0 12px; border-radius: 12px; background: var(--blue); color: #fff; font-weight: 600; font-size: var(--t-sm); text-decoration: none; }
+
+/* Шапка боковой панели: логотип и уведомления */
+.sideHead { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); padding-right: var(--s-1); }

@@ -93,9 +93,8 @@
 .mic[data-on] { background: var(--blue-soft); animation: pulse 1.2s infinite; }
 @keyframes pulse { 50% { box-shadow: 0 0 0 6px var(--blue-soft); } }
 
-@media (prefers-reduced-motion: reduce) {
-  .sheet, .row, .note, .choices li { animation: none; }
-}
+:global(:root[data-motion="reduce"]) .sheet, :global(:root[data-motion="reduce"]) .row, :global(:root[data-motion="reduce"]) .note, :global(:root[data-motion="reduce"]) .choices li,
+:global(:root[data-motion="reduce"]) .typing i, :global(:root[data-motion="reduce"]) .mic[data-on] { animation: none; }
 .note[data-tone="scene"] { font-style: italic; color: var(--fg); background: var(--bg-muted); border-radius: 14px; padding: 10px 14px; max-width: 100%; text-align: left; }
 
 /* Десктоп: диалог — боковая панель справа, сцена остаётся видна */

@@ -24,14 +24,15 @@ import styles from "./ChatDialog.module.css";
  */
 export default function ChatDialog({ speaker, messages, choices, onChoose, timer, busy, footer, scales, sheet = true, onClose, title, className }) {
   const scrollRef = useRef(null);
-  const [voice, setVoice] = useState(() => readVoicePref());
+  // Озвучка включается в настройках (раздел «Тренажёр»).
+  const [voice] = useState(() => readVoicePref());
   const [listening, setListening] = useState(false);
   const spokenRef = useRef(new Set());
 
   // Автопрокрутка к последнему сообщению — плавно, как в Сообщениях.
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: document.documentElement.getAttribute("data-motion") === "reduce" ? "auto" : "smooth" });
   }, [messages.length, busy, choices]);
 
   // Озвучка реплик собеседника (Web Speech API, голос ru-RU) — опционально, по кнопке.
@@ -49,13 +50,6 @@ export default function ChatDialog({ speaker, messages, choices, onChoose, timer
 
   useEffect(() => () => { try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) { /* нет API */ } }, []);
 
-  function toggleVoice() {
-    const next = !voice;
-    setVoice(next);
-    try { localStorage.setItem("reactlab.voice", next ? "1" : "0"); } catch (e) { /* приватный режим */ }
-    if (!next) try { window.speechSynthesis.cancel(); } catch (e) { /* нет API */ }
-    else messages.forEach((m) => spokenRef.current.add(m.id)); // не зачитывать историю
-  }
 
   // Ответ голосом: распознаём фразу и выбираем самый близкий по словам вариант.
   const Recognition = typeof window !== "undefined" ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
@@ -93,11 +87,6 @@ export default function ChatDialog({ speaker, messages, choices, onChoose, timer
             <Meter value={scales.safety} tone="safety" label="Безопасность" />
             <Meter value={scales.loyalty} tone="loyalty" label="Лояльность" />
           </div>
-        )}
-        {"speechSynthesis" in (typeof window !== "undefined" ? window : {}) && (
-          <button type="button" className={styles.round} data-on={voice || undefined} onClick={toggleVoice} aria-label={voice ? "Выключить озвучку" : "Включить озвучку"}>
-            <Icon name="speaker" size={16} />
-          </button>
         )}
         {onClose && (
           <button type="button" className={styles.round} onClick={onClose} aria-label="Закрыть">

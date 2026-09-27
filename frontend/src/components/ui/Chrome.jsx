@@ -2,7 +2,6 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { LogoMark } from "../brand/Logo.jsx";
 import Icon from "./Icon.jsx";
 import NotificationBell from "./NotificationBell.jsx";
-import ThemeToggle from "./ThemeToggle.jsx";
 import { readVisits, streakOf, weekStrip } from "../../engagement.js";
 import VerifiedBadge from "./VerifiedBadge.jsx";
 import { useAccount, initialsOf } from "../../account.js";
@@ -26,9 +25,8 @@ export function TopBar({ activeScreen }) {
         <span className={styles.wordmark}><b>React</b>Lab</span>
       </a>
       <div className={styles.tools}>
-        <ThemeToggle />
         <NotificationBell />
-        <a className={`${styles.roundBtn} ${activeScreen === "settings" ? styles.roundBtnActive : ""}`} href="#/settings" aria-label="Настройки"><Icon name="palette" size={18} /></a>
+        <a className={`${styles.roundBtn} ${activeScreen === "settings" ? styles.roundBtnActive : ""}`} href="#/settings" aria-label="Настройки"><Icon name="settings" size={18} /></a>
         {account ? (
           <a
             className={`${styles.avatarBtn} ${activeScreen === "profile" || activeScreen === "settings" ? styles.roundBtnActive : ""}`}
@@ -96,10 +94,13 @@ export function Sidebar({ activeScreen }) {
   const week = weekStrip(visits);
   return (
     <aside className={styles.sidebar} aria-label="Навигация">
-      <a className={styles.sideBrand} href="#/today" aria-label="ReactLab, на главную">
-        <LogoMark size={32} />
-        <span className={styles.wordmark}><b>React</b>Lab</span>
-      </a>
+      <div className={styles.sideHead}>
+        <a className={styles.sideBrand} href="#/today" aria-label="ReactLab, на главную">
+          <LogoMark size={32} />
+          <span className={styles.wordmark}><b>React</b>Lab</span>
+        </a>
+        <NotificationBell placement="sidebar-top" />
+      </div>
       <p className={styles.sideCaption}>Тренажёр проводника ВСМ</p>
       <nav className={styles.sideNav}>
         {TABS.map((t) => {
@@ -117,15 +118,9 @@ export function Sidebar({ activeScreen }) {
           Профиль и витрина
         </a>
         <a href="#/settings" className={styles.sideItem} aria-current={activeScreen === "settings" ? "page" : undefined}>
-          <span className={styles.sideIcon}><Icon name="palette" size={18} /></span>
+          <span className={styles.sideIcon}><Icon name="settings" size={18} /></span>
           Настройки
         </a>
-        {account && account.role === "ADMIN" && (
-          <a href="#/admin" className={styles.sideItem} aria-current={activeScreen === "admin" ? "page" : undefined}>
-            <span className={styles.sideIcon}><Icon name="clipboard" size={18} /></span>
-            Администрирование
-          </a>
-        )}
       </nav>
 
       <a className={styles.streakCard} href="#/profile" aria-label={`Серия входов: ${streak} дн.`}>
@@ -158,10 +153,6 @@ export function Sidebar({ activeScreen }) {
         <a className={styles.sideLogin} href="#/login"><Icon name="user" size={16} />Войти</a>
       )}
 
-      <div className={styles.sideTools}>
-        <ThemeToggle />
-        <NotificationBell placement="sidebar" />
-      </div>
     </aside>
   );
 }

@@ -1,11 +1,32 @@
 import { useEffect, useRef, useState } from "react";
 
+/**
+ * Режим «меньше движения»: атрибут data-motion="reduce" на <html> (его ставит applyMotion из
+ * settings.js — с учётом и настройки приложения, и системной prefers-reduced-motion).
+ * Если атрибута ещё нет — смотрим на системную настройку.
+ */
 export function prefersReducedMotion() {
   try {
+    const attr = document.documentElement.getAttribute("data-motion");
+    if (attr) return attr === "reduce";
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   } catch (e) {
     return false;
   }
+}
+
+/** То же как хук: компонент перерисуется, когда режим переключат в настройках. */
+export function useReducedMotion() {
+  const [reduce, setReduce] = useState(prefersReducedMotion);
+  useEffect(() => {
+    const update = () => setReduce(prefersReducedMotion());
+    update();
+    if (typeof MutationObserver === "undefined") return undefined;
+    const mo = new MutationObserver(update);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-motion"] });
+    return () => mo.disconnect();
+  }, []);
+  return reduce;
 }
 
 /**
@@ -43,12 +64,14 @@ function easeOutExpo(t) {
  */
 export function CountUp({ value, duration = 1100, delay = 0, format, className }) {
   const target = typeof value === "number" && isFinite(value) ? value : 0;
-  const [shown, setShown] = useState(prefersReducedMotion() ? target : 0);
+  const reduce = useReducedMotion();
+  const [shown, setShown] = useState(() => (prefersReducedMotion() ? target : 0));
   const fromRef = useRef(prefersReducedMotion() ? target : 0);
 
   useEffect(() => {
-    if (prefersReducedMotion()) {
+    if (reduce) {
       setShown(target);
+      fromRef.current = target;
       return undefined;
     }
     const from = fromRef.current;
@@ -70,7 +93,7 @@ export function CountUp({ value, duration = 1100, delay = 0, format, className }
       cancelAnimationFrame(raf);
       fromRef.current = target;
     };
-  }, [target, duration, delay]);
+  }, [target, duration, delay, reduce]);
 
   const rounded = Math.round(shown);
   const text = format ? format(rounded) : String(rounded);

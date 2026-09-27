@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 import { ICON_PATHS } from "../ui/Icon.jsx";
+import { prefersReducedMotion } from "../motion/Motion.jsx";
 import styles from "./Medal.module.css";
 
 /**
@@ -180,6 +181,13 @@ export default function Medal({
     function up() {
       if (!st.dragging) return;
       st.dragging = false;
+      if (prefersReducedMotion()) {
+        // Без инерции и доводки: сразу ближайшая сторона медали.
+        st.vel = 0;
+        st.angle = Math.round(st.angle / 180) * 180;
+        apply();
+        return;
+      }
       st.raf = requestAnimationFrame(settle);
     }
     el.addEventListener("pointerdown", down);

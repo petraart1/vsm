@@ -61,7 +61,7 @@ a.row .rowIcon { background: var(--blue); color: #fff; }
   .heroPerson { right: -4%; }
   .activity { gap: var(--s-4); padding: var(--s-4); }
 }
-@media (prefers-reduced-motion: reduce) { .heroImg, .heroPerson { animation: none; } }
+:global(:root[data-motion="reduce"]) .heroImg, :global(:root[data-motion="reduce"]) .heroPerson { animation: none; }
 
 .sideCard { padding: var(--s-5); }
 .sideHead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--s-4); }

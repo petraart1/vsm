@@ -13,6 +13,7 @@ import PageHeader from "../components/ui/PageHeader.jsx";
 import { CountUp } from "../components/motion/Motion.jsx";
 import { BLOCK_ICON } from "../progress.js";
 import styles from "./ScenarioList.module.css";
+import examStyles from "./Exam.module.css";
 
 const FILTERS = [
   { key: "all", label: "Все" },
@@ -23,7 +24,7 @@ const FILTERS = [
 function ScenarioRow({ situation, highlighted }) {
   const ref = useRef(null);
   useEffect(() => {
-    if (highlighted && ref.current) ref.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (highlighted && ref.current) ref.current.scrollIntoView({ behavior: document.documentElement.getAttribute("data-motion") === "reduce" ? "auto" : "smooth", block: "center" });
   }, [highlighted]);
 
   const done = situation.status === "completed";
@@ -151,6 +152,15 @@ export default function ScenarioList({ route }) {
           </Button>
         )}
       />
+
+      <section className={`${examStyles.entry} rv`} style={{ "--i": 1 }} aria-labelledby="exam-entry-title">
+        <span className={examStyles.entryIcon} aria-hidden="true"><Icon name="clipboard" size={22} /></span>
+        <span className={examStyles.entryText}>
+          <h2 id="exam-entry-title" className={examStyles.entryTitle}>Экзамен</h2>
+          <p className={examStyles.entryNote}>5 или 10 ситуаций из разных блоков подряд, без подсказок. Итоговая оценка и бонусные очки — в конце.</p>
+        </span>
+        <Button as="a" href="#/exam" className={examStyles.entryBtn}>Перейти к экзамену<Icon name="chevronRight" size={14} /></Button>
+      </section>
 
       <div className={`${styles.summary} rv`} style={{ "--i": 1 }}>
         <p className={styles.summaryNum}>

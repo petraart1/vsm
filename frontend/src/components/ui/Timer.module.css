@@ -37,3 +37,6 @@
   0% { transform: scale(1.12); }
   40%, 100% { transform: scale(1); }
 }
+
+/* «Меньше движения»: без пульсации цифр — о срочности говорит цвет. */
+:global(:root[data-motion="reduce"]) .timer[data-status="critical"] .digits { animation: none; }

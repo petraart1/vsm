@@ -6,7 +6,7 @@ import PageHeader from "../components/ui/PageHeader.jsx";
 import { CountUp } from "../components/motion/Motion.jsx";
 import Medal from "../components/awards/Medal.jsx";
 import CertificateDialog from "../components/progress/CertificateDialog.jsx";
-import { FINISH_OPTIONS, readFinish, writeFinish, moduleMedal, distinctionMedal } from "../components/awards/awards.js";
+import { readFinish, moduleMedal, distinctionMedal } from "../components/awards/awards.js";
 import { buildQualifications, toDistinction, formatDate } from "../progress.js";
 import { readShifts } from "../shift/shiftModel.js";
 import { STREAK_MILESTONES, claimedStreakRewards, streakMedal } from "../engagement.js";
@@ -24,7 +24,7 @@ export default function Achievements({ route }) {
   const query = route.query || {};
   const [s, setS] = useState({ phase: "loading" });
   const [opened, setOpened] = useState(null);
-  const [finish, setFinish] = useState(readFinish);
+  const [finish] = useState(readFinish);
   const account = useAccount();
   const verified = !!(account && account.verified);
   const [custom, setCustom] = useState([]);
@@ -54,11 +54,6 @@ export default function Achievements({ route }) {
   }
 
   useEffect(load, []);
-
-  function pickFinish(v) {
-    setFinish(v);
-    writeFinish(v);
-  }
 
   if (s.phase === "loading") {
     return (
@@ -92,11 +87,6 @@ export default function Achievements({ route }) {
           <div><dt>Отличия</dt><dd><CountUp value={earnedDistinctions} /><small>/{distinctions.length}</small></dd></div>
           <div><dt>Смены</dt><dd><CountUp value={cleanShifts.length} /></dd></div>
         </dl>
-        <div className={styles.segmented} role="radiogroup" aria-label="Отделка медалей">
-          {FINISH_OPTIONS.map((o) => (
-            <button key={o.key} type="button" role="radio" aria-checked={finish === o.key} data-on={finish === o.key || undefined} onClick={() => pickFinish(o.key)}>{o.label}</button>
-          ))}
-        </div>
       </div>
 
       {cleanShifts.length > 0 && (
