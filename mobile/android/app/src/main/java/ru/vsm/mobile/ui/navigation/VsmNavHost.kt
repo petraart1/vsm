@@ -72,7 +72,6 @@ import ru.vsm.mobile.ui.screens.scenarios.DebriefScreen
 import ru.vsm.mobile.ui.screens.scenarios.ScenarioListScreen
 import ru.vsm.mobile.ui.screens.scenarios.ScenarioPlayScreen
 import ru.vsm.mobile.ui.screens.settings.SettingsPreferences
-import ru.vsm.mobile.ui.screens.settings.SettingsScreen
 import ru.vsm.mobile.ui.screens.shift.ShiftScreen
 import ru.vsm.mobile.ui.screens.today.TodayScreen
 import androidx.compose.ui.platform.LocalContext
@@ -217,7 +216,6 @@ fun VsmNavHost() {
             composable(Routes.NOTIFICATIONS) { NotificationsScreen(navigator) }
             composable(Routes.CHALLENGES) { ChallengesScreen(navigator) }
             composable(Routes.EXAM) { ExamScreen(navigator) }
-            composable(Routes.SETTINGS) { SettingsScreen(navigator) }
             composable(Routes.LOGIN) { LoginScreen(navigator) }
             composable(Routes.REGISTER) { RegisterScreen(navigator) }
             composable(

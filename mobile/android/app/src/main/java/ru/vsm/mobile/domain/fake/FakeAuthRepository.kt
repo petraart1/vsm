@@ -32,7 +32,7 @@ class FakeAuthRepository : AuthRepository {
         if (login == FAIL_LOGIN) {
             return Result.failure(DomainError.Api(401, DomainError.INVALID_CREDENTIALS, "Неверный логин или пароль"))
         }
-        val fake = AuthUser(id = "fake-$login", login = login, displayName = login, role = UserRole.USER)
+        val fake = AuthUser(id = "fake-$login", login = login, displayName = login, role = UserRole.USER, verified = false)
         user.value = fake
         return Result.success(fake)
     }
@@ -47,7 +47,7 @@ class FakeAuthRepository : AuthRepository {
         if (code == FAIL_ESIA_CODE) {
             return Result.failure(DomainError.Api(400, "invalid_or_expired_esia_code", "Код ЕСИА недействителен или истёк"))
         }
-        val fake = AuthUser(id = "fake-esia-$code", login = "esia-$code", displayName = "Тестовый гражданин", role = UserRole.USER)
+        val fake = AuthUser(id = "fake-esia-$code", login = "esia-$code", displayName = "Тестовый гражданин", role = UserRole.USER, verified = true)
         user.value = fake
         return Result.success(fake)
     }

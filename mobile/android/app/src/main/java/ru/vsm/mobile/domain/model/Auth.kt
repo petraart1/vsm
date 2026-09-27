@@ -11,4 +11,6 @@ data class AuthUser(
     val login: String,
     val displayName: String?,
     val role: UserRole,
+    /** Подтверждённая личность (сейчас — только через демо-заглушку Госуслуг/ЕСИА, см. [ru.vsm.mobile.domain.repository.AuthRepository.loginWithEsia]); обычная регистрация логином/паролем даёт `false`. */
+    val verified: Boolean = false,
 )

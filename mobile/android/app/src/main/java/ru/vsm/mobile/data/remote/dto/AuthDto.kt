@@ -27,6 +27,7 @@ data class UserProfileResponseDto(
     val email: String,
     val displayName: String? = null,
     val role: UserRoleDto,
+    val verified: Boolean = false,
     val createdAt: String,
 )
 

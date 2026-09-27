@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -20,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,11 +29,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ru.vsm.mobile.R
 import ru.vsm.mobile.domain.model.Achievement
 import ru.vsm.mobile.domain.model.CustomAward
 import ru.vsm.mobile.ui.art.Medal
@@ -44,18 +47,32 @@ import ru.vsm.mobile.ui.common.viewModel
 import ru.vsm.mobile.ui.components.EmptyState
 import ru.vsm.mobile.ui.components.ErrorState
 import ru.vsm.mobile.ui.components.LoadingState
+import ru.vsm.mobile.ui.components.VerifiedBadge
 import ru.vsm.mobile.ui.components.VsmButton
 import ru.vsm.mobile.ui.navigation.AppNavigator
+import ru.vsm.mobile.ui.navigation.Routes
+import ru.vsm.mobile.ui.screens.shift.ShiftHistoryStats
+import ru.vsm.mobile.ui.screens.shift.readShiftHistory
+import ru.vsm.mobile.ui.screens.today.STREAK_MILESTONES
+import ru.vsm.mobile.ui.screens.today.StreakMilestone
+import ru.vsm.mobile.ui.screens.today.TodayStreak
 
 /**
- * Награды — как на сайте (`Achievements.jsx`): сетка объёмных медалей по категориям, полученные
- * в цвете, остальные — заблокированная серая отделка. Тап по медали открывает свидетельство.
+ * Награды — как на сайте (`Achievements.jsx`): сетка объёмных медалей по разделам, полученные
+ * в цвете, будущие — заблокированная серая отделка. Тап по медали открывает свидетельство.
+ * Разделы: смены без замечаний, официальные награды (только для подтверждённых через демо-ЕСИА
+ * учётных записей), особые награды администратора, серии входов, учебные модули, служебные отличия.
  */
 @Composable
 fun AchievementsScreen(navigator: AppNavigator) {
     val container = appContainer()
-    val viewModel = viewModel { AchievementsViewModel(container.gamificationRepository, container.playerRepository) }
+    val viewModel = viewModel { AchievementsViewModel(container.gamificationRepository, container.playerRepository, container.scenarioRepository) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val currentUser by container.authRepository.currentUser.collectAsStateWithLifecycle(initialValue = null)
+    val context = LocalContext.current
+    val verified = currentUser?.verified == true
+    val shiftHistory = remember(state.loading) { readShiftHistory(context) }
+    val longestStreak = remember(state.loading) { TodayStreak.longestStreak(context) }
 
     when {
         state.loading && state.achievements.isEmpty() -> LoadingState(modifier = Modifier.fillMaxWidth())
@@ -69,19 +86,36 @@ fun AchievementsScreen(navigator: AppNavigator) {
             text = "Сервер тренажёра пока не вернул ни одной ачивки.",
             modifier = Modifier.fillMaxWidth(),
         )
-        else -> AchievementsContent(state = state)
+        else -> AchievementsContent(
+            state = state,
+            verified = verified,
+            shiftHistory = shiftHistory,
+            longestStreak = longestStreak,
+            onConfirmIdentity = { navigator.open(Routes.LOGIN) },
+        )
     }
 }
 
 private sealed interface AwardDetail {
     data class Standard(val achievement: Achievement) : AwardDetail
     data class Custom(val award: CustomAward) : AwardDetail
+    data class Official(val award: OfficialAwardUi, val earned: Boolean) : AwardDetail
+    data class Streak(val milestone: StreakMilestone, val earned: Boolean) : AwardDetail
+    data class Module(val qualification: QualificationUi) : AwardDetail
 }
 
 @Composable
-private fun AchievementsContent(state: AchievementsUiState) {
+private fun AchievementsContent(
+    state: AchievementsUiState,
+    verified: Boolean,
+    shiftHistory: ShiftHistoryStats,
+    longestStreak: Int,
+    onConfirmIdentity: () -> Unit,
+) {
     var opened by remember { mutableStateOf<AwardDetail?>(null) }
     val fullSpan = GridItemSpan(2)
+    val certifiedModules = state.qualifications.count { it.status == "certified" }
+    val official = officialAwards(shiftHistory.admittedCount, shiftHistory.hasUpgrade, certifiedModules > 0)
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -93,7 +127,7 @@ private fun AchievementsContent(state: AchievementsUiState) {
             Column {
                 Text(text = "Награды", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    text = "Служебные отличия и учебные достижения за пройденные сценарии.",
+                    text = "Учебные модули, служебные отличия и смены без замечаний.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
@@ -107,34 +141,87 @@ private fun AchievementsContent(state: AchievementsUiState) {
                     modifier = Modifier.fillMaxWidth().padding(20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
+                    TotalsStat(label = "Модули", value = certifiedModules, of = state.qualifications.size)
                     TotalsStat(label = "Отличия", value = state.earnedCount, of = state.achievements.size)
-                    if (state.customAwards.isNotEmpty()) {
-                        TotalsStat(label = "Особые", value = state.earnedCustomCount, of = state.customAwards.size)
+                    TotalsStat(label = "Смены", value = shiftHistory.admittedCount, of = null)
+                }
+            }
+        }
+
+        if (shiftHistory.admittedCount > 0) {
+            item(span = { fullSpan }) {
+                Card(shape = MaterialTheme.shapes.large, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Medal(
+                            shape = MedalShape.CIRCLE,
+                            finish = MedalFinish.ENAMEL,
+                            glyph = "train",
+                            earned = true,
+                            size = 84.dp,
+                            flippable = true,
+                            backTitle = "Смена без замечаний",
+                            backNote = "${shiftHistory.admittedCount} " + shiftCountWord(shiftHistory.admittedCount),
+                        )
+                        Column(modifier = Modifier.padding(start = 16.dp)) {
+                            Text(text = "Смена без замечаний", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                text = "Допуск подтверждён ${shiftHistory.admittedCount} ${shiftCountWord(shiftHistory.admittedCount)}.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                            Text(
+                                text = "Нажмите на медаль, чтобы перевернуть",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
                     }
                 }
             }
         }
 
-        state.byCategory.forEach { (category, items) ->
+        item(span = { fullSpan }) {
+            SectionHeader(title = "Официальные награды") {
+                if (verified) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        VerifiedBadge()
+                        Text(
+                            text = "Подтверждено",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(start = 6.dp),
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "Подтвердить через Госуслуги",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable(onClick = onConfirmIdentity),
+                    )
+                }
+            }
+        }
+        if (!verified) {
             item(span = { fullSpan }) {
                 Text(
-                    text = categoryLabel(category),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 8.dp),
+                    text = "Официальные награды получают подтверждённые учётные записи: они учитываются в допуске и решении для HR. Выполненные условия сохраняются — награды появятся сразу после подтверждения.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            items(items, key = { it.code }) { achievement ->
-                val (shape, glyph) = categoryMedal(category)
-                AwardTile(
-                    title = achievement.title,
-                    meta = if (achievement.earned) "Получено" else achievement.description,
-                    earned = achievement.earned,
-                    shape = shape,
-                    glyph = glyph,
-                    onClick = { opened = AwardDetail.Standard(achievement) },
-                )
-            }
+        }
+        items(official, key = { it.id }) { award ->
+            val got = verified && award.condition
+            AwardTile(
+                title = award.title,
+                meta = if (got) "Получено" else if (award.condition) "Условие выполнено — нужна проверка личности" else award.note,
+                earned = got,
+                shape = MedalShape.SHIELD,
+                glyph = award.glyph,
+                onClick = { opened = AwardDetail.Official(award, got) },
+            )
         }
 
         if (state.customAwards.isNotEmpty()) {
@@ -149,13 +236,77 @@ private fun AchievementsContent(state: AchievementsUiState) {
             items(state.customAwards, key = { it.id }) { award ->
                 AwardTile(
                     title = award.title,
-                    meta = if (award.earned) "Получено" else award.description,
+                    meta = if (award.earned) "Получено" else award.description + if (award.verifiedOnly) " · для подтверждённых" else "",
                     earned = award.earned,
                     shape = parseMedalShape(award.shape),
                     glyph = award.glyph ?: "medal",
                     onClick = { opened = AwardDetail.Custom(award) },
                 )
             }
+        }
+
+        item(span = { fullSpan }) {
+            Text(
+                text = "Серии входов",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+        items(STREAK_MILESTONES, key = { it.days }) { milestone ->
+            val got = longestStreak >= milestone.days
+            AwardTile(
+                title = milestone.title,
+                meta = if (got) "Получено" else milestone.note,
+                earned = got,
+                shape = MedalShape.CIRCLE,
+                glyph = null,
+                text = milestone.days.toString(),
+                onClick = { opened = AwardDetail.Streak(milestone, got) },
+            )
+        }
+
+        item(span = { fullSpan }) {
+            Text(
+                text = "Учебные модули",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+        items(state.qualifications, key = { it.block }) { q ->
+            AwardTile(
+                title = q.title,
+                meta = when (q.status) {
+                    "certified" -> "Присвоено"
+                    "in_training" -> "${q.completed} из ${q.total}"
+                    else -> "Модуль ${q.code}"
+                },
+                earned = q.status == "certified",
+                shape = MedalShape.CIRCLE,
+                glyph = MODULE_GLYPH[q.block] ?: "medal",
+                onClick = { opened = AwardDetail.Module(q) },
+            )
+        }
+
+        item(span = { fullSpan }) {
+            Text(
+                text = "Служебные отличия",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+        items(state.achievements, key = { it.code }) { achievement ->
+            val (shape, glyph) = categoryMedal(achievement.category)
+            AwardTile(
+                title = achievement.title,
+                meta = if (achievement.earned) "Получено" else achievement.description,
+                earned = achievement.earned,
+                shape = shape,
+                glyph = glyph,
+                onClick = { opened = AwardDetail.Standard(achievement) },
+            )
         }
     }
 
@@ -166,17 +317,36 @@ private fun AchievementsContent(state: AchievementsUiState) {
 }
 
 @Composable
-private fun TotalsStat(label: String, value: Int, of: Int) {
+private fun SectionHeader(title: String, trailing: @Composable () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        trailing()
+    }
+}
+
+private fun shiftCountWord(n: Int): String = when {
+    n % 10 == 1 && n % 100 != 11 -> "раз"
+    else -> "раза"
+}
+
+@Composable
+private fun TotalsStat(label: String, value: Int, of: Int?) {
     Column {
         Text(text = label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(verticalAlignment = Alignment.Bottom) {
             Text(text = "$value", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text(
-                text = "/$of",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 4.dp, start = 1.dp),
-            )
+            if (of != null) {
+                Text(
+                    text = "/$of",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 4.dp, start = 1.dp),
+                )
+            }
         }
     }
 }
@@ -187,8 +357,9 @@ private fun AwardTile(
     meta: String,
     earned: Boolean,
     shape: MedalShape,
-    glyph: String,
+    glyph: String?,
     onClick: () -> Unit,
+    text: String? = null,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
@@ -200,7 +371,7 @@ private fun AwardTile(
             modifier = Modifier.fillMaxWidth().heightIn(min = 168.dp).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Medal(shape = shape, finish = MedalFinish.ENAMEL, glyph = glyph, earned = earned, size = 84.dp)
+            Medal(shape = shape, finish = MedalFinish.ENAMEL, glyph = glyph, text = text, earned = earned, size = 84.dp)
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
@@ -230,7 +401,9 @@ private fun AwardDetailDialog(detail: AwardDetail, onClose: () -> Unit) {
     val earned: Boolean
     val earnedAt: String?
     val shape: MedalShape
-    val glyph: String
+    val glyph: String?
+    val text: String?
+    val requirements: List<QualificationRequirement>
     when (detail) {
         is AwardDetail.Standard -> {
             title = detail.achievement.title
@@ -238,7 +411,7 @@ private fun AwardDetailDialog(detail: AwardDetail, onClose: () -> Unit) {
             earned = detail.achievement.earned
             earnedAt = detail.achievement.earnedAt
             val (s, g) = categoryMedal(detail.achievement.category)
-            shape = s; glyph = g
+            shape = s; glyph = g; text = null; requirements = emptyList()
         }
         is AwardDetail.Custom -> {
             title = detail.award.title
@@ -246,7 +419,29 @@ private fun AwardDetailDialog(detail: AwardDetail, onClose: () -> Unit) {
             earned = detail.award.earned
             earnedAt = detail.award.earnedAt
             shape = parseMedalShape(detail.award.shape)
-            glyph = detail.award.glyph ?: "medal"
+            glyph = detail.award.glyph ?: "medal"; text = null; requirements = emptyList()
+        }
+        is AwardDetail.Official -> {
+            title = detail.award.title
+            description = detail.award.note
+            earned = detail.earned
+            earnedAt = null
+            shape = MedalShape.SHIELD; glyph = detail.award.glyph; text = null; requirements = emptyList()
+        }
+        is AwardDetail.Streak -> {
+            title = detail.milestone.title
+            description = detail.milestone.note
+            earned = detail.earned
+            earnedAt = null
+            shape = MedalShape.CIRCLE; glyph = null; text = detail.milestone.days.toString(); requirements = emptyList()
+        }
+        is AwardDetail.Module -> {
+            title = detail.qualification.title
+            description = "Модуль ${detail.qualification.code}"
+            earned = detail.qualification.status == "certified"
+            earnedAt = null
+            shape = MedalShape.CIRCLE; glyph = MODULE_GLYPH[detail.qualification.block] ?: "medal"; text = null
+            requirements = detail.qualification.requirements
         }
     }
     val backNote = if (earned && earnedAt != null) "Получено $earnedAt" else if (earned) "Получено" else "Ещё не получено"
@@ -259,6 +454,7 @@ private fun AwardDetailDialog(detail: AwardDetail, onClose: () -> Unit) {
                     shape = shape,
                     finish = MedalFinish.ENAMEL,
                     glyph = glyph,
+                    text = text,
                     earned = earned,
                     size = 128.dp,
                     flippable = true,
@@ -285,6 +481,20 @@ private fun AwardDetailDialog(detail: AwardDetail, onClose: () -> Unit) {
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(top = 8.dp),
                 )
+                requirements.forEach { r ->
+                    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.Top) {
+                        Icon(
+                            painter = painterResource(if (r.met) R.drawable.ic_check else R.drawable.ic_x),
+                            contentDescription = null,
+                            tint = if (r.met) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                        Column(modifier = Modifier.padding(start = 8.dp)) {
+                            Text(text = r.label, style = MaterialTheme.typography.bodySmall)
+                            Text(text = r.detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
                 if (earned && earnedAt != null) {
                     Box(
                         modifier = Modifier
@@ -300,14 +510,6 @@ private fun AwardDetailDialog(detail: AwardDetail, onClose: () -> Unit) {
             }
         },
     )
-}
-
-private fun categoryLabel(category: String): String = when (category.lowercase()) {
-    "milestone" -> "Вехи"
-    "style" -> "Мастерство"
-    "volume" -> "Активность"
-    "challenge" -> "Челленджи"
-    else -> category.replaceFirstChar { it.uppercase() }
 }
 
 /** Форма+глиф медали по категории ачивки — единый код для всех наград одной категории. */

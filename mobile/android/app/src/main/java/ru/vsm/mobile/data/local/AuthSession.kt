@@ -15,4 +15,5 @@ data class AuthSession(
     val login: String,
     val displayName: String?,
     val role: String,
+    val verified: Boolean = false,
 )

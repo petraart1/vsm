@@ -22,7 +22,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +57,7 @@ import ru.vsm.mobile.ui.components.VsmAvatar
 import ru.vsm.mobile.ui.components.VsmAvatarTone
 import ru.vsm.mobile.ui.navigation.AppNavigator
 import ru.vsm.mobile.ui.navigation.Routes
+import ru.vsm.mobile.ui.screens.settings.SettingsSection
 import ru.vsm.mobile.ui.theme.VsmPalette
 
 /**
@@ -100,6 +100,7 @@ private fun ProfileContent(profile: Profile, competencies: CompetencyAnalytics?,
         }
         item { CompetenciesCard(competencies, navigator) }
         item { ShortcutsCard(navigator) }
+        item { SettingsSection(navigator) }
     }
 }
 
@@ -337,7 +338,6 @@ private fun ShortcutsCard(navigator: AppNavigator) {
         ShortcutRow(icon = Icons.Filled.Leaderboard, title = "Рейтинг", onClick = { navigator.open(Routes.LEADERBOARD) })
         ShortcutRow(icon = Icons.Filled.Notifications, title = "Уведомления", onClick = { navigator.open(Routes.NOTIFICATIONS) })
         ShortcutRow(icon = Icons.Filled.School, title = "Экзамен", onClick = { navigator.open(Routes.EXAM) })
-        ShortcutRow(icon = Icons.Filled.Settings, title = "Настройки", onClick = { navigator.open(Routes.SETTINGS) })
     }
 }
 

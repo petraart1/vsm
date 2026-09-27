@@ -11,6 +11,7 @@ fun UserProfileResponseDto.toDomain(): AuthUser = AuthUser(
     login = login,
     displayName = displayName,
     role = role.toDomain(),
+    verified = verified,
 )
 
 fun UserRoleDto.toDomain(): UserRole = when (this) {
@@ -23,6 +24,7 @@ fun AuthSession.toDomain(): AuthUser = AuthUser(
     login = login,
     displayName = displayName,
     role = if (role == UserRole.ADMIN.name) UserRole.ADMIN else UserRole.USER,
+    verified = verified,
 )
 
 fun UserProfileResponseDto.toSession(token: String): AuthSession = AuthSession(
@@ -31,4 +33,5 @@ fun UserProfileResponseDto.toSession(token: String): AuthSession = AuthSession(
     login = login,
     displayName = displayName,
     role = role.name,
+    verified = verified,
 )

@@ -469,6 +469,7 @@ class ShiftViewModel(
         val rings = ringsFor(summary, s.incidents)
         val score = Math.round(((rings.procedure + rings.reaction + rings.quality) / 3) * 100)
         s.chapter?.let { recordChapter(appContext, it.id, summary.admitted, score) }
+        recordShiftResult(appContext, summary.admitted, summary.upgrade != null)
         _state.update { it.copy(stage = ShiftStage.SUMMARY, summary = summary, rings = rings, story = readStory(appContext)) }
     }
 
