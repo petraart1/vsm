@@ -79,6 +79,7 @@ fun VsmButton(
     Row(
         modifier = modifier
             .wrapContentWidth()
+            .pressScale(interactionSource = interactionSource)
             .height(heightDp)
             .clip(CircleShape)
             .let { if (border != null) it.border(border, CircleShape) else it }
@@ -118,6 +119,7 @@ fun VsmChoiceButton(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .pressScale(pressedScale = 0.97f, interactionSource = interactionSource)
             .defaultMinSize(minHeight = 56.dp)
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.large)

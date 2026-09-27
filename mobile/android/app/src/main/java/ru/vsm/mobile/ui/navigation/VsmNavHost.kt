@@ -1,27 +1,34 @@
 package ru.vsm.mobile.ui.navigation
 
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.onSizeChanged
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -42,7 +50,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import ru.vsm.mobile.R
 import ru.vsm.mobile.ui.common.appContainer
 import ru.vsm.mobile.ui.components.NotificationBell
 import ru.vsm.mobile.ui.components.VsmAvatar
@@ -50,6 +57,9 @@ import ru.vsm.mobile.ui.components.VsmAvatarTone
 import ru.vsm.mobile.ui.components.VsmButton
 import ru.vsm.mobile.ui.components.VsmButtonSize
 import ru.vsm.mobile.ui.components.VsmButtonVariant
+import ru.vsm.mobile.ui.components.VsmMotion
+import ru.vsm.mobile.ui.components.pressScale
+import ru.vsm.mobile.ui.theme.VsmPalette
 import ru.vsm.mobile.ui.screens.auth.LoginScreen
 import ru.vsm.mobile.ui.screens.auth.RegisterScreen
 import ru.vsm.mobile.ui.screens.awards.AchievementsScreen
@@ -130,64 +140,44 @@ fun VsmNavHost() {
     Scaffold(
         topBar = {
             if (!isFullScreen) {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "ВСМ · Тренажёр",
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                        )
-                    },
-                    actions = {
-                        NotificationBell(
-                            unreadCount = unreadCount,
-                            onClick = { navigator.open(Routes.NOTIFICATIONS) },
-                            modifier = Modifier.padding(end = 6.dp),
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (currentRoute == Routes.SETTINGS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                    CircleShape,
-                                )
-                                .clickable { navigator.open(Routes.SETTINGS) },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_settings),
-                                contentDescription = "Настройки",
-                                tint = if (currentRoute == Routes.SETTINGS) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp),
-                            )
+                // Компактная шапка (56dp + системная строка состояния), без запаса высоты
+                // Material3 TopAppBar. Справа — только колокольчик и аватар/«Войти»: настройки
+                // переехали внутрь профиля.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .height(56.dp)
+                        .padding(start = 16.dp, end = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "ВСМ · Тренажёр",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f),
+                    )
+                    NotificationBell(
+                        unreadCount = unreadCount,
+                        onClick = { navigator.open(Routes.NOTIFICATIONS) },
+                        modifier = Modifier.padding(end = 10.dp),
+                    )
+                    val name = displayName
+                    if (name != null) {
+                        Box(modifier = Modifier.clickable { navigator.open(Routes.PROFILE) }) {
+                            VsmAvatar(initials = initialsOf(name), size = 32.dp, tone = VsmAvatarTone.Solid)
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        val name = displayName
-                        if (name != null) {
-                            Box(
-                                modifier = Modifier
-                                    .clickable { navigator.open(Routes.PROFILE) }
-                                    .padding(end = 12.dp),
-                            ) {
-                                VsmAvatar(initials = initialsOf(name), size = 32.dp, tone = VsmAvatarTone.Solid)
-                            }
-                        } else {
-                            VsmButton(
-                                text = "Войти",
-                                onClick = { navigator.open(Routes.LOGIN) },
-                                variant = VsmButtonVariant.Secondary,
-                                size = VsmButtonSize.Small,
-                                modifier = Modifier.padding(end = 12.dp),
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        titleContentColor = MaterialTheme.colorScheme.onBackground,
-                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                )
+                    } else {
+                        VsmButton(
+                            text = "Войти",
+                            onClick = { navigator.open(Routes.LOGIN) },
+                            variant = VsmButtonVariant.Secondary,
+                            size = VsmButtonSize.Small,
+                        )
+                    }
+                }
             }
         },
         containerColor = MaterialTheme.colorScheme.background,
@@ -197,10 +187,26 @@ fun VsmNavHost() {
             }
         },
     ) { innerPadding ->
+        // Переходы между экранами — fade+slide как `.rv`/`transitions` на сайте (`motion.css`):
+        // вперёд — новый экран въезжает снизу-сбоку с лёгким смещением по X и наплывом, старый
+        // уходит в противоположную сторону; назад — зеркально. Единая кривая `easeOut`/`easeInOut`.
+        val forwardEnter = fadeIn(tween(VsmMotion.DUR, easing = VsmMotion.easeOut)) +
+            slideInHorizontally(tween(VsmMotion.DUR, easing = VsmMotion.easeOut)) { it / 6 }
+        val forwardExit = fadeOut(tween(VsmMotion.DUR_FAST, easing = VsmMotion.easeInOut)) +
+            slideOutHorizontally(tween(VsmMotion.DUR_FAST, easing = VsmMotion.easeInOut)) { -it / 8 }
+        val backEnter = fadeIn(tween(VsmMotion.DUR, easing = VsmMotion.easeOut)) +
+            slideInHorizontally(tween(VsmMotion.DUR, easing = VsmMotion.easeOut)) { -it / 8 }
+        val backExit = fadeOut(tween(VsmMotion.DUR_FAST, easing = VsmMotion.easeInOut)) +
+            slideOutHorizontally(tween(VsmMotion.DUR_FAST, easing = VsmMotion.easeInOut)) { it / 6 }
+
         NavHost(
             navController = navController,
             startDestination = startDestination,
             modifier = Modifier.padding(innerPadding),
+            enterTransition = { forwardEnter },
+            exitTransition = { forwardExit },
+            popEnterTransition = { backEnter },
+            popExitTransition = { backExit },
         ) {
             composable(Routes.TODAY) { TodayScreen(navigator) }
             composable(Routes.SCENARIOS) { ScenarioListScreen(navigator) }
@@ -233,43 +239,72 @@ fun VsmNavHost() {
 }
 
 /**
- * Плавающая капсула снизу поверх контента — как `TabBar` из `Chrome.jsx`: активный пункт залит
- * `primaryContainer`, остальные — прозрачны. Полупрозрачная «стеклянная» заливка вместо blur.
+ * Нижний таб-бар на всю ширину, без обводки/видимых границ блока — честное «стекло» edge-to-edge,
+ * как `.tabbar`/`.tabInner` в `Chrome.jsx` (сайт), но растянутое по краям вместо плавающей капсулы:
+ * так лучше держит фирменный стиль на узких экранах и не выглядит «обрезанным блоком». Полупрозрачная
+ * заливка `VsmPalette.glass` без бордера, скруглены только верхние углы, тень вместо обводки отделяет
+ * от контента. Индикатор активного пункта — плавающая «пилюля» (аналог `.pill` на сайте), которая
+ * скользит между пунктами по X с пружинным перелётом; все пункты имеют одинаковый вес/высоту, иконка
+ * и подпись у каждого строго центрированы по горизонтали и вертикали.
  */
 @Composable
 private fun VsmBottomBar(currentRoute: String?, onSelect: (String) -> Unit) {
+    val selectedIndex = bottomTabs.indexOfFirst { it.route == currentRoute }.let { if (it >= 0) it else 0 }
+    var barWidthPx by remember { mutableIntStateOf(0) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val tabCount = bottomTabs.size
+
+    // Общая высота содержимого таб-бара — фиксированная; отступ под системную навигацию добавляется
+    // ПОВЕРХ неё (windowInsetsPadding последним), а не откусывает от неё, иначе на жестовой навигации
+    // пункты станут ниже нужного.
+    val barContentHeight = 64.dp
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center,
+            .shadow(elevation = 12.dp, shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp), clip = false)
+            .background(
+                VsmPalette.glass,
+                RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+            )
+            .onSizeChanged { barWidthPx = it.width }
+            .windowInsetsPadding(WindowInsets.navigationBars),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(999.dp))
-                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(999.dp))
-                .height(58.dp)
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        val tabWidthDp = if (barWidthPx > 0) with(density) { (barWidthPx / tabCount).toDp() } else 0.dp
+        val pillOffset by animateDpAsState(
+            targetValue = tabWidthDp * selectedIndex,
+            animationSpec = tween(VsmMotion.DUR, easing = VsmMotion.easeSpring),
+            label = "tabPillOffset",
+        )
+        if (tabWidthDp > 0.dp) {
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .offset(x = pillOffset)
+                    .width(tabWidthDp)
+                    .height(barContentHeight - 16.dp)
+                    .padding(horizontal = 6.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+            )
+        }
+        Row(modifier = Modifier.fillMaxWidth().height(barContentHeight), verticalAlignment = Alignment.CenterVertically) {
             bottomTabs.forEach { tab ->
                 val selected = tab.route == currentRoute
+                val interactionSource = remember { MutableInteractionSource() }
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(
-                            if (selected) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent,
-                            RoundedCornerShape(999.dp),
-                        )
-                        .clickable { onSelect(tab.route) }
-                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                        .fillMaxHeight()
+                        .pressScale(pressedScale = 0.9f, interactionSource = interactionSource)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) { onSelect(tab.route) },
                     contentAlignment = Alignment.Center,
                 ) {
                     androidx.compose.foundation.layout.Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
                     ) {
                         Icon(
                             painter = painterResource(tab.iconRes),
@@ -282,7 +317,9 @@ private fun VsmBottomBar(currentRoute: String?, onSelect: (String) -> Unit) {
                             style = MaterialTheme.typography.labelSmall,
                             color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
+                            softWrap = false,
                             textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 2.dp),
                         )
                     }
                 }

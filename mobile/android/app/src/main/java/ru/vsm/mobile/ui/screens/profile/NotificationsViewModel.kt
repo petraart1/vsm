@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import ru.vsm.mobile.domain.error.userMessage
 import ru.vsm.mobile.domain.model.Notification
 import ru.vsm.mobile.domain.repository.GamificationRepository
 import ru.vsm.mobile.domain.repository.PlayerRepository
@@ -42,7 +43,7 @@ class NotificationsViewModel(
                     _state.value = NotificationsUiState(loading = false, error = null, playerId = playerId, notifications = list)
                 },
                 onFailure = { e ->
-                    _state.value = _state.value.copy(loading = false, error = e.message ?: "Не удалось загрузить уведомления")
+                    _state.value = _state.value.copy(loading = false, error = e.userMessage())
                 },
             )
         }

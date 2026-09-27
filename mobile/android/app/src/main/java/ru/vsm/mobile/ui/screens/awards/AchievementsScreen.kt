@@ -249,12 +249,28 @@ private fun AwardDetailDialog(detail: AwardDetail, onClose: () -> Unit) {
             glyph = detail.award.glyph ?: "medal"
         }
     }
+    val backNote = if (earned && earnedAt != null) "Получено $earnedAt" else if (earned) "Получено" else "Ещё не получено"
     AlertDialog(
         onDismissRequest = onClose,
         confirmButton = {},
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Medal(shape = shape, finish = MedalFinish.ENAMEL, glyph = glyph, earned = earned, size = 128.dp)
+                Medal(
+                    shape = shape,
+                    finish = MedalFinish.ENAMEL,
+                    glyph = glyph,
+                    earned = earned,
+                    size = 128.dp,
+                    flippable = true,
+                    backTitle = title,
+                    backNote = backNote,
+                )
+                Text(
+                    text = "Нажмите на медаль, чтобы перевернуть",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleLarge,

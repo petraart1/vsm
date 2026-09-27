@@ -45,6 +45,7 @@ import ru.vsm.mobile.ui.components.VsmPageHeader
 import ru.vsm.mobile.ui.components.VsmTone
 import ru.vsm.mobile.ui.navigation.AppNavigator
 import ru.vsm.mobile.ui.navigation.Routes
+import ru.vsm.mobile.ui.screens.profile.blockLabel
 
 /**
  * Каталог сценариев: поиск по названию, фильтр по блоку ситуаций, сгруппированный по блокам
@@ -126,7 +127,7 @@ private fun ScenarioListContent(
                 items(state.blocks) { block ->
                     val count = state.allItems.count { it.block == block }
                     BlockChip(
-                        label = "$block ($count)",
+                        label = "${blockLabel(block)} ($count)",
                         selected = state.selectedBlock == block,
                         onClick = { onBlockSelected(if (state.selectedBlock == block) null else block) },
                     )
@@ -152,7 +153,7 @@ private fun ScenarioListContent(
                 if (situations.isNotEmpty()) {
                     item(key = "header-$block") {
                         Text(
-                            text = "$block · ${situations.size}",
+                            text = "${blockLabel(block)} · ${situations.size}",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

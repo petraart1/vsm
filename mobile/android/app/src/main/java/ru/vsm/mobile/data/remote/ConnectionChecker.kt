@@ -54,7 +54,7 @@ class ConnectionChecker(baseOkHttpClient: OkHttpClient) {
                 success = false,
                 statusCode = null,
                 elapsedMs = System.currentTimeMillis() - startedAt,
-                errorMessage = e.message ?: e::class.simpleName ?: "network_error",
+                errorMessage = e.message ?: "не удалось подключиться",
             )
         }
     }

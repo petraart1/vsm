@@ -60,6 +60,7 @@ import ru.vsm.mobile.ui.components.VsmButtonVariant
 import ru.vsm.mobile.ui.components.VsmTone
 import ru.vsm.mobile.ui.navigation.AppNavigator
 import ru.vsm.mobile.ui.navigation.Routes
+import ru.vsm.mobile.ui.screens.profile.blockLabel
 import ru.vsm.mobile.ui.theme.VsmPalette
 
 private val CAR_CLASS_TITLES = mapOf(
@@ -339,7 +340,7 @@ private fun ExamResultsContent(exam: Exam, navigator: AppNavigator) {
             item {
                 SectionCard(title = "Что стоит повторить") {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        weak.forEach { block -> Text("• $block") }
+                        weak.forEach { block -> Text("• ${blockLabel(block)}") }
                     }
                 }
             }
@@ -369,7 +370,13 @@ private fun ExamResultRow(number: Int, item: ExamScenarioItem, navigator: AppNav
         Text("$number", style = MaterialTheme.typography.labelLarge, modifier = Modifier.width(20.dp))
         Column(Modifier.weight(1f)) {
             Text(item.title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(item.block, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                blockLabel(item.block),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
         item.outcome?.let { outcome ->
             val tone = when (outcome.name) {

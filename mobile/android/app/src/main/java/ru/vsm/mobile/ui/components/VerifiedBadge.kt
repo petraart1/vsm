@@ -1,5 +1,6 @@
 package ru.vsm.mobile.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -36,10 +37,9 @@ fun VerifiedBadge(modifier: Modifier = Modifier, size: Dp = 14.dp) {
 /** Знак портала Госуслуг. */
 @Composable
 fun GosuslugiMark(modifier: Modifier = Modifier, size: Dp = 24.dp) {
-    Icon(
-        painter = painterResource(R.drawable.ic_gosuslugi_mark),
+    Image(
+        painter = painterResource(R.drawable.img_gosuslugi),
         contentDescription = "Госуслуги",
-        tint = androidx.compose.ui.graphics.Color.Unspecified,
         modifier = modifier.size(size),
     )
 }

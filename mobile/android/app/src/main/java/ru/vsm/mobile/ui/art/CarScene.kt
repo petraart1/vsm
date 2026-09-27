@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -47,9 +48,13 @@ import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.isActive
 import kotlin.math.abs
@@ -62,17 +67,25 @@ import ru.vsm.mobile.R
  * Перенос `components/shift/CarScene.jsx` — вагон в разрезе («кукольный домик»): стена с окнами
  * (за ними бежит пейзаж), пассажиры в креслах, проводник идёт по проходу.
  *
- * В отличие от веб-версии сцена не скроллится камерой за узким вьюпортом — целиком вписывается
- * по ширине экрана (см. карточку роли), поэтому здесь нет краевых стрелок-вызовов «за пределами
- * экрана» (`.edge` на сайте): все пассажиры и хотспоты видны сразу.
+ * Как на сайте: мир вагона шире экрана, камера — вьюпорт фиксированной ширины (в мировых
+ * единицах), который плавно следует за проводником; кресла и коридор при этом крупнее и не
+ * сжимаются в мелкий масштаб. Вызовы за пределами вьюпорта показывают стрелку у края экрана.
+ *
+ * Высота сцены — только от собственной ширины контейнера (aspect ratio вьюпорта), не зависит от
+ * соседних панелей (диалог, тосты и т.п. накладываются поверх — см. `ShiftScreen.kt`), поэтому
+ * сцена не «прыгает» при их появлении. Персонажи двигаются только по горизонтали: линия пола и
+ * все Y-координаты фиксированы, лёгкое покачивание идёт только во время самой ходьбы.
  *
  * Управление: тап по полу — идти в точку; тап по пассажиру/хотспоту — подойти и, если рядом,
- * сразу выполнить действие; педали внизу — идти влево/вправо, пока зажаты.
+ * сразу выполнить действие; педали внизу — идти влево/вправо, пока зажаты; стрелки у края экрана —
+ * подойти к вызову, который сейчас не виден.
  */
 private const val H = 300f
 private const val VESTIBULE = 150f
 private const val SPEED = 140f // мировых px/с
 private const val REACH = 58f
+private const val VIEWPORT_W = 300f // мировых px, видно в кадре одновременно (как на сайте)
+private const val CAM_EASE = 0.16f
 
 data class CarClass(
     val key: String,
@@ -117,9 +130,11 @@ fun CarScene(
     onInteract: ((type: String, key: String) -> Unit)? = null
 ) {
     val W = worldWidth(cls)
+    val viewportW = min(VIEWPORT_W, W)
     fun sigX(sg: SignalCall) = if (sg.vestibuleEnd) W - VESTIBULE * 0.62f else seatX(cls, sg.seat)
 
     var heroX by remember(cls.key) { mutableFloatStateOf(VESTIBULE * 0.55f) }
+    var cam by remember(cls.key) { mutableFloatStateOf(0f) }
     var dir by remember { mutableFloatStateOf(0f) }
     var target by remember { mutableStateOf<Float?>(null) }
     var pendingAction by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -174,23 +189,31 @@ fun CarScene(
             heroX = (heroX + v * dt).coerceIn(24f, W - 24f)
             walking = abs(v) > 1f
             if (v > 1f) facing = "right" else if (v < -1f) facing = "left"
+
+            // Камера мягко следует за проводником, не выходя за края мира.
+            val maxCam = (W - viewportW).coerceAtLeast(0f)
+            val wantCam = (heroX - viewportW / 2f).coerceIn(0f, maxCam)
+            cam += (wantCam - cam) * CAM_EASE
         }
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val density = LocalDensity.current
         val widthPx = with(density) { maxWidth.toPx() }
-        val scale = if (widthPx > 0f) widthPx / W else 1f
+        val scale = if (widthPx > 0f) widthPx / viewportW else 1f
         fun px(v: Float) = with(density) { v.toDp() }
+        // Экранная (не мировая) координата: то же самое смещение для Canvas и оверлеев.
+        fun screenX(worldX: Float) = (worldX - cam) * scale
 
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(W / H)
+                .aspectRatio(viewportW / H)
+                .clipToBounds()
                 .pointerInput(cls.key, disabled) {
                     detectTapGestures { offset ->
                         if (!disabled) {
-                            target = (offset.x / scale).coerceIn(0f, W)
+                            target = (offset.x / scale + cam).coerceIn(0f, W)
                             pendingAction = null
                         }
                     }
@@ -199,7 +222,9 @@ fun CarScene(
             Landscape(moving = moving, stationName = stationName, modifier = Modifier.matchParentSize())
 
             Canvas(Modifier.matchParentSize()) {
-                withTransformScale(scale) { drawWagon(cls, W) }
+                scale(scaleX = scale, scaleY = scale, pivot = Offset.Zero) {
+                    translate(left = -cam) { drawWagon(cls, W) }
+                }
             }
 
             passengers.forEach { p ->
@@ -207,7 +232,7 @@ fun CarScene(
                 val h = 100f * (if (p.kid) 0.72f else 1f) * scale
                 Box(
                     Modifier.offset(
-                        x = px(seatX(cls, p.seat) * scale - 35f * (if (p.kid) 0.72f else 1f) * scale),
+                        x = px(screenX(seatX(cls, p.seat)) - 35f * (if (p.kid) 0.72f else 1f) * scale),
                         y = px((if (p.kid) 170f else 142f) * scale)
                     ).size(px(w), px(h))
                 ) {
@@ -224,7 +249,7 @@ fun CarScene(
             hotspots.forEach { h ->
                 HotspotButton(
                     h,
-                    Modifier.offset(x = px((h.x - 20f) * scale), y = px(88f * scale))
+                    Modifier.offset(x = px(screenX(h.x) - 20f * scale), y = px(88f * scale))
                 ) { act("hotspot", h.key, h.x) }
             }
 
@@ -232,17 +257,23 @@ fun CarScene(
                 val x = sigX(s)
                 SignalButton(
                     s,
-                    Modifier.offset(x = px((x - 22f) * scale), y = px(86f * scale))
+                    Modifier.offset(x = px(screenX(x) - 22f * scale), y = px(86f * scale))
                 ) { act("signal", s.key, x) }
             }
 
             val heroW = 150f * (80f / 180f) * scale
             val heroH = 150f * scale
             Box(
-                Modifier.offset(x = px((heroX - 33f) * scale), y = px(138f * scale)).size(px(heroW), px(heroH))
+                Modifier.offset(x = px(screenX(heroX) - 33f * scale), y = px(138f * scale)).size(px(heroW), px(heroH))
             ) {
                 WalkingPerson(outfit = "conductor", walking = walking, facing = facing, modifier = Modifier.matchParentSize())
             }
+
+            // Вызовы за пределами вьюпорта — стрелка у соответствующего края экрана.
+            val edgeLeft = signals.filter { sigX(it) < cam }.maxByOrNull { if (it.urgent) Float.MAX_VALUE else sigX(it) }
+            val edgeRight = signals.filter { sigX(it) > cam + viewportW }.let { list -> list.firstOrNull { it.urgent } ?: list.minByOrNull { sigX(it) } }
+            edgeLeft?.let { s -> EdgeCallout(urgent = s.urgent, alignEnd = false, modifier = Modifier.align(Alignment.CenterStart)) { act("signal", s.key, sigX(s)) } }
+            edgeRight?.let { s -> EdgeCallout(urgent = s.urgent, alignEnd = true, modifier = Modifier.align(Alignment.CenterEnd)) { act("signal", s.key, sigX(s)) } }
         }
 
         Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
@@ -263,6 +294,26 @@ fun CarScene(
                 WalkPad(left = false) { pressed -> if (!disabled) dir = if (pressed) 1f else 0f }
             }
         }
+    }
+}
+
+@Composable
+private fun EdgeCallout(urgent: Boolean, alignEnd: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val color = if (urgent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+    Row(
+        modifier
+            .padding(horizontal = 2.dp)
+            .background(color, if (alignEnd) RoundedCornerShape(topStart = 999.dp, bottomStart = 999.dp) else RoundedCornerShape(topEnd = 999.dp, bottomEnd = 999.dp))
+            .semantics { contentDescription = if (urgent) "Срочный вызов за пределами экрана" else "Вызов пассажира за пределами экрана" }
+            .pointerInput(urgent) { detectTapGestures { onClick() } }
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        val icon = painterResource(if (alignEnd) R.drawable.ic_chevron_right else R.drawable.ic_chevron_left)
+        if (!alignEnd) Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+        if (urgent) Text("!", color = Color.White, style = MaterialTheme.typography.titleSmall) else Icon(painterResource(R.drawable.ic_hand), contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+        if (alignEnd) Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
     }
 }
 

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ru.vsm.mobile.domain.model.LeaderboardEntry
 import ru.vsm.mobile.domain.model.Team
+import ru.vsm.mobile.domain.error.userMessage
 import ru.vsm.mobile.domain.model.TeamLeaderboardEntry
 import ru.vsm.mobile.domain.repository.GamificationRepository
 import ru.vsm.mobile.domain.repository.PlayerRepository
@@ -70,7 +71,7 @@ class LeaderboardViewModel(
                     )
                 },
                 onFailure = { e ->
-                    _state.value = _state.value.copy(loading = false, error = e.message ?: "Не удалось загрузить рейтинг")
+                    _state.value = _state.value.copy(loading = false, error = e.userMessage())
                 },
             )
             if (_state.value.tab == LeaderboardTab.TEAMS) loadTeams()

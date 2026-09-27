@@ -22,6 +22,7 @@ data class RingSpec(val progress: Float, val color: Color, val label: String)
 /** 3 вложенных кольца прогресса, как Apple Fitness — используется на «Сегодня» (смены/регламент/качество). */
 @Composable
 fun ActivityRings(rings: List<RingSpec>, modifier: Modifier = Modifier, size: Dp = 96.dp) {
+    val animatedProgress = rings.map { rememberSpringProgress(it.progress) }
     Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.size(size)) {
             val strokeWidth = this.size.minDimension / (rings.size * 4.5f)
@@ -40,7 +41,7 @@ fun ActivityRings(rings: List<RingSpec>, modifier: Modifier = Modifier, size: Dp
                 drawArc(
                     color = ring.color,
                     startAngle = -90f,
-                    sweepAngle = 360f * ring.progress.coerceIn(0f, 1f),
+                    sweepAngle = 360f * animatedProgress[index],
                     useCenter = false,
                     style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
                     topLeft = Offset(inset, inset),
@@ -61,6 +62,7 @@ fun ProgressRing(
     trackColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     centerContent: (@Composable () -> Unit)? = null,
 ) {
+    val animated = rememberSpringProgress(progress)
     Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.size(size)) {
             val strokeWidth = this.size.minDimension * 0.09f
@@ -78,7 +80,7 @@ fun ProgressRing(
             drawArc(
                 color = color,
                 startAngle = -90f,
-                sweepAngle = 360f * progress.coerceIn(0f, 1f),
+                sweepAngle = 360f * animated,
                 useCenter = false,
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
                 topLeft = Offset(inset, inset),

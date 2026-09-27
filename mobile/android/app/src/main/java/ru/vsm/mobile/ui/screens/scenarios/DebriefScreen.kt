@@ -51,6 +51,7 @@ import ru.vsm.mobile.ui.components.VsmButtonVariant
 import ru.vsm.mobile.ui.components.VsmTone
 import ru.vsm.mobile.ui.navigation.AppNavigator
 import ru.vsm.mobile.ui.navigation.Routes
+import ru.vsm.mobile.ui.screens.profile.blockLabel
 import ru.vsm.mobile.ui.theme.VsmPalette
 
 /**
@@ -187,16 +188,16 @@ private fun DebriefContent(debrief: Debrief, navigator: AppNavigator) {
 @Composable
 private fun DebriefHeader(debrief: Debrief) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            VsmBadge(text = debrief.scenarioBlock, tone = VsmTone.Neutral)
-            Text(
-                debrief.scenarioTitle,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-        }
+        // Подпись блока может быть длинной ("Медицинские и экстренные ситуации") — отдельной
+        // строкой над названием, чтобы не сжимать его до нечитаемого остатка в узком ряду.
+        VsmBadge(text = blockLabel(debrief.scenarioBlock), tone = VsmTone.Neutral)
+        Text(
+            debrief.scenarioTitle,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth(),
+        )
         Text(
             text = debrief.verdict,
             style = MaterialTheme.typography.headlineSmall,

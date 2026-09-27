@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -83,7 +84,7 @@ fun LoginScreen(navigator: AppNavigator) {
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .imePadding()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(text = "Вход", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
@@ -186,10 +187,9 @@ internal fun EsiaEntryRow(onClick: () -> Unit) {
                     .background(MaterialTheme.colorScheme.secondary, MaterialTheme.shapes.small),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_gosuslugi_mark),
+                Image(
+                    painter = painterResource(R.drawable.img_gosuslugi),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondary,
                 )
             }
             Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {

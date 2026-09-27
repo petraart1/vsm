@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ru.vsm.mobile.domain.model.CompetencyAnalytics
 import ru.vsm.mobile.domain.model.Profile
+import ru.vsm.mobile.domain.error.userMessage
 import ru.vsm.mobile.domain.repository.FeedbackRepository
 import ru.vsm.mobile.domain.repository.GamificationRepository
 import ru.vsm.mobile.domain.repository.PlayerRepository
@@ -50,7 +51,7 @@ class ProfileViewModel(
                     _state.value = ProfileUiState(loading = false, error = null, profile = profile, competencies = competencies)
                 },
                 onFailure = { e ->
-                    _state.value = _state.value.copy(loading = false, error = e.message ?: "Не удалось загрузить профиль")
+                    _state.value = _state.value.copy(loading = false, error = e.userMessage())
                 },
             )
         }

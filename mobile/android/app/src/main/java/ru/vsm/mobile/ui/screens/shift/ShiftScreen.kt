@@ -32,7 +32,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -113,13 +112,15 @@ fun ShiftScreen(navigator: AppNavigator) {
     Scaffold(
         topBar = {
             when (state.stage) {
-                ShiftStage.MED -> PhaseBar("Заступ на смену", speakerSubtitle(state), onExit = viewModel::exitToSetup)
+                ShiftStage.MED -> PhaseBar("Заступ на смену", onExit = viewModel::exitToSetup)
                 ShiftStage.INSPECT -> PhaseBar(
-                    "Приёмка вагона", "Проверено ${state.inspectionPoints.count { it.checked }} из ${state.inspectionPoints.size}",
+                    "Приёмка вагона",
                     onExit = viewModel::exitToSetup,
                     right = { Text(formatClock(state.inspectionSecondsLeft), style = MaterialTheme.typography.titleMedium, color = if (state.inspectionSecondsLeft <= 15) VsmPalette.danger else MaterialTheme.colorScheme.onSurface) },
                 )
-                else -> TopAppBar(title = { Text("Смена") })
+                // «Рейс» рисует свою компактную строку-тулбар в теле экрана — вторая шапка здесь не нужна.
+                ShiftStage.TRIP -> {}
+                else -> PhaseBar("Смена", onExit = null)
             }
         },
     ) { padding ->
@@ -137,26 +138,27 @@ fun ShiftScreen(navigator: AppNavigator) {
     }
 }
 
-private fun speakerSubtitle(state: ShiftUiState): String = state.dialog.role.ifBlank { "Заступ на смену" }
-
 private fun formatClock(seconds: Int): String {
     val m = seconds / 60
     val s = seconds % 60
     return "$m:${s.toString().padStart(2, '0')}"
 }
 
+/** Компактная однострочная шапка этапа смены: [назад] заголовок [таймер/др.] — минимум высоты,
+ * чтобы сцене и диалогу под ней доставалось как можно больше места. Пояснения — в теле экрана. */
 @Composable
-private fun PhaseBar(title: String, subtitle: String, onExit: () -> Unit, right: (@Composable () -> Unit)? = null) {
+private fun PhaseBar(title: String, onExit: (() -> Unit)?, right: (@Composable () -> Unit)? = null) {
     Row(
-        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(horizontal = 8.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background).padding(horizontal = 4.dp, vertical = 2.dp).height(40.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onExit) { Icon(Icons.Filled.Close, contentDescription = "Выйти из смены") }
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(subtitle, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (onExit != null) {
+            IconButton(onClick = onExit, modifier = Modifier.size(36.dp)) { Icon(Icons.Filled.Close, contentDescription = "Выйти из смены", modifier = Modifier.size(18.dp)) }
+        } else {
+            Box(Modifier.size(36.dp))
         }
-        if (right != null) Box(Modifier.width(56.dp), contentAlignment = Alignment.CenterEnd) { right() } else Box(Modifier.width(48.dp))
+        Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 4.dp))
+        if (right != null) Box(Modifier.width(48.dp), contentAlignment = Alignment.CenterEnd) { right() } else Box(Modifier.width(36.dp))
     }
 }
 
@@ -334,6 +336,7 @@ private fun MedContent(state: ShiftUiState, vm: ShiftViewModel) {
     } else null
     val place = if (state.dialog.outfit == "chief") "briefing" else "medpoint"
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(state.dialog.role.ifBlank { "Заступ на смену" }, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         MedRoom(place = place, npc = state.dialog.outfit ?: "medic", heroTalking = state.dialog.busy, npcTalking = !state.dialog.busy, readout = readout)
         DialogSheet(
             state = state.dialog, onChoose = vm::chooseDialog,
@@ -444,18 +447,22 @@ private fun TripContent(state: ShiftUiState, vm: ShiftViewModel) {
             vm.clearTripToast()
         }
     }
+    val activeIncident = state.incidents.find { it.key == state.activeIncidentKey }
+    // Сцена вагона — во всю доступную высоту (aspect ratio по своей ширине, задаётся внутри CarScene),
+    // а не через weight(1f): её размер не должен пересчитываться при появлении/исчезновении диалога
+    // или паузы под ней — те накладываются поверх сцены, не сдвигая и не сжимая её.
     Column(Modifier.fillMaxSize()) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp).height(40.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            IconButton(onClick = vm::pauseTrip) { Icon(Icons.Filled.Pause, contentDescription = "Пауза") }
+            IconButton(onClick = vm::pauseTrip, modifier = Modifier.size(36.dp)) { Icon(Icons.Filled.Pause, contentDescription = "Пауза", modifier = Modifier.size(18.dp)) }
             RouteLine(progress = state.tripProgress, modifier = Modifier.weight(1f))
             VsmButton(text = "${state.tripSpeed}×", onClick = vm::toggleTripSpeed, variant = VsmButtonVariant.Secondary)
             VsmBadge(text = "${state.incidents.count { it.status == IncidentStatus.DONE }}")
         }
 
-        Box(Modifier.weight(1f).padding(horizontal = 16.dp)) {
+        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
             CarScene(
                 cls = state.artCls, passengers = state.passengers,
                 signals = state.incidents.filter { it.status == IncidentStatus.ACTIVE }.map { i ->
@@ -472,24 +479,23 @@ private fun TripContent(state: ShiftUiState, vm: ShiftViewModel) {
                     Text(state.tripToast, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium)
                 }
             }
-        }
 
-        val activeIncident = state.incidents.find { it.key == state.activeIncidentKey }
-        if (state.dialog.active && activeIncident != null) {
-            Box(Modifier.fillMaxWidth().padding(16.dp)) {
-                DialogSheet(
-                    state = state.dialog, onChoose = vm::chooseDialog,
-                    footer = { if (state.dialog.final) VsmButton(text = "Вернуться к работе", onClick = vm::dismissTripDialog, modifier = Modifier.fillMaxWidth()) },
-                )
+            if (state.dialog.active && activeIncident != null) {
+                Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+                    DialogSheet(
+                        state = state.dialog, onChoose = vm::chooseDialog,
+                        footer = { if (state.dialog.final) VsmButton(text = "Вернуться к работе", onClick = vm::dismissTripDialog, modifier = Modifier.fillMaxWidth()) },
+                    )
+                }
             }
-        }
 
-        if (state.tripPaused) {
-            Box(Modifier.fillMaxWidth().padding(16.dp)) {
-                SectionCard(title = "Смена на паузе") {
-                    Text("Таймеры остановлены. Досрочное завершение не засчитывается.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    VsmButton(text = "Продолжить", onClick = vm::resumeTrip, modifier = Modifier.fillMaxWidth())
-                    VsmButton(text = "Завершить смену", onClick = vm::exitToSetup, variant = VsmButtonVariant.Ghost, modifier = Modifier.fillMaxWidth())
+            if (state.tripPaused) {
+                Box(Modifier.matchParentSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)).padding(16.dp), contentAlignment = Alignment.Center) {
+                    SectionCard(title = "Смена на паузе") {
+                        Text("Таймеры остановлены. Досрочное завершение не засчитывается.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        VsmButton(text = "Продолжить", onClick = vm::resumeTrip, modifier = Modifier.fillMaxWidth())
+                        VsmButton(text = "Завершить смену", onClick = vm::exitToSetup, variant = VsmButtonVariant.Ghost, modifier = Modifier.fillMaxWidth())
+                    }
                 }
             }
         }

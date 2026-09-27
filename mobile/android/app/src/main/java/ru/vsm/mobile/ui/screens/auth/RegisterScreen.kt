@@ -62,7 +62,7 @@ fun RegisterScreen(navigator: AppNavigator) {
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .imePadding()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(text = "Регистрация", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)

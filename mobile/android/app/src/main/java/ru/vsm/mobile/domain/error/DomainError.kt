@@ -96,3 +96,42 @@ fun DomainError.Api.isUnauthorized(): Boolean = statusCode == 401
 /** Частный случай 409 — разбор недоступен, пока экзамен не завершён (см. [DomainError.DEBRIEF_UNAVAILABLE_DURING_EXAM]). */
 fun DomainError.Api.isDebriefUnavailableDuringExam(): Boolean =
     errorCode == DomainError.DEBRIEF_UNAVAILABLE_DURING_EXAM
+
+/**
+ * Человекочитаемое сообщение об ошибке для интерфейса — без HTTP-кодов, технических сообщений
+ * исключений и упоминаний внутреннего устройства сервиса. Единственная точка, где [DomainError]
+ * превращается в текст, который увидит пользователь; экраны и ViewModel всегда берут сообщение
+ * отсюда, а не читают [Throwable.message] напрямую.
+ */
+fun DomainError.userMessage(): String = when (this) {
+    is DomainError.Network -> "Не удалось загрузить данные. Проверьте подключение к интернету и попробуйте ещё раз"
+    is DomainError.Unexpected -> "Что-то пошло не так, попробуйте ещё раз"
+    is DomainError.Api -> when (errorCode) {
+        DomainError.INVALID_CREDENTIALS -> "Неверный логин или пароль"
+        DomainError.INVALID_TOKEN -> "Сессия истекла — войдите снова"
+        DomainError.LOGIN_ALREADY_TAKEN -> "Этот логин уже занят, выберите другой"
+        DomainError.EMAIL_ALREADY_TAKEN -> "Эта почта уже используется другой учётной записью"
+        DomainError.PLAYER_ALREADY_REGISTERED -> "Это устройство уже привязано к другой учётной записи"
+        DomainError.LOGIN_TOO_SHORT -> "Логин слишком короткий"
+        DomainError.EMAIL_INVALID -> "Проверьте правильность почты"
+        DomainError.PASSWORD_TOO_SHORT -> "Пароль слишком короткий"
+        DomainError.SCENARIO_NOT_FOUND, DomainError.PROGRESS_NOT_FOUND -> "Ситуация недоступна, вернитесь в каталог"
+        DomainError.CHOICE_NOT_AVAILABLE -> "Этот вариант ответа уже нельзя выбрать"
+        DomainError.NO_ACTIVE_TIMER -> "Время на ответ уже вышло"
+        DomainError.PROGRESS_ACCESS_DENIED -> "Это прохождение недоступно для вашей учётной записи"
+        DomainError.PROGRESS_ALREADY_COMPLETED -> "Эта ситуация уже пройдена"
+        DomainError.CONCURRENT_MODIFICATION -> "Данные обновились в другом месте, попробуйте ещё раз"
+        DomainError.EXAM_NOT_FOUND -> "Экзамен недоступен"
+        DomainError.EXAM_ALREADY_FINISHED -> "Экзамен уже завершён"
+        DomainError.DEBRIEF_UNAVAILABLE_DURING_EXAM -> "Разбор решений появится после завершения экзамена"
+        else -> when {
+            statusCode == 401 -> "Сессия истекла — войдите снова"
+            statusCode == 404 -> "Не удалось найти запрошенные данные"
+            statusCode in 500..599 -> "Сервис временно недоступен, попробуйте позже"
+            else -> "Не удалось выполнить запрос, попробуйте ещё раз"
+        }
+    }
+}
+
+/** То же самое для любой другой ошибки, попавшей в `Result.failure` вне [DomainError]. */
+fun Throwable.userMessage(): String = if (this is DomainError) userMessage() else "Что-то пошло не так, попробуйте ещё раз"

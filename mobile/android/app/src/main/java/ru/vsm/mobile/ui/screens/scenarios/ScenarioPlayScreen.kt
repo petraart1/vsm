@@ -106,7 +106,7 @@ fun ScenarioPlayScreen(scenarioId: String, navigator: AppNavigator) {
         topBar = {
             ChatHeader(
                 title = "Пассажир",
-                subtitle = (state as? ScenarioPlayUiState.Content)?.scenarioCode ?: "Сценарий",
+                subtitle = "Диалог с пассажиром",
                 passengerVariant = passengerVariant,
                 safetyScore = (state as? ScenarioPlayUiState.Content)?.safetyScore,
                 loyaltyScore = (state as? ScenarioPlayUiState.Content)?.loyaltyScore,

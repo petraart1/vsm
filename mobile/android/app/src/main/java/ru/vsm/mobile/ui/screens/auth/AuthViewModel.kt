@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ru.vsm.mobile.domain.error.userMessage
 import ru.vsm.mobile.domain.repository.AuthRepository
 
 /** Своя схема приложения для перехвата редиректа демо-ЕСИА (см. [AuthRepository.esiaAuthorizeUrl]). */
@@ -58,7 +59,7 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
             authRepository.login(s.login.trim(), s.password).onSuccess {
                 _state.update { it.copy(busy = false, done = true) }
             }.onFailure { err ->
-                _state.update { it.copy(busy = false, error = err.message ?: "Не удалось войти") }
+                _state.update { it.copy(busy = false, error = err.userMessage()) }
             }
         }
     }
@@ -84,7 +85,7 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
             ).onSuccess {
                 _state.update { it.copy(busy = false, done = true) }
             }.onFailure { err ->
-                _state.update { it.copy(busy = false, error = err.message ?: "Не удалось зарегистрироваться") }
+                _state.update { it.copy(busy = false, error = err.userMessage()) }
             }
         }
     }
@@ -120,7 +121,7 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
                         esiaExchanging = false,
                         esiaOpen = false,
                         esiaAuthorizeUrl = null,
-                        error = err.message ?: "Не удалось подтвердить через Госуслуги",
+                        error = err.userMessage(),
                     )
                 }
             }

@@ -12,15 +12,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-/** Карточка-секция контента (заголовок опционален) в едином стиле по всему приложению. */
+/**
+ * Карточка-секция контента (заголовок опционален) в едином стиле по всему приложению.
+ * `appearIndex` (если задан, >= 0) включает каскадное проявление, как карточки на сайте
+ * (fade + подъём со ступенчатой задержкой по позиции в списке); по умолчанию выключено, чтобы не
+ * трогать разметку мест, где это не нужно.
+ */
 @Composable
 fun SectionCard(
     title: String? = null,
     modifier: Modifier = Modifier,
+    appearIndex: Int? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = (if (appearIndex != null) modifier.appearIn(appearIndex) else modifier).fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),

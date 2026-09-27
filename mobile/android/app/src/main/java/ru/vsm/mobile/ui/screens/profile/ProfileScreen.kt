@@ -295,7 +295,8 @@ private fun QualificationsCard(blocks: List<BlockProgress>) {
     }
 }
 
-private fun blockMark(block: String): String = block.take(2).uppercase()
+/** Метка на печати квалификации — по первым буквам русского названия блока, а не служебного кода. */
+private fun blockMark(block: String): String = blockLabel(block).take(2).uppercase()
 
 /** Последние полученные награды — список с медалью-миниатюрой (вместо ленты прохождений, которой нет в клиенте). */
 @Composable

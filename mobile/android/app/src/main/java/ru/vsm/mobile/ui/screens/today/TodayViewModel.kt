@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import ru.vsm.mobile.domain.model.LeaderboardEntry
 import ru.vsm.mobile.domain.model.Profile
 import ru.vsm.mobile.domain.model.ScenarioRecommendation
+import ru.vsm.mobile.domain.error.userMessage
 import ru.vsm.mobile.domain.repository.FeedbackRepository
 import ru.vsm.mobile.domain.repository.GamificationRepository
 import ru.vsm.mobile.domain.repository.PlayerRepository
@@ -59,7 +60,7 @@ class TodayViewModel(
             if (profileResult.isFailure && leaderboard == null) {
                 _state.value = _state.value.copy(
                     loading = false,
-                    error = profileResult.exceptionOrNull()?.message ?: "Не удалось загрузить данные",
+                    error = profileResult.exceptionOrNull()?.userMessage() ?: "Не удалось загрузить данные",
                 )
                 return@launch
             }
