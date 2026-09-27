@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.vsm.backend.auth.esia.service.exception.InvalidEsiaCodeException;
 import ru.vsm.backend.auth.service.exception.InvalidCredentialsException;
 import ru.vsm.backend.auth.service.exception.InvalidTokenException;
+import ru.vsm.backend.auth.service.exception.TooManyAttemptsException;
 import ru.vsm.backend.auth.service.exception.UserAlreadyExistsException;
 import ru.vsm.backend.config.error.ApiError;
 
@@ -36,6 +37,11 @@ public class AuthExceptionHandler {
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<ApiError> handle(InvalidTokenException e, HttpServletRequest request) {
         return respond(HttpStatus.UNAUTHORIZED, e.getMessage(), request);
+    }
+
+    @ExceptionHandler(TooManyAttemptsException.class)
+    public ResponseEntity<ApiError> handle(TooManyAttemptsException e, HttpServletRequest request) {
+        return respond(HttpStatus.TOO_MANY_REQUESTS, e.getMessage(), request);
     }
 
     @ExceptionHandler(InvalidEsiaCodeException.class)

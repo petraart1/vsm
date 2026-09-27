@@ -121,7 +121,8 @@ class ExamApiIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         UUID progressId = UUID.fromString(objectMapper.readTree(startBody).get("progressId").asText());
 
-        mockMvc.perform(get("/api/feedback/debrief/{id}", progressId))
+        mockMvc.perform(get("/api/feedback/debrief/{id}", progressId)
+                        .header(ScenarioPlayController.PLAYER_ID_HEADER, playerId.toString()))
                 .andExpect(status().isConflict());
 
         // Каталог сценариев (не тронут этой задачей) продолжает отдавать активные сценарии.
@@ -180,7 +181,8 @@ class ExamApiIntegrationTest {
 
         // Разбор пройденного пункта был заблокирован (409) на предыдущем тесте, пока экзамен шёл —
         // теперь, когда экзамен завершён целиком, он открыт.
-        mockMvc.perform(get("/api/feedback/debrief/{id}", lastProgressId))
+        mockMvc.perform(get("/api/feedback/debrief/{id}", lastProgressId)
+                        .header(ScenarioPlayController.PLAYER_ID_HEADER, playerId.toString()))
                 .andExpect(status().isOk());
     }
 

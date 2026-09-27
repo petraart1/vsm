@@ -1,5 +1,6 @@
 package ru.vsm.backend.auth.web;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -11,8 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.vsm.backend.auth.security.LoginRateLimiter;
 import ru.vsm.backend.auth.service.AuthLoginService;
 import ru.vsm.backend.auth.service.AuthRegistrationService;
+import ru.vsm.backend.auth.service.exception.InvalidCredentialsException;
 import ru.vsm.backend.auth.web.dto.LoginRequest;
 import ru.vsm.backend.auth.web.dto.LoginResponse;
 import ru.vsm.backend.auth.web.dto.RegisterRequest;
@@ -30,6 +33,7 @@ public class AuthController {
 
     private final AuthRegistrationService authRegistrationService;
     private final AuthLoginService authLoginService;
+    private final LoginRateLimiter loginRateLimiter;
 
     /**
      * Опциональный {@value #PLAYER_ID_HEADER} — id уже накопленного анонимного прогресса
@@ -43,9 +47,24 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(profile);
     }
 
+    /**
+     * Лимит брутфорса — HIGH из аудита безопасности (п. 3): не больше
+     * {@code app.auth.login-rate-limit.max-attempts} неудачных попыток подряд для пары логин+IP,
+     * иначе {@code 429 too_many_attempts} (см. {@link LoginRateLimiter}) до истечения блокировки.
+     */
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest request) {
-        return authLoginService.login(request);
+    public LoginResponse login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        String login = request.login();
+        String ip = httpRequest.getRemoteAddr();
+        loginRateLimiter.checkAllowed(login, ip);
+        try {
+            LoginResponse response = authLoginService.login(request);
+            loginRateLimiter.recordSuccess(login, ip);
+            return response;
+        } catch (InvalidCredentialsException e) {
+            loginRateLimiter.recordFailure(login, ip);
+            throw e;
+        }
     }
 
     @GetMapping("/me")

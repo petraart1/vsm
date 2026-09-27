@@ -34,6 +34,11 @@ public class JwtService {
     private final Duration expiration;
 
     public JwtService(JwtProperties properties) {
+        if (JwtProperties.DEFAULT_SECRET.equals(properties.getSecret())) {
+            log.warn("APP_AUTH_JWT_SECRET не задан — используется демо-секрет из исходного кода. "
+                    + "Любой, кто видел исходники, может подделать ADMIN-токен. НЕ использовать вне демо/хакатона: "
+                    + "задать переменную окружения APP_AUTH_JWT_SECRET (см. README \"Безопасность\").");
+        }
         this.key = Keys.hmacShaKeyFor(properties.getSecret().getBytes(StandardCharsets.UTF_8));
         this.expiration = Duration.ofMinutes(properties.getExpirationMinutes());
     }

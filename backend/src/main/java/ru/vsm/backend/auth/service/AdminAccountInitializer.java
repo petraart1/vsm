@@ -31,6 +31,11 @@ public class AdminAccountInitializer implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         String login = adminAccountProperties.getLogin();
+        if ("admin".equals(login) && "admin123".equals(adminAccountProperties.getPassword())) {
+            log.warn("APP_AUTH_ADMIN_LOGIN/APP_AUTH_ADMIN_PASSWORD не заданы — создаётся дефолтный "
+                    + "администратор admin/admin123. НЕ использовать вне демо/хакатона: задать переменные "
+                    + "окружения APP_AUTH_ADMIN_LOGIN/APP_AUTH_ADMIN_PASSWORD (см. README \"Безопасность\").");
+        }
         if (appUserRepository.existsByLogin(login)) {
             return;
         }

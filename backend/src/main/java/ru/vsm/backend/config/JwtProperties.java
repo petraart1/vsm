@@ -16,7 +16,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 public class JwtProperties {
 
-    private String secret = "vsm-demo-jwt-secret-please-change-in-production-0123456789abcdef";
+    /** Демо-дефолт, используется, только если {@code APP_AUTH_JWT_SECRET} не задан — см. {@code JwtService}. */
+    public static final String DEFAULT_SECRET = "vsm-demo-jwt-secret-please-change-in-production-0123456789abcdef";
+
+    private String secret = DEFAULT_SECRET;
 
     private long expirationMinutes = 1440;
 }
