@@ -1,0 +1,90 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-013-create-custom-award
+      author: vsm
+      comment: >
+        Награды, созданные администратором (в дополнение к встроенным ачивкам). Выдаются вручную
+        из админ-панели; verified_only — только подтверждённым через Госуслуги учётным записям.
+      changes:
+        - createTable:
+            tableName: gamification_custom_award
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: code
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uq_custom_award_code
+              - column:
+                  name: title
+                  type: varchar(120)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: varchar(300)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: shape
+                  type: varchar(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: glyph
+                  type: varchar(32)
+              - column:
+                  name: verified_only
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: gamification-013-create-custom-award-grant
+      author: vsm
+      comment: Выдача награды игроку; одна награда выдаётся игроку не более одного раза.
+      changes:
+        - createTable:
+            tableName: gamification_custom_award_grant
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: award_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_custom_award_grant_award
+                    references: gamification_custom_award(id)
+              - column:
+                  name: player_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: granted_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: gamification_custom_award_grant
+            columnNames: award_id, player_id
+            constraintName: uq_custom_award_grant

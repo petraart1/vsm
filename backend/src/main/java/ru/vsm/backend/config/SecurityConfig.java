@@ -59,6 +59,7 @@ public class SecurityConfig {
             "/api/exams/**",
             "/api/gamification/profile/**",
             "/api/gamification/showcase",
+            "/api/gamification/custom-awards",
             "/api/gamification/achievements",
             "/api/gamification/achievements/**",
             "/api/gamification/notifications",
