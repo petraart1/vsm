@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import ru.vsm.backend.gamification.domain.Notification;
 import ru.vsm.backend.gamification.domain.NotificationType;
 import ru.vsm.backend.gamification.domain.PlayerProfile;
+import ru.vsm.backend.gamification.domain.PlayerLevel;
 import ru.vsm.backend.gamification.repository.NotificationRepository;
 import ru.vsm.backend.gamification.repository.PlayerProfileRepository;
 import ru.vsm.backend.gamification.web.dto.NotificationDto;
@@ -74,6 +75,25 @@ public class NotificationService {
                 .toList();
         notificationRepository.saveAll(notifications);
         return notifications.size();
+    }
+
+    /**
+     * Уведомление {@link NotificationType#LEVEL_UP}, если {@code scoreAfter} пересёк порог нового
+     * уровня (см. {@link PlayerLevel}) по сравнению со {@code scoreBefore}. Вызывается из мест
+     * начисления очков ({@code GamificationAccrualService}, {@code ExamAccrualService}) сразу после
+     * обновления {@code PlayerProfile.totalScore} — само начисление тем же событием пересчитывать
+     * не нужно, уровень выводится из {@code totalScore} без отдельного поля.
+     */
+    void notifyLevelUpIfChanged(UUID playerId, int scoreBefore, int scoreAfter, UUID sourceUserProgressId) {
+        PlayerLevel before = PlayerLevel.forScore(scoreBefore);
+        PlayerLevel after = PlayerLevel.forScore(scoreAfter);
+        if (after == before) {
+            return;
+        }
+        create(playerId, NotificationType.LEVEL_UP,
+                "Новый уровень: " + after.title(),
+                "Вы достигли уровня «%s» (уровень %d)".formatted(after.title(), after.level()),
+                sourceUserProgressId);
     }
 
     @Transactional(readOnly = true)

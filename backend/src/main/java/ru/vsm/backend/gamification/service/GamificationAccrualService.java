@@ -163,7 +163,8 @@ public class GamificationAccrualService {
 
         PlayerProfile profile = existingProfile
                 .orElseGet(() -> PlayerProfile.builder().id(event.userId()).build());
-        profile.setTotalScore(profile.getTotalScore() + totalPoints);
+        int scoreBeforeAccrual = profile.getTotalScore();
+        profile.setTotalScore(scoreBeforeAccrual + totalPoints);
         if (awardable) {
             profile.setScenariosCompleted(profile.getScenariosCompleted() + 1);
         }
@@ -205,6 +206,8 @@ public class GamificationAccrualService {
                 .build());
 
         if (awardable) {
+            notificationService.notifyLevelUpIfChanged(
+                    event.userId(), scoreBeforeAccrual, profile.getTotalScore(), event.userProgressId());
             evaluateAchievements(event, profile);
             evaluatePersonalBest(event, totalPoints, previousBestForScenario);
             evaluateRankUp(event, rankBefore);
@@ -390,9 +393,12 @@ public class GamificationAccrualService {
 
     /** Награда за выполнение челленджа: очки в профиль + ачивка (если задана) + уведомление. */
     private void awardChallengeCompletion(ScenarioCompletedEvent event, PlayerProfile profile, Challenge challenge) {
-        profile.setTotalScore(profile.getTotalScore() + challenge.getRewardPoints());
+        int scoreBeforeReward = profile.getTotalScore();
+        profile.setTotalScore(scoreBeforeReward + challenge.getRewardPoints());
         profile.setUpdatedAt(Instant.now());
         playerProfileRepository.save(profile);
+        notificationService.notifyLevelUpIfChanged(
+                event.userId(), scoreBeforeReward, profile.getTotalScore(), event.userProgressId());
 
         if (challenge.getRewardAchievementCode() != null) {
             AchievementCode code = AchievementCode.valueOf(challenge.getRewardAchievementCode());

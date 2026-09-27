@@ -14,5 +14,7 @@ public record LeaderboardEntryDto(
         String displayName,
         int totalScore,
         int scenariosCompleted,
-        boolean me) {
+        boolean me,
+        int level,
+        String levelTitle) {
 }

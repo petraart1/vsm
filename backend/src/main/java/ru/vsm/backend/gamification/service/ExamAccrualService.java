@@ -76,9 +76,11 @@ public class ExamAccrualService {
         Optional<PlayerProfile> existingProfile = playerProfileRepository.findById(event.playerId());
         PlayerProfile profile = existingProfile
                 .orElseGet(() -> PlayerProfile.builder().id(event.playerId()).build());
-        profile.setTotalScore(profile.getTotalScore() + bonusPoints);
+        int scoreBeforeBonus = profile.getTotalScore();
+        profile.setTotalScore(scoreBeforeBonus + bonusPoints);
         profile.setUpdatedAt(Instant.now());
         playerProfileRepository.save(profile);
+        notificationService.notifyLevelUpIfChanged(event.playerId(), scoreBeforeBonus, profile.getTotalScore(), null);
 
         examAccrualLogRepository.save(ExamAccrualLogEntry.builder()
                 .examId(event.examId())

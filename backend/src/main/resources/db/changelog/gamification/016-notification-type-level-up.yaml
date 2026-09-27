@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-016-notification-type-level-up
+      author: vsm
+      comment: >
+        Расширяет допустимые значения gamification_notification.type новым LEVEL_UP —
+        уведомление о переходе игрока на новый уровень при пересечении порога totalScore (см.
+        gamification.domain.PlayerLevel, gamification.service.GamificationAccrualService /
+        ExamAccrualService).
+      changes:
+        - sql:
+            sql: ALTER TABLE gamification_notification DROP CONSTRAINT chk_notification_type
+        - sql:
+            comment: type — допустимые значения (согласовано с gamification.domain.NotificationType)
+            sql: >-
+              ALTER TABLE gamification_notification ADD CONSTRAINT chk_notification_type
+              CHECK (type IN ('ACHIEVEMENT_UNLOCKED', 'NEW_PERSONAL_BEST', 'LEADERBOARD_RANK_UP',
+              'RECOMMENDED_SCENARIO', 'CHALLENGE_COMPLETED', 'TEAM_RANK_UP', 'EXAM_COMPLETED', 'NEW_SCENARIO', 'NEW_CHALLENGE', 'POINTS_EXPIRING', 'POINTS_EXPIRED',
+              'LEVEL_UP'))

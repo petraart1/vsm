@@ -17,5 +17,9 @@ public record ProfileResponse(
         int totalScenariosAvailable,
         List<BlockProgressDto> blockProgress,
         List<AchievementDto> recentAchievements,
-        Long leaderboardRank) {
+        Long leaderboardRank,
+        int level,
+        String levelTitle,
+        int levelProgress,
+        Integer pointsToNextLevel) {
 }

@@ -59,5 +59,12 @@ public enum NotificationType {
      * {@code gamification.expiry.service.PointsExpiryService}); текст уведомления содержит
      * число сгоревших баллов.
      */
-    POINTS_EXPIRED
+    POINTS_EXPIRED,
+
+    /**
+     * Игрок перешёл на новый уровень (см. {@link PlayerLevel}) — общий счёт {@code
+     * PlayerProfile.totalScore} пересёк порог следующего уровня. Создаётся там же, где начисляются
+     * очки ({@code GamificationAccrualService}, {@code ExamAccrualService}).
+     */
+    LEVEL_UP
 }
