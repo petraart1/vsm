@@ -9,11 +9,13 @@ import CarScene from "../components/shift/CarScene.jsx";
 import ChatDialog from "../components/dialog/ChatDialog.jsx";
 import useScenarioDialog from "../components/dialog/useScenarioDialog.js";
 import useLocalDialog from "../components/dialog/useLocalDialog.js";
+import { rankPhrase } from "../engagement.js";
+import { getSettings } from "../settings.js";
 import { STRESS_SCENARIOS, MED_CONDITIONS, rollCondition, shuffled, findStress } from "../shift/stressScenarios.js";
 import { Person } from "../components/characters/People.jsx";
 import { CountUp, SplitText } from "../components/motion/Motion.jsx";
 import {
-  CAR_CLASSES, CLASS_ORDER, STATIONS, rng, seatPassengers, medCheckScript, planInspection,
+  CAR_CLASSES, CLASS_ORDER, STATIONS, VESTIBULE, rng, seatPassengers, medCheckScript, planInspection, seatX, worldWidth,
   planIncidents, summarize, ringsFor, saveShift
 } from "../shift/shiftModel.js";
 import styles from "./Shift.module.css";
@@ -56,7 +58,7 @@ export default function Shift({ route }) {
     const nextSeed = Date.now() % 100000;
     setSeed(nextSeed);
     setMedLog([]);
-    setCondition(conditionMode === "random" ? rollCondition(rng(nextSeed + 17)) : conditionMode);
+    setCondition(conditionMode === "random" ? rollCondition(rng(nextSeed + 17), getSettings().simMedProblemRate) : conditionMode);
     setPhase("med");
   }
 
@@ -77,9 +79,11 @@ export default function Shift({ route }) {
     const first = forced || urgent[Math.floor(rand() * urgent.length)];
     const rest = STRESS_SCENARIOS.filter((x) => x.id !== first.id);
     const second = rest[Math.floor(rand() * rest.length)];
+    const third = rest.filter((x) => x.id !== second.id)[Math.floor(rand() * (rest.length - 1))];
+    const stressCount = Math.max(0, Math.min(3, getSettings().simStressCount));
     const taken = new Set(backend.map((i) => i.seat));
     const free = pool.filter((p) => !taken.has(p.seat));
-    const stress = [first, second].map((sc, i) => ({
+    const stress = [first, second, third].slice(0, stressCount).map((sc, i) => ({
       key: `st-${i}`,
       local: sc.id,
       title: sc.title,
@@ -88,6 +92,8 @@ export default function Shift({ route }) {
       urgent: sc.urgent,
       mood: sc.mood,
       removal: !!sc.removal,
+      look: sc.looks ? sc.looks[Math.floor(rand() * sc.looks.length)] : null,
+      responders: sc.responders || null,
       seat: (free[i] || pool[(i + 3) % pool.length]).seat,
       x: sc.at === "vestibule" ? "vestibule" : undefined,
       status: "pending",
@@ -97,7 +103,7 @@ export default function Shift({ route }) {
     // Основные сценарии — 2 из backend + всплывшие после приёмки; вперемешку со стрессовыми.
     const main = backend.filter((i) => !i.fromInspection).slice(0, 2);
     const extra = backend.filter((i) => i.fromInspection);
-    const order = [main[0], stress[0], main[1], stress[1], ...extra].filter(Boolean);
+    const order = [main[0], stress[0], main[1], stress[1], stress[2], ...extra].filter(Boolean);
     const at = [0.07, 0.22, 0.4, 0.55, 0.7, 0.8, 0.88];
     setIncidents(order.map((i, n) => ({ ...i, spawnAt: at[n] ?? 0.9 })));
     setPhase("trip");
@@ -297,6 +303,7 @@ function NotAdmitted({ cls, condition, med, onAgain }) {
       <div className={styles.summaryInner}>
         <p className={`${styles.eyebrow} rv`}>Заступ на смену · Вагон {cls.car}</p>
         <SplitText as="h1" text="Не допущен к смене" className={styles.largeTitle} />
+<div className={styles.sumLeft}>
         <section className={`${styles.hr} ${styles.hrReject} rv`} style={{ "--i": 1 }}>
           <span className={styles.rejectIcon}><Icon name={condition === "fever" ? "thermometer" : condition === "alcohol" ? "alert" : "stethoscope"} size={28} /></span>
           <div className={styles.hrText}>
@@ -307,19 +314,22 @@ function NotAdmitted({ cls, condition, med, onAgain }) {
         </section>
         <section className={`${styles.verdictCard} rv`} style={{ "--i": 2 }} data-ok={!critical || undefined}>
           <p className={styles.hrLabel}>Оценка поведения</p>
-          <p className={styles.verdictTitle}>{critical ? "Грубое нарушение на медосмотре" : honest ? "Вы действовали правильно" : "Есть ошибки в поведении"}</p>
+          <p className={styles.verdictTitle}>{critical ? "Серьёзное нарушение порядка медосмотра" : honest ? "Вы действовали правильно" : "Есть что улучшить"}</p>
           <p className={styles.verdictNote}>{critical
             ? "Попытка скрыть состояние, подделать результат или выйти на смену вопреки решению медработника — повод для служебного расследования."
             : "Недопуск — не провал тренировки. Проводник, который честно сообщает о своём состоянии, защищает пассажиров и бригаду."}</p>
         </section>
+</div>
+<div className={styles.sumRight}>
         <h2 className={styles.groupLabel}>Разбор</h2>
         <ul className={styles.group}>
           {med.map((m, i) => (
             <li key={i} className={styles.factNote} data-best={m.best || undefined}>
-              <b className={styles.noteMark}>{m.best ? "Верно" : m.critical ? "Критично" : "Ошибка"}</b> {m.note}
+              <b className={styles.noteMark}>{m.best ? "Верно" : m.critical ? "Серьёзная ошибка" : "Ошибка"}</b> {m.note}
             </li>
           ))}
         </ul>
+</div>
         <div className={styles.summaryActions}>
           <Button size="lg" className={styles.ctaBtn} onClick={onAgain}>Новая смена</Button>
           <Button size="lg" variant="secondary" className={styles.ctaBtn} as="a" href="#/today">На главную</Button>
@@ -419,8 +429,22 @@ function CountDown({ value }) {
 // Рейс
 // ---------------------------------------------------------------------------
 
+const SPEEDS = [1, 2, 4];
+const ROLE_OFFSET = { guard: 46, police: -46, medic: -92, chief: 46 };
+const ROLE_NAME = { guard: "Охрана поезда", police: "Наряд транспортной полиции", medic: "Бригада скорой помощи", chief: "Начальник поезда" };
+
 function Trip({ cls, passengers, initial, onDone, onExit }) {
+  const W = worldWidth(cls);
+  const doorOf = (x) => (x > W / 2 ? W - 60 : 60);
   const [incidents, setIncidents] = useState(initial);
+  // Пассажиры в креслах: у мест будущих стрессовых ситуаций — «проблемная» внешность по референсу.
+  const [crew, setCrew] = useState(() => {
+    const byLook = new Map(initial.filter((i) => i.look != null && i.x !== "vestibule").map((i) => [i.seat, i.look]));
+    return passengers.map((p) => (byLook.has(p.seat) ? { ...p, variant: byLook.get(p.seat), kid: false, phone: false } : p));
+  });
+  const [walkers, setWalkers] = useState([]);
+  const [visits, setVisits] = useState([]);
+  const [speed, setSpeed] = useState(() => getSettings().tripSpeed || 1);
   const [progress, setProgress] = useState(0);
   const [stop, setStop] = useState({ name: STATIONS[0].name, until: Date.now() + 2500 });
   const [paused, setPaused] = useState(false);
@@ -430,19 +454,40 @@ function Trip({ cls, passengers, initial, onDone, onExit }) {
   const passedRef = useRef(new Set([0]));
   const incRef = useRef(incidents);
   incRef.current = incidents;
+  const crewRef = useRef(crew);
+  crewRef.current = crew;
+  const visitsRef = useRef(visits);
+  visitsRef.current = visits;
+  const seq = useRef(0);
+  const nextKey = (p) => { seq.current += 1; return `${p}${seq.current}`; };
 
   const talkInc = incidents.find((i) => i.key === talk) || null;
-  const talkPassenger = talkInc ? passengers.find((p) => p.seat === talkInc.seat) : null;
-  const [removals, setRemovals] = useState([]);
+  const talkPassenger = talkInc ? crew.find((p) => p.seat === talkInc.seat) : null;
   const talkSpeaker = talkInc
     ? { kind: "passenger", variant: talkPassenger ? talkPassenger.variant : 3, mood: talkInc.mood || "calm", name: talkInc.x === "vestibule" ? "Пассажир в тамбуре" : `Пассажир, место ${talkInc.seat + 1}`, role: `Вагон ${cls.car} · ${cls.title}` }
     : { kind: "passenger", variant: 0, name: "", role: "" };
+
+  /** Сотрудники подходят к месту: из ближайшего тамбура, встают по обе стороны от кресла. */
+  function callResponders(visitKey, seat, roles, x) {
+    const target = x != null ? x : seatX(cls, seat);
+    setWalkers((w) => [...w, ...roles.map((role) => ({ key: nextKey(role), visit: visitKey, role, from: doorOf(target), to: target + (ROLE_OFFSET[role] || 40), stay: true, faceRight: (ROLE_OFFSET[role] || 40) < 0 }))]);
+  }
+
   const finishIncident = (result) => {
     const key = talkRef.current;
     const inc = incRef.current.find((i) => i.key === key);
     setIncidents((list) => list.map((i) => (i.key === key ? { ...i, status: "done", result } : i)));
-    if (inc && inc.removal && result.verdict !== "Критическая ошибка безопасности") {
-      setRemovals((r) => [...r, { seat: inc.seat, state: "pending" }]);
+    if (!inc || !inc.responders) return;
+    const critical = result.verdict === "Критическая ошибка безопасности";
+    const x = inc.x === "vestibule" ? W - VESTIBULE * 0.62 : null;
+    const visit = { key: `v-${inc.key}`, seat: inc.seat, x, station: inc.responders.station || [], removal: !!inc.removal && !critical, state: "onboard", mood: inc.mood };
+    setVisits((v) => [...v, visit]);
+    if (inc.responders.onboard && inc.responders.onboard.length) {
+      callResponders(visit.key, inc.seat, inc.responders.onboard, x);
+      setToast({ text: `${ROLE_NAME[inc.responders.onboard[0]]} идёт к месту ${inc.seat + 1}`, icon: "shield", at: Date.now() });
+    }
+    if (visit.station.length) {
+      setToast({ text: `${visit.station.map((r) => ROLE_NAME[r]).join(" и ")} встретят поезд на ближайшей станции`, icon: "flag", at: Date.now() + 1 });
     }
   };
   const remoteDialog = useScenarioDialog({ speaker: talkSpeaker, onDone: finishIncident });
@@ -453,39 +498,113 @@ function Trip({ cls, passengers, initial, onDone, onExit }) {
 
   const frozen = paused || talk !== null;
 
-  // Главный цикл рейса: 4 тика в секунду.
+  /** Стоянка: сотрудники на станции входят в вагон; иногда пассажиры выходят и заходят. */
+  function arriveAtStation(last) {
+    // Вызванные службы
+    const pending = visitsRef.current.filter((v) => v.state === "onboard" && v.station.length);
+    if (pending.length) {
+      setVisits((vs) => vs.map((v) => (pending.some((p) => p.key === v.key) ? { ...v, state: "station" } : v)));
+      pending.forEach((v) => callResponders(v.key, v.seat, v.station, v.x));
+    }
+    if (last) return;
+    // Смена пассажиров — не на каждой станции.
+    if (Math.random() < 0.3) return;
+    const busy = new Set([
+      ...incRef.current.filter((i) => i.status !== "done" && i.status !== "missed").map((i) => i.seat),
+      ...visitsRef.current.filter((v) => v.state !== "done").map((v) => v.seat)
+    ]);
+    const seated = crewRef.current.filter((p) => !busy.has(p.seat));
+    const leaving = shuffle(seated).slice(0, Math.floor(Math.random() * 3));
+    const occupied = new Set(crewRef.current.map((p) => p.seat));
+    const empty = [];
+    for (let i = 0; i < cls.seats; i += 1) if (!occupied.has(i) && !busy.has(i)) empty.push(i);
+    const boarding = shuffle(empty.concat(leaving.map((p) => p.seat))).slice(0, Math.floor(Math.random() * 3));
+    if (!leaving.length && !boarding.length) return;
+    setCrew((c) => c.filter((p) => !leaving.some((l) => l.seat === p.seat)));
+    setWalkers((w) => [
+      ...w,
+      ...leaving.map((p) => ({ key: nextKey("out"), role: "passenger", variant: p.variant, from: seatX(cls, p.seat), to: doorOf(seatX(cls, p.seat)), vanish: true })),
+      ...boarding.map((seat, n) => ({ key: nextKey("in"), role: "passenger", variant: Math.floor(Math.random() * 40), from: doorOf(seatX(cls, seat)), to: seatX(cls, seat), board: seat, delay: 900 + n * 700 }))
+    ]);
+    const parts = [];
+    if (leaving.length) parts.push(`вышли ${leaving.length}`);
+    if (boarding.length) parts.push(`вошли ${boarding.length}`);
+    setToast({ text: `Посадка: ${parts.join(", ")}`, icon: "users", at: Date.now() + 2 });
+  }
+
+  /** Отправление: службы уходят, при удалении из поезда пассажир выходит вместе с ними. */
+  function departStation() {
+    const leavingVisits = visitsRef.current.filter((v) => v.state === "station");
+    if (!leavingVisits.length) return;
+    setVisits((vs) => vs.map((v) => (leavingVisits.some((l) => l.key === v.key) ? { ...v, state: "done" } : v)));
+    setWalkers((ws) => {
+      const out = [];
+      const keep = [];
+      ws.forEach((w) => {
+        const v = leavingVisits.find((l) => l.key === w.visit);
+        if (v) out.push({ ...w, key: nextKey("go"), from: w.to, to: doorOf(w.to), stay: false, vanish: true });
+        else keep.push(w);
+      });
+      leavingVisits.filter((v) => v.removal).forEach((v) => {
+        const p = crewRef.current.find((c) => c.seat === v.seat);
+        if (p) out.push({ key: nextKey("rm"), role: "passenger", variant: p.variant, mood: v.mood === "drunk" ? "drunk" : undefined, from: seatX(cls, v.seat), to: doorOf(seatX(cls, v.seat)), vanish: true });
+      });
+      return [...keep, ...out];
+    });
+    const removed = leavingVisits.filter((v) => v.removal).map((v) => v.seat);
+    if (removed.length) setCrew((c) => c.filter((p) => !removed.includes(p.seat)));
+  }
+
+  function onWalkerArrive(w) {
+    if (w.vanish) setWalkers((ws) => ws.filter((x) => x.key !== w.key));
+    else if (w.board != null) {
+      setWalkers((ws) => ws.filter((x) => x.key !== w.key));
+      setCrew((c) => (c.some((p) => p.seat === w.board) ? c : [...c, { seat: w.board, variant: w.variant, kid: false, phone: Math.random() < 0.3 }]));
+    }
+  }
+
+  const arriveRef = useRef(arriveAtStation);
+  arriveRef.current = arriveAtStation;
+  const departRef = useRef(departStation);
+  departRef.current = departStation;
+
+  // Главный цикл рейса: 4 тика в секунду; скорость рейса — 1×, 2× или 4×.
   useEffect(() => {
     const TICK = 250;
     const t = window.setInterval(() => {
       if (frozen) return;
       const now = Date.now();
       const atStation = stop && now < stop.until;
-      if (stop && now >= stop.until && stop.name !== STATIONS[STATIONS.length - 1].name) setStop(null);
+      if (stop && now >= stop.until && stop.name !== STATIONS[STATIONS.length - 1].name) {
+        setStop(null);
+        departRef.current();
+      }
 
       if (!atStation) {
         setProgress((p) => {
           if (p >= 1) return 1;
-          const np = Math.min(1, p + TICK / 1000 / TRIP_SECONDS);
-          STATIONS.forEach((s, idx) => {
-            if (idx > 0 && !passedRef.current.has(idx) && np >= s.at) {
+          const np = Math.min(1, p + (TICK / 1000 / (getSettings().simTripSeconds || TRIP_SECONDS)) * speed);
+          STATIONS.forEach((st, idx) => {
+            if (idx > 0 && !passedRef.current.has(idx) && np >= st.at) {
               passedRef.current.add(idx);
               const last = idx === STATIONS.length - 1;
-              setStop({ name: s.name, until: last ? Infinity : now + DWELL_MS });
-              setToast({ text: last ? `Прибытие: ${s.name}` : `Стоянка: ${s.name}`, icon: "flag", at: now });
+              setStop({ name: st.name, until: last ? Infinity : now + Math.max(DWELL_MS / speed, 2600) });
+              setToast({ text: last ? `Прибытие: ${st.name}` : `Стоянка: ${st.name}`, icon: "flag", at: now });
+              window.setTimeout(() => arriveRef.current(last), 0);
             }
           });
           return np;
         });
       }
 
-      // Инциденты: появление и таймер ожидания пассажира (идёт и на стоянках).
+      // Инциденты: появление и таймер ожидания пассажира (идёт в реальном времени и на стоянках).
       setIncidents((list) => {
         let changed = false;
         const next = list.map((i) => {
           if (i.status === "pending" && progressRef.current >= i.spawnAt) {
             changed = true;
-            setToast({ text: i.urgent ? `Срочный вызов: место ${i.seat + 1}` : `Пассажир зовёт: место ${i.seat + 1}`, icon: i.urgent ? "alert" : "hand", urgent: i.urgent, at: now });
-            try { navigator.vibrate && navigator.vibrate(i.urgent ? [60, 40, 60] : 40); } catch (e) { /* нет API */ }
+            setToast({ text: i.urgent ? `Срочный вызов: ${i.x === "vestibule" ? "тамбур" : `место ${i.seat + 1}`}` : `Пассажир зовёт: место ${i.seat + 1}`, icon: i.urgent ? "alert" : "hand", urgent: i.urgent, at: now });
+            try { if (getSettings().haptics && navigator.vibrate) navigator.vibrate(i.urgent ? [60, 40, 60] : 40); } catch (e) { /* нет API */ }
             return { ...i, status: "active", total: i.remaining };
           }
           if (i.status === "active") {
@@ -503,7 +622,7 @@ function Trip({ cls, passengers, initial, onDone, onExit }) {
       });
     }, TICK);
     return () => window.clearInterval(t);
-  }, [frozen, stop]);
+  }, [frozen, stop, speed]);
 
   const progressRef = useRef(0);
   progressRef.current = progress;
@@ -513,7 +632,7 @@ function Trip({ cls, passengers, initial, onDone, onExit }) {
     if (finished || progress < 1 || talk !== null) return undefined;
     const open = incidents.some((i) => i.status === "pending" || i.status === "active");
     if (open) return undefined;
-    const t = window.setTimeout(() => { setFinished(true); onDone(incRef.current); }, 1800);
+    const t = window.setTimeout(() => { setFinished(true); onDone(incRef.current); }, 2600);
     return () => window.clearTimeout(t);
   }, [progress, incidents, talk, finished, onDone]);
 
@@ -533,27 +652,17 @@ function Trip({ cls, passengers, initial, onDone, onExit }) {
     else remoteDialog.start(inc.scenarioId, cls.key);
   }
 
-  // Наряд полиции с охраной приходят на ближайшей стоянке и уводят нарушителя (п. 33 «а» ПП № 810).
-  useEffect(() => {
-    if (stop && stop.name !== STATIONS[0].name) {
-      setRemovals((r) => (r.some((x) => x.state === "pending") ? r.map((x) => (x.state === "pending" ? { ...x, state: "active" } : x)) : r));
-    } else if (!stop) {
-      setRemovals((r) => (r.some((x) => x.state === "active") ? r.map((x) => (x.state === "active" ? { ...x, state: "done" } : x)) : r));
-    }
-  }, [stop]);
-  useEffect(() => {
-    if (removals.some((x) => x.state === "active")) setToast({ text: "Наряд транспортной полиции в вагоне", icon: "shield", at: Date.now() });
-  }, [removals]);
-
   function closeDialog() {
     setTalk(null);
   }
 
   const signals = incidents.filter((i) => i.status === "active").map((i) => ({ key: i.key, seat: i.seat, x: i.x, urgent: i.urgent, remaining: i.remaining, total: i.total }));
   const moods = {};
-  incidents.forEach((i) => { if (i.mood && i.x !== "vestibule" && (i.status === "active" || i.status === "talking")) moods[i.seat] = i.mood; });
-  const gone = new Set(removals.filter((x) => x.state === "done").map((x) => x.seat));
-  const visitors = removals.filter((x) => x.state === "active").flatMap((x) => [{ key: `p${x.seat}`, role: "police", seat: x.seat, offset: -46 }, { key: `g${x.seat}`, role: "guard", seat: x.seat, offset: 46 }]);
+  incidents.forEach((i) => {
+    if (!i.mood || i.x === "vestibule") return;
+    const visiting = visits.some((v) => v.seat === i.seat && v.state !== "done");
+    if (i.status === "active" || i.status === "talking" || i.status === "pending" && i.look != null || visiting) moods[i.seat] = i.mood;
+  });
   const moving = !(stop && Date.now() < stop.until) && progress < 1;
   const doneCount = incidents.filter((i) => i.status === "done").length;
 
@@ -562,17 +671,28 @@ function Trip({ cls, passengers, initial, onDone, onExit }) {
       <header className={styles.tripBar}>
         <button type="button" className={styles.roundBtn} onClick={() => setPaused(true)} aria-label="Пауза"><Icon name="pause" size={16} /></button>
         <RouteLine progress={progress} />
+        <button
+          type="button"
+          className={styles.speedBtn}
+          onClick={() => setSpeed((v) => SPEEDS[(SPEEDS.indexOf(v) + 1) % SPEEDS.length])}
+          aria-label={`Скорость рейса ${speed}×, нажмите, чтобы изменить`}
+          data-fast={speed > 1 || undefined}
+        >
+          <Icon name="bolt" size={13} />{speed}×
+        </button>
         <span className={styles.counter} title="Обработано вызовов"><Icon name="hand" size={14} />{doneCount}</span>
       </header>
 
       <div className={styles.scene}>
         <CarScene
           cls={cls}
-          passengers={passengers.filter((p) => !gone.has(p.seat))}
+          passengers={crew}
           moods={moods}
-          visitors={visitors}
+          walkers={walkers}
+          onWalkerArrive={onWalkerArrive}
           signals={signals}
           moving={moving}
+          speed={speed}
           stationName={stop ? stop.name : null}
           disabled={frozen}
           onInteract={onInteract}
@@ -621,6 +741,15 @@ function Trip({ cls, passengers, initial, onDone, onExit }) {
   );
 }
 
+function shuffle(list) {
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function RouteLine({ progress }) {
   return (
     <div className={styles.route} aria-label={`Пройдено ${Math.round(progress * 100)}% пути`}>
@@ -655,7 +784,7 @@ function Summary({ cls, med, inspection, incidents, onAgain }) {
     savedRef.current = true;
     saveShift({ cls: cls.key, score, rings, admitted: sum.admitted, upgrade: sum.upgrade ? sum.upgrade.key : null, safety: sum.safety, loyalty: sum.loyalty });
     api.getLeaderboard().then((d) => {
-      if (d && d.me && d.total > 1) setRank(Math.round(((d.total - d.me.rank) / (d.total - 1)) * 100));
+      if (d && d.me) setRank(rankPhrase(d.me.rank, d.total));
     }, () => {});
   }, [cls, score, rings, sum]);
 
@@ -667,6 +796,7 @@ function Summary({ cls, med, inspection, incidents, onAgain }) {
         <p className={`${styles.eyebrow} rv`}>Вагон {cls.car} · {cls.title} · Москва — Санкт-Петербург</p>
         <SplitText as="h1" text="Смена завершена" className={styles.largeTitle} />
 
+<div className={styles.sumLeft}>
         <section className={`${styles.ringsCard} rv`} style={{ "--i": 1 }}>
           <Rings size={148} rings={[
             { value: rings.procedure, tone: "navy", label: "Регламент" },
@@ -692,10 +822,12 @@ function Summary({ cls, med, inspection, incidents, onAgain }) {
                 ? (sum.upgrade ? `Рекомендация: перевод в вагон класса «${sum.upgrade.title}».` : "Класс вагона сохраняется.")
                 : sum.critical ? "В одном из диалогов — критическая ошибка безопасности." : sum.incidents.missed ? "Пассажир не дождался проводника." : !sum.honest ? "На медосмотре скрыты симптомы." : sum.inspection.found * 2 < sum.inspection.faults ? "Вагон принят с неисправностями." : "Итоговая безопасность ниже порога."}
             </p>
-            <p className={styles.hrScore}>Балл смены <b className="num"><CountUp value={score} /></b>{rank !== null && <> · лучше, чем у {rank}% коллег</>}</p>
+            <p className={styles.hrScore}>Балл смены <b className="num"><CountUp value={score} /></b>{rank && <> · {rank.short.startsWith("Топ") ? `${rank.short} рейтинга` : `место ${rank.short}`}</>}</p>
           </div>
         </section>
 
+</div>
+<div className={styles.sumRight}>
         <h2 className={styles.groupLabel}>Что произошло в рейсе</h2>
         <ul className={styles.group}>
           {incidents.map((i, n) => (
@@ -724,6 +856,7 @@ function Summary({ cls, med, inspection, incidents, onAgain }) {
           {sum.inspection.missed.map((p) => <li key={p.key} className={styles.factNote}>Пропущено на приёмке: {p.fault.toLowerCase()}</li>)}
         </ul>
 
+</div>
         <div className={styles.summaryActions}>
           <Button size="lg" className={styles.ctaBtn} onClick={onAgain}>Новая смена</Button>
           <Button size="lg" variant="secondary" className={styles.ctaBtn} as="a" href="#/today">На главную</Button>

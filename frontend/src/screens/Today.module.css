@@ -35,10 +35,10 @@
 .legend dt { font-size: var(--t-xs); color: var(--fg-2); }
 .legend dd { margin: 0; font-size: var(--t-xl); font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .legend small { font-size: var(--t-sm); font-weight: 600; opacity: 0.7; }
-.legend [data-tone="navy"] dd { color: var(--vsm-navy); }
-.legend [data-tone="blue"] dd { color: var(--blue); }
-.legend [data-tone="sky"] dd { color: var(--loyalty); }
-:global([data-theme="dark"]) .legend [data-tone="navy"] dd { color: #5b8def; }
+.legend [data-tone="navy"] dd { color: var(--ring-1); }
+.legend [data-tone="blue"] dd { color: var(--ring-2); }
+.legend [data-tone="sky"] dd { color: var(--ring-3); }
+
 
 .label { font-size: var(--t-xl); font-weight: 700; letter-spacing: -0.02em; margin: var(--s-8) 0 var(--s-3); }
 .empty { padding: var(--s-5); color: var(--fg-2); font-size: var(--t-sm); line-height: 1.45; }

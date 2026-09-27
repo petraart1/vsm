@@ -4,6 +4,8 @@ import Icon from "./Icon.jsx";
 import NotificationBell from "./NotificationBell.jsx";
 import ThemeToggle from "./ThemeToggle.jsx";
 import { readVisits, streakOf, weekStrip } from "../../engagement.js";
+import VerifiedBadge from "./VerifiedBadge.jsx";
+import { useAccount, initialsOf } from "../../account.js";
 import styles from "./Chrome.module.css";
 
 export const TABS = [
@@ -16,6 +18,7 @@ export const TABS = [
 
 /** Верхняя панель: стекло, логотип слева, тема/уведомления/профиль справа. */
 export function TopBar({ activeScreen }) {
+  const account = useAccount();
   return (
     <header className={styles.topbar}>
       <a className={styles.brand} href="#/today" aria-label="ReactLab, на главную">
@@ -25,14 +28,20 @@ export function TopBar({ activeScreen }) {
       <div className={styles.tools}>
         <ThemeToggle />
         <NotificationBell />
-        <a
-          className={`${styles.roundBtn} ${activeScreen === "profile" ? styles.roundBtnActive : ""}`}
-          href="#/profile"
-          aria-label="Профиль"
-          aria-current={activeScreen === "profile" ? "page" : undefined}
-        >
-          <Icon name="user" size={18} />
-        </a>
+        <a className={`${styles.roundBtn} ${activeScreen === "settings" ? styles.roundBtnActive : ""}`} href="#/settings" aria-label="Настройки"><Icon name="palette" size={18} /></a>
+        {account ? (
+          <a
+            className={`${styles.avatarBtn} ${activeScreen === "profile" || activeScreen === "settings" ? styles.roundBtnActive : ""}`}
+            href="#/profile"
+            aria-label="Профиль"
+            aria-current={activeScreen === "profile" ? "page" : undefined}
+          >
+            {initialsOf(account.displayName || account.login)}
+            {account.verified && <span className={styles.avatarCheck}><VerifiedBadge size={14} /></span>}
+          </a>
+        ) : (
+          <a className={styles.loginBtn} href="#/login">Войти</a>
+        )}
       </div>
     </header>
   );
@@ -81,6 +90,7 @@ export function TabBar({ activeScreen }) {
  * логотип, разделы, внизу — серия входов и профиль. На телефоне и планшете скрыта (CSS).
  */
 export function Sidebar({ activeScreen }) {
+  const account = useAccount();
   const visits = readVisits();
   const streak = streakOf(visits);
   const week = weekStrip(visits);
@@ -106,6 +116,16 @@ export function Sidebar({ activeScreen }) {
           <span className={styles.sideIcon}><Icon name="user" size={18} /></span>
           Профиль и витрина
         </a>
+        <a href="#/settings" className={styles.sideItem} aria-current={activeScreen === "settings" ? "page" : undefined}>
+          <span className={styles.sideIcon}><Icon name="palette" size={18} /></span>
+          Настройки
+        </a>
+        {account && account.role === "ADMIN" && (
+          <a href="#/admin" className={styles.sideItem} aria-current={activeScreen === "admin" ? "page" : undefined}>
+            <span className={styles.sideIcon}><Icon name="clipboard" size={18} /></span>
+            Администрирование
+          </a>
+        )}
       </nav>
 
       <a className={styles.streakCard} href="#/profile" aria-label={`Серия входов: ${streak} дн.`}>
@@ -121,6 +141,22 @@ export function Sidebar({ activeScreen }) {
           ))}
         </span>
       </a>
+
+      {account ? (
+        <a
+          className={styles.sideAccount}
+          href="#/profile"
+          aria-current={activeScreen === "profile" ? "page" : undefined}
+        >
+          <span className={styles.sideAvatar}>{initialsOf(account.displayName || account.login)}</span>
+          <span className={styles.sideWho}>
+            <b>{account.displayName || account.login} {account.verified && <VerifiedBadge size={14} />}</b>
+            <span>{account.verified ? "Личность подтверждена" : "Не подтверждён"}</span>
+          </span>
+        </a>
+      ) : (
+        <a className={styles.sideLogin} href="#/login"><Icon name="user" size={16} />Войти</a>
+      )}
 
       <div className={styles.sideTools}>
         <ThemeToggle />

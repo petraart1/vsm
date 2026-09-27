@@ -152,3 +152,15 @@
 .streakDay[data-future] i { opacity: 0.5; }
 
 .sideTools { display: flex; gap: var(--s-2); padding: var(--s-3) var(--s-1) 0; }
+
+.avatarBtn { position: relative; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--vsm-navy); color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
+.avatarCheck { position: absolute; right: -3px; bottom: -3px; display: grid; place-items: center; border-radius: 50%; background: var(--page-bg); padding: 1px; }
+.loginBtn { height: 34px; padding: 0 14px; border-radius: 999px; display: inline-flex; align-items: center; background: var(--blue); color: #fff; font-weight: 600; font-size: var(--t-sm); text-decoration: none; }
+.sideAccount { display: flex; align-items: center; gap: 10px; margin-top: var(--s-3); padding: 10px; border-radius: 14px; color: var(--fg); text-decoration: none; }
+.sideAccount:hover { background: var(--bg-hover); }
+.sideAccount[aria-current="page"] { background: var(--blue-soft); }
+.sideAvatar { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--vsm-navy); color: #fff; font-size: 13px; font-weight: 700; }
+.sideWho { min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.sideWho b { font-size: var(--t-sm); display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sideWho span { font-size: var(--t-xs); color: var(--fg-2); }
+.sideLogin { display: flex; align-items: center; gap: 8px; margin-top: var(--s-3); height: 40px; padding: 0 12px; border-radius: 12px; background: var(--blue); color: #fff; font-weight: 600; font-size: var(--t-sm); text-decoration: none; }

@@ -3,6 +3,7 @@ import Icon from "../ui/Icon.jsx";
 import Timer from "../ui/Timer.jsx";
 import DeltaBadges from "../ui/DeltaBadges.jsx";
 import { PassengerBust, PersonBust } from "../characters/People.jsx";
+import { getSettings } from "../../settings.js";
 import styles from "./ChatDialog.module.css";
 
 /**
@@ -133,7 +134,7 @@ export default function ChatDialog({ speaker, messages, choices, onChoose, timer
               ))}
             </ol>
           )}
-          {choices && Recognition && (
+          {choices && Recognition && getSettings().voiceReplies && (
             <button type="button" className={styles.mic} data-on={listening || undefined} onClick={listen}>
               <Icon name="mic" size={16} />
               {listening ? "Слушаю…" : "Ответить голосом"}

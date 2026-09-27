@@ -31,3 +31,14 @@ export function setTheme(theme) {
   if (document.startViewTransition && !reduce) document.startViewTransition(apply);
   else apply();
 }
+
+/** Тема как в системе: снимаем явный выбор. */
+export function setSystemTheme() {
+  try { localStorage.removeItem(THEME_KEY); } catch (e) { /* приватный режим */ }
+  document.documentElement.removeAttribute("data-theme");
+  listeners.forEach((fn) => fn());
+}
+
+export function getThemeChoice() {
+  try { return localStorage.getItem(THEME_KEY) || "system"; } catch (e) { return "system"; }
+}

@@ -255,3 +255,7 @@ a.feedItem:hover { background: var(--bg-hover); }
   .name { font-size: 24px; overflow-wrap: anywhere; }
   .gradeLine { font-size: var(--t-sm); }
 }
+
+.nameRow { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.verifyNote { display: inline-flex; align-items: flex-start; gap: 6px; margin-top: 6px; font-size: var(--t-sm); color: var(--blue); text-decoration: none; line-height: 1.35; }
+.verifyNote svg { flex: none; margin-top: 2px; }

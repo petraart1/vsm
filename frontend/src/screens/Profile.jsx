@@ -4,6 +4,8 @@ import Button from "../components/ui/Button.jsx";
 import Badge from "../components/ui/Badge.jsx";
 import VerdictMark from "../components/ui/VerdictMark.jsx";
 import StreakCard from "../components/engagement/StreakCard.jsx";
+import VerifiedBadge from "../components/ui/VerifiedBadge.jsx";
+import { useAccount } from "../account.js";
 import ShowcaseGrid from "../components/engagement/ShowcaseGrid.jsx";
 import ShowcaseEditor from "../components/engagement/ShowcaseEditor.jsx";
 import { readShowcase, writeShowcase, claimedStreakRewards } from "../engagement.js";
@@ -20,7 +22,7 @@ import CertificateDialog from "../components/progress/CertificateDialog.jsx";
 import { SplitText, CountUp } from "../components/motion/Motion.jsx";
 import {
   readActivity, currentStreak, longestStreak, weekSummary, recentAverages,
-  gradeFor, GRADES, buildQualifications, toDistinction, formatDate, pluralRu
+  gradeFor, GRADES, buildQualifications, toDistinction, blockTitle, formatDate, pluralRu
 } from "../progress.js";
 import styles from "./Profile.module.css";
 
@@ -183,6 +185,7 @@ export default function Profile() {
   const [s, setS] = useState({ phase: "loading" });
   const [opened, setOpened] = useState(null);
   const [showcase, setShowcase] = useState(readShowcase);
+  const account = useAccount();
   const [editing, setEditing] = useState(false);
   const [shareNote, setShareNote] = useState(null);
   const activity = useMemo(() => readActivity(), [s.phase]);
@@ -231,15 +234,17 @@ export default function Profile() {
 
   const blockLabelMap = {};
   qualifications.forEach((q) => { blockLabelMap[q.block] = q.blockLabel; });
-  (p.blockProgress || []).forEach((bp) => { blockLabelMap[bp.block] = bp.blockLabel || bp.block; });
-  const blockLabelOf = (code) => blockLabelMap[code] || code;
+  (p.blockProgress || []).forEach((bp) => { blockLabelMap[bp.block] = bp.blockLabel || blockTitle(bp.block); });
+  const blockLabelOf = (code) => blockLabelMap[code] || blockTitle(code);
 
   const weekDelta = week.current - week.previous;
   const awards = earnedAwards({
     qualifications,
     distinctions: (s.achievements || []).map(toDistinction),
     cleanShifts: readShifts().filter((x) => x.admitted).length,
-    streakDays: claimedStreakRewards()
+    streakDays: claimedStreakRewards(),
+    verified: !!(account && account.verified),
+    shifts: readShifts()
   });
   function saveShowcase(items) {
     writeShowcase(items);
@@ -258,10 +263,18 @@ export default function Profile() {
           <Avatar initials={initialsFor(p.displayName)} size={72} tone="solid" />
         </div>
         <div className={styles.who}>
-          <SplitText as="h1" text={p.displayName} className={styles.name} id="profile-name" />
+          <div className={styles.nameRow}>
+            <SplitText as="h1" text={(account && account.displayName) || p.displayName} className={styles.name} id="profile-name" />
+            {account && account.verified && <VerifiedBadge size={24} />}
+          </div>
           <p className={`${styles.gradeLine} rv`} style={{ "--i": 1 }}>
             <strong>{grade.current.title}.</strong> {grade.current.note}.
           </p>
+          {!(account && account.verified) && (
+            <a className={`${styles.verifyNote} rv`} style={{ "--i": 2 }} href={account ? (api.USE_MOCKS ? "#/auth/esia-demo" : api.esiaAuthorizeUrl()) : "#/login?next=/profile"}>
+              <Icon name="shield" size={14} />{account ? "Подтвердите личность через Госуслуги — очки начисляются полностью, откроются официальные награды" : "Войдите и подтвердите личность, чтобы очки начислялись полностью"}
+            </a>
+          )}
         </div>
         <div className={`${styles.gradeBox} rv`} style={{ "--i": 2 }}>
           <p className={styles.score}>

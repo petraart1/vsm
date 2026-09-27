@@ -252,6 +252,26 @@ export const MODULES = {
 
 const MODULE_ORDER = Object.keys(MODULES);
 
+/** Короткие русские названия блоков ситуаций — вместо служебных ключей датасета (lost_found, misc…). */
+export const BLOCK_TITLES = {
+  boarding: "Посадка и проездные документы",
+  baggage: "Багаж и животные",
+  safety: "Порядок и безопасность",
+  seating: "Места и смена класса",
+  catering: "Питание и услуги",
+  medical: "Медицинские ситуации",
+  lost_found: "Вещи и находки",
+  conflict: "Конфликты пассажиров",
+  comfort: "Комфорт в вагоне",
+  misc: "Нестандартные запросы"
+};
+
+export function blockTitle(key) {
+  if (!key) return "";
+  const k = String(key).toLowerCase();
+  return BLOCK_TITLES[k] || (MODULES[k] && MODULES[k].title) || String(key);
+}
+
 /** Иконка для каждого блока ситуаций (имена из components/ui/Icon.jsx). */
 export const BLOCK_ICON = {
   boarding: "ticket",

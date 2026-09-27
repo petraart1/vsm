@@ -86,6 +86,11 @@
 @keyframes step-bob { 0%, 100% { transform: translateY(0.6px); } 50% { transform: translateY(-2.2px); } }
 @keyframes head-bob { 0%, 100% { transform: rotate(0.8deg); } 50% { transform: rotate(-0.8deg); } }
 
+/* Нетрезвый: неустойчивое раскачивание корпуса */
+.sway { transform-box: view-box; }
+.sway > g { transform-origin: 40px 172px; animation: sway 1.8s ease-in-out infinite; }
+@keyframes sway { 0%, 100% { transform: rotate(-3.5deg); } 50% { transform: rotate(4deg); } }
+
 /* ---------- Пассажир в кресле ---------- */
 .torsoSeat { transform-box: fill-box; transform-origin: 50% 100%; animation: breath-seat 3.8s ease-in-out infinite; animation-delay: var(--breath-delay, 0s); }
 @keyframes breath-seat { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.015); } }
@@ -97,7 +102,11 @@
 @keyframes shake { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
 .angry .torsoSeat { animation: agitated 0.9s ease-in-out infinite; }
 @keyframes agitated { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
-.unwell .seatHead { animation: slump 3s ease-in-out infinite; }
+.unwell .seatHead, .high .seatHead { animation: slump 3s ease-in-out infinite; }
+.drunk .seatHead { transform-origin: 50% 100%; animation: drunk-head 2.2s ease-in-out infinite; }
+.drunk .torsoSeat { animation: drunk-body 2.2s ease-in-out infinite; }
+@keyframes drunk-head { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(7deg); } }
+@keyframes drunk-body { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
 @keyframes slump { 0%, 100% { transform: rotate(8deg) translateY(1px); } 50% { transform: rotate(11deg) translateY(2px); } }
 
 .phone { animation: glow 3s ease-in-out infinite; }

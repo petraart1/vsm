@@ -3,8 +3,9 @@ import Icon from "../ui/Icon.jsx";
 import Button from "../ui/Button.jsx";
 import Medal from "../awards/Medal.jsx";
 import { readFinish } from "../awards/awards.js";
-import { STREAK_MILESTONES, streakMedal, weekStrip } from "../../engagement.js";
+import { STREAK_MILESTONES, streakMedal, weekStrip, rewardShownToday, markRewardShown } from "../../engagement.js";
 import { daysWord } from "./StreakCard.jsx";
+import { getSettings } from "../../settings.js";
 import styles from "./Engagement.module.css";
 
 /**
@@ -15,8 +16,12 @@ export default function DailyReward({ visit, delay = 0, onClose }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
-    if (!visit || !visit.firstToday) return undefined;
-    const t = window.setTimeout(() => setOpen(true), delay);
+    if (!visit || !visit.firstToday || rewardShownToday() || !getSettings().dailyReward) return undefined;
+    const t = window.setTimeout(() => {
+      if (rewardShownToday()) return;
+      markRewardShown();
+      setOpen(true);
+    }, delay);
     return () => window.clearTimeout(t);
   }, [visit, delay]);
   useEffect(() => {

@@ -106,6 +106,9 @@
 
   --page-max: 980px;
   --sidebar-w: 248px;
+  --ring-1: #3e3bb8;
+  --ring-2: #1a7cf0;
+  --ring-3: #1fb3c9;
   --tabbar-h: 64px;
 
   /* Семантика компонентов */
@@ -219,3 +222,6 @@
     --ink-fg: #ffffff;
   }
 }
+
+:root[data-theme="dark"] { --ring-1: #7c7af5; --ring-2: #3d97ff; --ring-3: #4fd3e6; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ring-1: #7c7af5; --ring-2: #3d97ff; --ring-3: #4fd3e6; } }

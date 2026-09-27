@@ -37,7 +37,24 @@ const LOOKS = [
   { top: "#5d86c2", shade: "#4b72ad", pants: "#2e3a52", pantsShade: "#252f44", shoes: "#f4f4f6", sole: "#cfd3da", hood: true, hair: "short" }
 ];
 
+/**
+ * Пассажиры с признаками нарушений (по референсу команды): variant 100+.
+ * 100–101 — нетрезвые (мятая куртка поверх худи, бутылка), 102–103 — агрессивные (тёмный худи
+ * с лампасами и кепкой, чёрная куртка), 104–106 — под воздействием веществ (капюшон, бесформенная
+ * одежда, заторможенность).
+ */
+export const TROUBLE_LOOKS = {
+  100: { top: "#4d5a44", shade: "#3d4836", innerTop: "#c9ccd2", pants: "#2a2d33", pantsShade: "#202328", shoes: "#e9eaee", sole: "#c8ccd4", hood: true, backpack: "#2a2b30", hair: "messy", bottle: true, skinTone: 0 },
+  101: { top: "#26272c", shade: "#1c1d21", innerTop: "#ece6dc", pants: "#6f8fbf", pantsShade: "#5e7dab", shoes: "#f1f1f3", sole: "#c8ccd4", hair: "long", bottle: true, skinTone: 4 },
+  102: { top: "#1f2023", shade: "#161719", pants: "#1f2023", pantsShade: "#161719", shoes: "#1a1b1e", hood: true, cap: "#161719", capBrim: "#0e0f10", trackStripes: true, hair: "short", skinTone: 1 },
+  103: { top: "#1c1d20", shade: "#141517", innerTop: "#e8e4dc", pants: "#23252a", pantsShade: "#1b1c20", shoes: "#eeeeef", sole: "#c8ccd4", hair: "side", skinTone: 1 },
+  104: { top: "#2a2b31", shade: "#1f2025", pants: "#4a463d", pantsShade: "#3c3931", shoes: "#e9eaee", sole: "#c8ccd4", hoodUp: true, backpack: "#26272b", hair: "short", skinTone: 4 },
+  105: { top: "#d6ccbb", shade: "#c2b7a4", pants: "#33363c", pantsShade: "#282a2f", shoes: "#e0ddd6", sole: "#c8ccd4", backpack: "#1f2023", hair: "messy", skinTone: 4 },
+  106: { top: "#2b2c31", shade: "#202126", pants: "#34363b", pantsShade: "#2a2b30", shoes: "#1a1b1e", beanie: "#1c1d21", hood: true, handbag: "#26272b", hair: "short", skinTone: 1 }
+};
+
 export function lookOf(variant) {
+  if (TROUBLE_LOOKS[variant]) return TROUBLE_LOOKS[variant];
   return LOOKS[Math.abs(variant) % LOOKS.length];
 }
 
@@ -54,12 +71,12 @@ function outfitOf(role, variant) {
  * props: outfit (роль: conductor|chief|medic|guard|police|passenger), variant (внешность пассажира),
  * skin, hair (цвет), hairStyle, walking, talking, facing ('left'|'right'), size (px высоты).
  */
-export function Person({ outfit = "conductor", variant = 0, skin = 0, hair = 0, hairStyle, walking = false, talking = false, facing = "right", size = 150, className }) {
+export function Person({ outfit = "conductor", variant = 0, skin = 0, hair = 0, hairStyle, walking = false, talking = false, facing = "right", size = 150, mood, className }) {
   const o = outfitOf(outfit, variant);
-  const skinC = SKIN[skin % SKIN.length];
+  const skinC = SKIN[(o.skinTone ?? skin) % SKIN.length];
   const hairC = o.hair === "grey" ? HAIR[4] : HAIR[hair % HAIR.length];
   const style = hairStyle || o.hair || (outfit === "medic" ? "side" : "short");
-  const cls = [styles.person, walking ? styles.walking : styles.idle, talking ? styles.talking : null, className].filter(Boolean).join(" ");
+  const cls = [styles.person, walking ? styles.walking : styles.idle, talking ? styles.talking : null, mood === "drunk" ? styles.sway : null, className].filter(Boolean).join(" ");
   return (
     <svg
       className={cls}
@@ -70,7 +87,7 @@ export function Person({ outfit = "conductor", variant = 0, skin = 0, hair = 0, 
       style={{ transform: facing === "left" ? "scaleX(-1)" : undefined }}
     >
       <ellipse cx="40" cy="175" rx={walking ? 17 : 20} ry="3.4" className={styles.shadow} />
-      {walking ? <Side o={o} skinC={skinC} hairC={hairC} hairStyle={style} /> : <Front o={o} skinC={skinC} hairC={hairC} hairStyle={style} />}
+      {walking ? <Side o={o} skinC={skinC} hairC={hairC} hairStyle={style} /> : <Front o={o} skinC={skinC} hairC={hairC} hairStyle={style} mood={mood} />}
     </svg>
   );
 }
@@ -79,7 +96,7 @@ export function Person({ outfit = "conductor", variant = 0, skin = 0, hair = 0, 
 // Вид спереди
 // ---------------------------------------------------------------------------
 
-function Front({ o, skinC, hairC, hairStyle }) {
+function Front({ o, skinC, hairC, hairStyle, mood }) {
   const long = hairStyle === "long";
   return (
     <g className={styles.body}>
@@ -90,6 +107,7 @@ function Front({ o, skinC, hairC, hairStyle }) {
       <rect x="27" y="100" width="12.5" height="66" rx="5" fill={o.pants} />
       <rect x="40.5" y="100" width="12.5" height="66" rx="5" fill={o.pantsShade} />
       {o.trim && <><rect x="27" y="157" width="12.5" height="2.6" fill={o.trim} /><rect x="40.5" y="157" width="12.5" height="2.6" fill={o.trim} /></>}
+      {o.trackStripes && <><rect x="28" y="102" width="1.8" height="60" fill="#e9eaee" /><rect x="50.2" y="102" width="1.8" height="60" fill="#e9eaee" /></>}
       <path d="M24 170 Q24 163 30 163 L38 163 Q40 163 40 166 L40 172 L25 172 Q24 172 24 170 Z" fill={o.shoes} />
       <path d="M56 170 Q56 163 50 163 L42 163 Q40 163 40 166 L40 172 L55 172 Q56 172 56 170 Z" fill={o.shoes} />
       {o.sole && <><rect x="24" y="170" width="16" height="2.4" rx="1.2" fill={o.sole} /><rect x="40" y="170" width="16" height="2.4" rx="1.2" fill={o.sole} /></>}
@@ -109,9 +127,11 @@ function Front({ o, skinC, hairC, hairStyle }) {
           </>
         )}
         {/* Ворот, рубашка, галстук */}
+        {o.innerTop && <path d="M31 55 L49 55 L47 104 L33 104 Z" fill={o.innerTop} />}
+        {o.innerTop && <><path d="M31 55 L36 104 L27 107 L24 60 Z" fill={o.top} /><path d="M49 55 L44 104 L53 107 L56 60 Z" fill={o.shade} /></>}
         {o.hood ? (
-          <path d="M28 55 Q40 66 52 55 Q50 51 40 51 Q30 51 28 55 Z" fill={o.shade} />
-        ) : (
+          <path d="M28 55 Q40 66 52 55 Q50 51 40 51 Q30 51 28 55 Z" fill={o.innerTop && !o.hoodUp ? "#b8bcc4" : o.shade} />
+        ) : o.innerTop ? null : (
           <path d="M33 55 L40 71 L47 55 Z" fill={o.shirt || o.top} />
         )}
         {o.tie && <path d="M38.7 58 L41.3 58 L42.4 77 L40 81 L37.6 77 Z" fill={o.tie} />}
@@ -166,12 +186,14 @@ function Front({ o, skinC, hairC, hairStyle }) {
         {o.trim && !o.stripes && <rect x="53.5" y="96" width="10" height="2.4" fill={o.trim} />}
         <circle cx="58.5" cy="105" r="4.8" fill={skinC} />
         {o.briefcase && <g><rect x="52" y="108" width="14" height="13" rx="2" fill="#23252b" /><rect x="56" y="105.5" width="6" height="3" rx="1.2" fill="none" stroke="#23252b" strokeWidth="1.3" /></g>}
+        {o.bottle && <g><rect x="55.5" y="104" width="6" height="16" rx="2" fill="#3f6b3a" /><rect x="57.2" y="98" width="2.6" height="7" rx="1" fill="#3f6b3a" /><rect x="56" y="109" width="5" height="4" fill="#d9d3c2" opacity=".7" /></g>}
       </g>
       {o.radio && <g><rect x="50" y="56" width="5" height="9" rx="1.2" fill="#111" /><rect x="52.5" y="49" width="1.4" height="8" fill="#111" /></g>}
 
       {/* Голова */}
       <rect x="36" y="48" width="8" height="10" rx="3" fill={skinC} />
       <g className={styles.head}>
+        {o.hoodUp && <path d="M16 40 Q14 8 40 7 Q66 8 64 40 Q63 56 52 58 L28 58 Q17 56 16 40 Z" fill={o.top} />}
         <circle cx="21.5" cy="35" r="3.6" fill={skinC} />
         <circle cx="58.5" cy="35" r="3.6" fill={skinC} />
         <ellipse cx="40" cy="32" rx="18" ry="19" fill={skinC} />
@@ -184,20 +206,59 @@ function Front({ o, skinC, hairC, hairStyle }) {
         <circle cx="29" cy="41" r="2.6" fill="#f09a86" opacity=".28" />
         <circle cx="51" cy="41" r="2.6" fill="#f09a86" opacity=".28" />
         <path className={styles.mouth} d="M37.6 43.4 Q40 45.2 42.4 43.4" stroke="#8b4a3a" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-        <Hat kind={o.hat} cap={o.cap} />
+        <MoodFace mood={mood} skinC={skinC} />
+        {o.hoodUp && <path d="M19 30 Q20 10 40 10 Q60 10 61 30 Q58 16 40 15 Q22 16 19 30 Z" fill={o.shade} />}
+        {o.beanie && <path d="M20 26 Q20 7 40 7 Q60 7 60 26 L60 28 L20 28 Z" fill={o.beanie} />}
+        <Hat kind={o.hat} cap={o.cap} brim={o.capBrim} />
       </g>
     </g>
   );
 }
 
 function Hair({ style, color }) {
+  if (style === "messy") return <path d="M21 33 Q17 9 40 9 Q63 9 59 33 Q58 22 52 20 L50 26 L46 19 L42 25 L38 18 L34 25 L30 19 Q24 22 23 34 Z" fill={color} />;
   if (style === "long") return <path d="M21 36 Q19 11 40 11 Q61 11 59 36 Q58 24 50 20 Q46 27 34 26 Q27 26 23 34 Z" fill={color} />;
   if (style === "side") return <path d="M22 31 Q20 11 41 11 Q60 12 58 30 Q55 21 45 20 Q37 20 31 24 Q26 27 24 33 Z" fill={color} />;
   if (style === "grey") return <path d="M22 30 Q22 13 40 13 Q58 13 58 30 Q55 22 47 21 Q40 24 33 22 Q26 23 24 31 Z" fill={color} />;
   return <path d="M22 31 Q19 11 40 11 Q61 11 58 31 Q56 21 48 20 Q44 26 34 25 Q27 24 24 32 Z" fill={color} />;
 }
 
-function Hat({ kind, cap }) {
+/** Выражение лица поверх базового: нетрезвый (румянец, полуприкрытые глаза), агрессивный (брови), под веществами (тяжёлые веки). */
+function MoodFace({ mood, skinC }) {
+  if (mood === "drunk") {
+    return (
+      <g>
+        <circle cx="29" cy="41" r="4.2" fill="#e8615a" opacity=".45" />
+        <circle cx="51" cy="41" r="4.2" fill="#e8615a" opacity=".45" />
+        <rect x="30" y="31" width="7" height="3.4" fill={skinC} />
+        <rect x="43" y="31" width="7" height="3.4" fill={skinC} />
+        <path d="M36.5 43 Q40 46.5 43.8 42.6" stroke="#8b4a3a" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      </g>
+    );
+  }
+  if (mood === "angry") {
+    return (
+      <g stroke={INK} strokeWidth="1.5" strokeLinecap="round">
+        <path d="M30 30.5 L36.5 33" />
+        <path d="M50 30.5 L43.5 33" />
+        <path d="M37 45 Q40 42.8 43 45" stroke="#8b4a3a" fill="none" />
+      </g>
+    );
+  }
+  if (mood === "high" || mood === "unwell") {
+    return (
+      <g>
+        <rect x="30" y="31.5" width="7" height="3.2" fill={skinC} />
+        <rect x="43" y="31.5" width="7" height="3.2" fill={skinC} />
+        <path d="M30.5 34.6 h6 M43.5 34.6 h6" stroke="#5a4038" strokeWidth=".8" />
+        <path d="M31 38.5 Q33.5 39.5 36 38.5 M44 38.5 Q46.5 39.5 49 38.5" stroke="#9c8f9e" strokeWidth=".9" fill="none" opacity=".7" />
+      </g>
+    );
+  }
+  return null;
+}
+
+function Hat({ kind, cap, brim }) {
   if (kind === "rail" || kind === "police") {
     return (
       <g>
@@ -215,7 +276,7 @@ function Hat({ kind, cap }) {
     return (
       <g>
         <path d="M20.5 27 Q20.5 9 40 9 Q59.5 9 59.5 27 Z" fill={c} />
-        <path d="M20 27 L60 27 Q58 32.5 40 31.5 Q23 31 20 27 Z" fill={kind === "guard" ? "#111214" : "#4b573c"} />
+        <path d="M20 27 L60 27 Q58 32.5 40 31.5 Q23 31 20 27 Z" fill={kind === "guard" ? "#111214" : brim || "#4b573c"} />
         {kind === "guard" && <path d="M37.5 14.5 h5 v4 l-2.5 2.5 l-2.5 -2.5 z" fill="#aeb4bf" />}
       </g>
     );
@@ -256,6 +317,7 @@ function Arm({ o, skinC, back }) {
         {o.trim && !o.stripes && <rect x="37" y="102" width="8" height="2.2" fill={o.trim} />}
         <circle cx="41" cy="109" r="4.4" fill={skinC} />
         {!back && o.briefcase && <g><rect x="35" y="112" width="15" height="13" rx="2" fill="#23252b" /></g>}
+        {!back && o.bottle && <g><rect x="38" y="106" width="6" height="15" rx="2" fill="#3f6b3a" /><rect x="39.7" y="100" width="2.6" height="7" rx="1" fill="#3f6b3a" /></g>}
       </g>
     </g>
   );
@@ -304,7 +366,9 @@ function Side({ o, skinC, hairC, hairStyle }) {
           {o.glasses && <circle cx="53.2" cy="34.5" r="4" fill="none" stroke="#3b3f48" strokeWidth="1" />}
           <circle cx="54" cy="41" r="2.4" fill="#f09a86" opacity=".28" />
           <path d="M55 45 Q57.5 46 59 44.6" stroke="#8b4a3a" strokeWidth="1.1" fill="none" strokeLinecap="round" />
-          <SideHat kind={o.hat} cap={o.cap} />
+          {o.hoodUp && <path d="M24 38 Q20 9 44 8 Q64 9 63 30 Q56 16 44 16 Q30 16 28 40 Q27 50 24 38 Z" fill={o.top} />}
+          {o.beanie && <path d="M25 27 Q24 8 43 8 Q60 8 61 25 L61 27 Z" fill={o.beanie} />}
+          <SideHat kind={o.hat} cap={o.cap} brim={o.capBrim} />
         </g>
       </g>
     </g>
@@ -312,11 +376,12 @@ function Side({ o, skinC, hairC, hairStyle }) {
 }
 
 function SideHair({ style, color }) {
+  if (style === "messy") return <path d="M25 36 Q21 10 43 9 Q62 9 62 25 L57 21 L55 27 L51 20 L48 26 L44 20 Q37 26 34 38 Q30 42 26 40 Z" fill={color} />;
   if (style === "long") return <path d="M25 36 Q23 11 43 11 Q60 11 61 25 Q55 20 48 21 Q45 26 40 25 Q35 30 34 40 Q30 44 26 42 Z" fill={color} />;
   return <path d="M25.5 35 Q23 11 43 11 Q60 11 61 25 Q55 20 48 21 Q45 26 40 25 Q36 29 34 36 Q30 41 26.5 40 Z" fill={color} />;
 }
 
-function SideHat({ kind, cap }) {
+function SideHat({ kind, cap, brim }) {
   if (kind === "rail" || kind === "police") {
     return (
       <g>
@@ -331,7 +396,7 @@ function SideHat({ kind, cap }) {
     return (
       <g>
         <path d="M25 27 Q25 9.5 43 9.5 Q60 9.5 61 25 Z" fill={cap || "#1d1e22"} />
-        <path d="M58 24 L71 26 Q69 30 58 28.5 Z" fill={kind === "guard" ? "#111214" : "#4b573c"} />
+        <path d="M58 24 L71 26 Q69 30 58 28.5 Z" fill={kind === "guard" ? "#111214" : brim || "#4b573c"} />
       </g>
     );
   }
@@ -351,7 +416,7 @@ function darken(hex) {
 /** Пассажир в кресле (вид спереди). variant — детерминированная внешность. mood: calm|angry|unwell. */
 export function SeatedPerson({ variant = 0, size = 96, kid = false, phone = false, mood = "calm", className }) {
   const o = lookOf(variant);
-  const skinC = SKIN[(variant * 3 + 1) % SKIN.length];
+  const skinC = SKIN[(o.skinTone ?? variant * 3 + 1) % SKIN.length];
   const hairC = o.hair === "grey" ? HAIR[4] : HAIR[(variant * 5 + 2) % 4];
   const scale = kid ? 0.72 : 1;
   const long = o.hair === "long";
@@ -366,6 +431,7 @@ export function SeatedPerson({ variant = 0, size = 96, kid = false, phone = fals
     >
       <g className={styles.torsoSeat}>
         {long && <path d="M20 22 Q18 44 22 56 L48 56 Q52 44 50 22 Z" fill={hairC} />}
+        {o.hoodUp && <path d="M17 26 Q16 2 35 2 Q54 2 53 26 Q53 38 45 40 L25 40 Q17 38 17 26 Z" fill={o.top} />}
         {/* Ноги к зрителю */}
         <rect x="18" y="71" width="15" height="12" rx="5" fill={o.pants} />
         <rect x="37" y="71" width="15" height="12" rx="5" fill={o.pantsShade} />
@@ -376,8 +442,10 @@ export function SeatedPerson({ variant = 0, size = 96, kid = false, phone = fals
         {/* Корпус */}
         <path d="M16 50 Q16 38 26 38 L44 38 Q54 38 54 50 L53 76 L17 76 Z" fill={o.top} />
         <path d="M44 38 Q54 38 54 50 L53 76 L46 76 Z" fill={o.shade} opacity=".7" />
-        {o.hood ? <path d="M25 38 Q35 47 45 38 Q43 34 35 34 Q27 34 25 38 Z" fill={o.shade} />
-          : <path d="M29.5 38 L35 50 L40.5 38 Z" fill={o.shirt || o.top} />}
+        {o.innerTop && <path d="M28 38 L42 38 L41 76 L29 76 Z" fill={o.innerTop} />}
+        {o.hood ? <path d="M25 38 Q35 47 45 38 Q43 34 35 34 Q27 34 25 38 Z" fill={o.innerTop ? "#b8bcc4" : o.shade} />
+          : o.innerTop ? null : <path d="M29.5 38 L35 50 L40.5 38 Z" fill={o.shirt || o.top} />}
+        {o.trackStripes && <><rect x="20" y="72" width="1.4" height="24" fill="#e9eaee" /><rect x="48.6" y="72" width="1.4" height="24" fill="#e9eaee" /></>}
         {o.tie && <path d="M34 40 L36 40 L36.8 53 L35 56 L33.2 53 Z" fill={o.tie} />}
         {o.headphones && <path d="M25 40 Q35 47 45 40" fill="none" stroke="#1b1c21" strokeWidth="2.6" strokeLinecap="round" />}
         {/* Руки */}
@@ -389,6 +457,7 @@ export function SeatedPerson({ variant = 0, size = 96, kid = false, phone = fals
         {o.handbag && <rect x="42" y="62" width="14" height="12" rx="3" fill={o.handbag} />}
         {o.briefcase && <rect x="22" y="64" width="26" height="12" rx="2" fill="#23252b" />}
         {phone && <rect className={styles.phone} x="30" y="62" width="10" height="14" rx="2" fill="#1c1c1e" />}
+        {o.bottle && <g><rect x="50" y="60" width="6.5" height="15" rx="2" fill="#3f6b3a" /><rect x="51.9" y="54" width="2.7" height="7" rx="1" fill="#3f6b3a" /></g>}
         <rect x="31.5" y="31" width="7" height="8" rx="3" fill={skinC} />
         {/* Голова */}
         <g className={styles.seatHead}>
@@ -396,8 +465,27 @@ export function SeatedPerson({ variant = 0, size = 96, kid = false, phone = fals
           <circle cx="48.5" cy="23" r="2.8" fill={skinC} />
           <ellipse cx="35" cy="21" rx="13.5" ry="14" fill={skinC} />
           <SeatHair style={o.hair} color={hairC} />
-          {o.cap && <><path d="M21 17 Q21 5 35 5 Q49 5 49 17 Z" fill={o.cap} /><path d="M21 17 L49 17 Q47 21 35 20.5 Q23 20 21 17 Z" fill="#4b573c" /></>}
-          {mood === "angry" ? (
+          {o.hoodUp && <path d="M19 18 Q20 5 35 5 Q50 5 51 18 Q48 9 35 9 Q22 9 19 18 Z" fill={o.shade} />}
+          {o.beanie && <path d="M21 16 Q21 3 35 3 Q49 3 49 16 L49 18 L21 18 Z" fill={o.beanie} />}
+          {o.cap && <><path d="M21 17 Q21 5 35 5 Q49 5 49 17 Z" fill={o.cap} /><path d="M21 17 L49 17 Q47 21 35 20.5 Q23 20 21 17 Z" fill={o.capBrim || "#4b573c"} /></>}
+          {mood === "drunk" ? (
+            <g>
+              <path d="M28.5 23.8 Q30.5 22.4 32.5 23.8" stroke={INK} strokeWidth="1.3" fill="none" strokeLinecap="round" />
+              <path d="M37.5 23.8 Q39.5 22.4 41.5 23.8" stroke={INK} strokeWidth="1.3" fill="none" strokeLinecap="round" />
+              <path d="M31.5 29 Q35 32 38.8 28.4" stroke="#8b4a3a" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+              <circle cx="27" cy="27.5" r="3.2" fill="#e8615a" opacity=".5" />
+              <circle cx="43" cy="27.5" r="3.2" fill="#e8615a" opacity=".5" />
+              <circle cx="35" cy="25.5" r="1.4" fill="#e8615a" opacity=".45" />
+            </g>
+          ) : mood === "high" ? (
+            <g>
+              <ellipse cx="30.5" cy="24.2" rx="1.5" ry="1.2" fill={INK} />
+              <ellipse cx="39.5" cy="24.2" rx="1.5" ry="1.2" fill={INK} />
+              <path d="M28.5 23.3 h4 M37.5 23.3 h4" stroke="#5a4038" strokeWidth="1" />
+              <path d="M28.8 26.6 Q30.5 27.4 32.2 26.6 M37.8 26.6 Q39.5 27.4 41.2 26.6" stroke="#9c8f9e" strokeWidth=".8" fill="none" />
+              <path d="M33 30.2 h4" stroke="#8b4a3a" strokeWidth="1.1" strokeLinecap="round" />
+            </g>
+          ) : mood === "angry" ? (
             <g>
               <path d="M28 20 L32.5 22" stroke={INK} strokeWidth="1.3" strokeLinecap="round" />
               <path d="M42 20 L37.5 22" stroke={INK} strokeWidth="1.3" strokeLinecap="round" />
@@ -426,6 +514,7 @@ export function SeatedPerson({ variant = 0, size = 96, kid = false, phone = fals
 }
 
 function SeatHair({ style, color }) {
+  if (style === "messy") return <path d="M21 23 Q18 4 35 4 Q52 4 49 23 Q48 14 44 12 L42 17 L39 11 L36 16 L33 10 L30 16 L27 12 Q23 15 22.5 24 Z" fill={color} />;
   if (style === "long") return <path d="M21.5 24 Q20 6 35 6 Q50 6 48.5 24 Q47 15 41 13 Q37 18 29 17 Q24 18 23 25 Z" fill={color} />;
   if (style === "side") return <path d="M22 21 Q21 6 36 6 Q49 7 48 20 Q46 13 39 13 Q33 13 28 16 Q24 18 23.5 23 Z" fill={color} />;
   if (style === "grey") return <path d="M22 20 Q22 8 35 8 Q48 8 48 20 Q46 14 40 13 Q35 15 30 14 Q25 15 23.5 21 Z" fill={color} />;

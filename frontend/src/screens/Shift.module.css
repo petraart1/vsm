@@ -131,10 +131,10 @@
 .legend div { display: flex; flex-direction: column; }
 .legend dt { font-size: var(--t-sm); color: var(--fg-2); }
 .legend dd { margin: 0; font-size: var(--t-2xl); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.legend [data-tone="navy"] dd { color: var(--vsm-navy); }
-.legend [data-tone="blue"] dd { color: var(--blue); }
-.legend [data-tone="sky"] dd { color: var(--loyalty); }
-:global([data-theme="dark"]) .legend [data-tone="navy"] dd { color: #5b8def; }
+.legend [data-tone="navy"] dd { color: var(--ring-1); }
+.legend [data-tone="blue"] dd { color: var(--ring-2); }
+.legend [data-tone="sky"] dd { color: var(--ring-3); }
+
 
 .hr { display: flex; align-items: center; gap: var(--s-4); margin-top: var(--s-4); padding: var(--s-5); border-radius: var(--r-lg); background: var(--bg); }
 .hr[data-ok] { background: linear-gradient(135deg, #0b3d91, #0a64d8); color: #fff; }
@@ -208,3 +208,24 @@
   .setupWrap .setup { flex: 0 0 min(640px, 50%); margin: 0; }
 }
 @keyframes kenburns { to { transform: scale(1.1) translateX(-2%); } }
+
+.speedBtn { flex: none; display: inline-flex; align-items: center; gap: 3px; min-width: 52px; justify-content: center; height: 32px; padding: 0 10px; border-radius: 999px; border: 0; cursor: pointer; font-weight: 700; font-size: var(--t-sm); font-variant-numeric: tabular-nums; background: var(--bg-muted); color: var(--fg); transition: background 250ms var(--ease-spring), color 250ms; }
+.speedBtn[data-fast] { background: var(--blue); color: #fff; }
+.speedBtn:active { transform: scale(0.94); }
+
+@media (min-width: 1024px) {
+  .medSheet { max-height: none; }
+  .stage .room { flex: 1 1 auto; margin-right: 500px; }
+  .roomHero, .roomNpc { bottom: 18%; }
+  .roomHero { left: 16%; }
+  .roomNpc { right: 16%; }
+  .roomHero > *, .roomNpc > * { scale: 1.5; transform-origin: 50% 100%; }
+  .roomDesk { transform: translateX(-10%) scale(1.4); transform-origin: 50% 100%; }
+  .scrim { background: rgba(10, 20, 40, 0.08); }
+  /* Итог смены: две колонки */
+  .summaryInner { width: min(100%, 1180px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 var(--s-8); align-items: start; }
+  .summaryInner > .eyebrow, .summaryInner > h1, .summaryInner > .summaryActions { grid-column: 1 / -1; }
+  .sumRight > .groupLabel:first-child { margin-top: var(--s-6); }
+  .summaryActions { flex-direction: row; max-width: 560px; }
+  .summaryActions > * { flex: 1; }
+}

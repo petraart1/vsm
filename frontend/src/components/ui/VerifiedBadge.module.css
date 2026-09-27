@@ -1,0 +1,4 @@
+.badge { display: inline-flex; align-items: center; gap: 4px; flex: none; vertical-align: middle; }
+.seal { fill: var(--blue); }
+.tick { fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.withLabel { padding: 3px 9px 3px 5px; border-radius: 999px; background: var(--blue-soft); color: var(--blue); font-size: var(--t-xs); font-weight: 700; }

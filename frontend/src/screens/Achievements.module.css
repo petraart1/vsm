@@ -55,3 +55,4 @@
 .sectionRow { display: flex; justify-content: space-between; align-items: baseline; }
 .sectionLink { color: var(--blue); font-weight: 600; font-size: var(--t-sm); text-decoration: none; }
 @media (min-width: 1024px) { .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); } }
+.note { font-size: var(--t-sm); color: var(--fg-2); line-height: 1.45; margin: calc(-1 * var(--s-2)) 0 var(--s-4); max-width: 70ch; }

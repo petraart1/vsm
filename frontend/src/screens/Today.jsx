@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import * as api from "../api.js";
 import StreakCard from "../components/engagement/StreakCard.jsx";
 import ShowcaseGrid from "../components/engagement/ShowcaseGrid.jsx";
-import { readShowcase } from "../engagement.js";
+import { readShowcase, rankPhrase } from "../engagement.js";
 import { readFinish } from "../components/awards/awards.js";
 import Icon from "../components/ui/Icon.jsx";
 import Rings from "../components/ui/Rings.jsx";
@@ -26,7 +26,7 @@ export default function Today() {
   const showcase = readShowcase();
   const [board, setBoard] = useState(null);
   useEffect(() => { api.getLeaderboard({ limit: 5 }).then(setBoard, () => setBoard(null)); }, []);
-  const pct = board && board.me && board.total > 1 ? Math.round(((board.total - board.me.rank) / (board.total - 1)) * 100) : null;
+  const place = board && board.me ? rankPhrase(board.me.rank, board.total) : null;
 
   return (
     <div className={styles.page}>
@@ -113,7 +113,7 @@ export default function Today() {
               <h2>Рейтинг</h2>
               <a href="#/leaderboard">Все</a>
             </header>
-            {pct !== null && <p className={styles.pct}><b className="num">{pct}%</b> коллег — ниже вас</p>}
+            {place && <p className={styles.pct}><b className="num">{place.short}</b> {place.short.startsWith("Топ") ? "рейтинга" : "место в рейтинге"}</p>}
             <ol className={styles.mini}>
               {board.top.slice(0, 3).concat(board.me && !board.top.slice(0, 3).some((e) => e.me) ? [board.me] : []).map((e) => (
                 <li key={e.key} data-me={e.me || undefined}>

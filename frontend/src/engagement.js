@@ -133,3 +133,26 @@ export function toggleShowcase(item) {
   writeShowcase(next);
   return next;
 }
+
+// ---------------------------------------------------------------------------
+// Окно награды за вход показывается один раз в сутки, даже если компонент монтируется
+// повторно (переходы между экранами, возврат со смены, несколько вкладок).
+// ---------------------------------------------------------------------------
+
+const REWARD_SHOWN_KEY = "reactlab.rewardShown.v1";
+
+export function rewardShownToday() {
+  try { return localStorage.getItem(REWARD_SHOWN_KEY) === dayKey(); } catch (e) { return true; }
+}
+
+export function markRewardShown() {
+  try { localStorage.setItem(REWARD_SHOWN_KEY, dayKey()); } catch (e) { /* приватный режим */ }
+}
+
+/** Мягкая формулировка места в рейтинге — без сравнения «кто ниже вас». */
+export function rankPhrase(rank, total) {
+  if (!rank || !total) return null;
+  const top = Math.max(1, Math.round((rank / total) * 100));
+  if (top <= 50) return { short: `Топ-${top}%`, long: `Вы в топ-${top}% рейтинга — место ${rank} из ${total}.` };
+  return { short: `${rank} из ${total}`, long: `Место ${rank} из ${total}. Каждая смена приближает к лидерам.` };
+}

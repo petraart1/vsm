@@ -10,6 +10,9 @@ import { FINISH_OPTIONS, readFinish, writeFinish, moduleMedal, distinctionMedal 
 import { buildQualifications, toDistinction, formatDate } from "../progress.js";
 import { readShifts } from "../shift/shiftModel.js";
 import { STREAK_MILESTONES, claimedStreakRewards, streakMedal } from "../engagement.js";
+import { officialAwards } from "../components/awards/awards.js";
+import VerifiedBadge from "../components/ui/VerifiedBadge.jsx";
+import { useAccount } from "../account.js";
 import styles from "./Achievements.module.css";
 
 /**
@@ -22,6 +25,10 @@ export default function Achievements({ route }) {
   const [s, setS] = useState({ phase: "loading" });
   const [opened, setOpened] = useState(null);
   const [finish, setFinish] = useState(readFinish);
+  const account = useAccount();
+  const verified = !!(account && account.verified);
+  const [custom, setCustom] = useState([]);
+  useEffect(() => { api.getCustomAwards().then((l) => setCustom(Array.isArray(l) ? l : []), () => setCustom([])); }, []);
 
   function load() {
     setS({ phase: "loading" });
@@ -103,6 +110,45 @@ export default function Achievements({ route }) {
               <p className={styles.featHint}>Покрутите медаль пальцем</p>
             </div>
           </div>
+        </section>
+      )}
+
+      <section className="rv" style={{ "--i": 3 }}>
+        <div className={styles.sectionRow}>
+          <h2 className={styles.sectionTitle}>Официальные награды</h2>
+          {verified ? <VerifiedBadge withLabel /> : <a className={styles.sectionLink} href={api.USE_MOCKS ? "#/auth/esia-demo" : (account ? api.esiaAuthorizeUrl() : "#/login?next=/achievements")}>Подтвердить через Госуслуги</a>}
+        </div>
+        {!verified && <p className={styles.note}>Официальные награды получают подтверждённые учётные записи: они учитываются в допуске и решении для HR. Выполненные условия сохраняются — награды появятся сразу после подтверждения.</p>}
+        <ul className={styles.grid}>
+          {officialAwards({ shifts, qualifications }).map((a, i) => {
+            const got = verified && a.condition;
+            return (
+              <li key={a.id} style={{ "--i": i }}>
+                <div className={styles.award} data-earned={got || undefined}>
+                  <span className={styles.medalWrap}><Medal shape={a.shape} finish={finish} glyph={a.glyph} earned={got} size={92} spin={got} backTitle={a.title} backNote="Официальная награда" /></span>
+                  <span className={styles.awardTitle}>{a.title}</span>
+                  <span className={styles.awardMeta}>{got ? "Получено" : a.condition ? "Условие выполнено — нужна проверка личности" : a.note}</span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {custom.length > 0 && (
+        <section className="rv" style={{ "--i": 3 }}>
+          <h2 className={styles.sectionTitle}>Особые награды</h2>
+          <ul className={styles.grid}>
+            {custom.map((a, i) => (
+              <li key={a.id} style={{ "--i": i }}>
+                <div className={styles.award} data-earned={a.earned || undefined}>
+                  <span className={styles.medalWrap}><Medal shape={a.shape} finish={finish} glyph={a.glyph || "medal"} earned={!!a.earned} size={92} spin={!!a.earned} backTitle={a.title} backNote="Особая награда" /></span>
+                  <span className={styles.awardTitle}>{a.title}</span>
+                  <span className={styles.awardMeta}>{a.earned ? `Получено ${formatDate(a.earnedAt, { day: "numeric", month: "short" }) || ""}` : a.description}{a.verifiedOnly && !a.earned ? " · для подтверждённых" : ""}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

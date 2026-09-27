@@ -9,7 +9,7 @@
  * если backend недоступен во время демо.
  */
 
-import { recordActivity } from "./progress.js";
+import { recordActivity, blockTitle } from "./progress.js";
 
 export const USE_MOCKS = false;
 const NETWORK_DELAY_MS = 220;
@@ -60,6 +60,8 @@ function generateUuidV4() {
 /** Один UUID на браузер, хранится в localStorage; используется как X-Player-Id и как
  * playerId в gamification-эндпоинтах — единое пространство идентификаторов на клиенте. */
 export function getPlayerId() {
+  const account = getAccount();
+  if (account && account.id) return account.id;
   let id = null;
   try { id = localStorage.getItem(PLAYER_ID_STORAGE_KEY); } catch (e) { /* приватный режим */ }
   if (!id) {
@@ -77,7 +79,9 @@ function apiFetch(path, options = {}) {
   // разбор проверяют владельца (403 без заголовка), лидерборд по нему помечает строку "me".
   // Поэтому заголовок уходит всегда, кроме явного publicCall.
   if (!options.publicCall) headers["X-Player-Id"] = getPlayerId();
-  if (options.body) headers["Content-Type"] = "application/json";
+  const token = getToken();
+  if (token && !options.noAuth) headers.Authorization = `Bearer ${token}`;
+  if (options.body) headers["Content-Type"] = options.contentType || "application/json";
   return fetch(API_BASE + path, { method: options.method || "GET", headers, body: options.body }).then((res) => {
     if (res.status === 204) return null;
     return res.text().then((text) => {
@@ -106,13 +110,14 @@ let CATALOG = null;
 
 function loadCatalog() {
   if (CATALOG) return Promise.resolve(CATALOG);
-  return fetch("/data/situations-index.json")
+  return fetch(`${import.meta.env.BASE_URL}data/situations-index.json`)
     .then((r) => r.json())
     .then((json) => { CATALOG = json; return CATALOG; });
 }
 
 function blockLabelFor(catalog, blockKey) {
-  return (catalog && catalog.blocks && catalog.blocks[blockKey]) || blockKey;
+  const key = String(blockKey || "").toLowerCase();
+  return (catalog && catalog.blocks && catalog.blocks[key]) || blockTitle(key);
 }
 
 // =======================================================================
@@ -226,7 +231,8 @@ function realListScenarios() {
     summaries = summaries || [];
     const progress = readProgress();
     const blocks = {};
-    const situations = summaries.map((s) => {
+    const situations = summaries.map((raw) => {
+      const s = { ...raw, block: String(raw.block || "misc").toLowerCase() };
       const label = blockLabelFor(catalog, s.block);
       const localMeta = catalog && catalog.situations
         ? catalog.situations.filter((x) => x.id === s.situationRef)[0]
@@ -885,6 +891,250 @@ export function getShowcase(entry) {
   }
   return apiFetch(`/api/gamification/showcase/${encodeURIComponent(entry.publicId)}`, { method: "GET" })
     .then((d) => ({ items: (d && d.items) || [], finish: (d && d.finish) || "enamel" }), () => ({ items: null, finish: "enamel" }));
+}
+
+// =======================================================================
+// Учётная запись: регистрация, вход, Госуслуги (демо-ЕСИА на backend), выход.
+// Токен — Authorization: Bearer; id учётной записи = playerId (анонимный прогресс сохраняется:
+// регистрация передаёт текущий X-Player-Id, и он становится id учётной записи).
+// =======================================================================
+
+const TOKEN_KEY = "reactlab.token.v1";
+const ACCOUNT_KEY = "reactlab.account.v1";
+const authListeners = new Set();
+
+export function getToken() {
+  try { return localStorage.getItem(TOKEN_KEY); } catch (e) { return null; }
+}
+
+export function getAccount() {
+  try { return JSON.parse(localStorage.getItem(ACCOUNT_KEY) || "null"); } catch (e) { return null; }
+}
+
+export function subscribeAuth(fn) {
+  authListeners.add(fn);
+  return () => authListeners.delete(fn);
+}
+
+function setSession(token, profile) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(ACCOUNT_KEY, JSON.stringify(profile));
+    localStorage.setItem(PLAYER_ID_STORAGE_KEY, profile.id);
+  } catch (e) { /* приватный режим */ }
+  authListeners.forEach((fn) => fn(profile));
+  return profile;
+}
+
+export function logout() {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ACCOUNT_KEY);
+    localStorage.setItem(PLAYER_ID_STORAGE_KEY, generateUuidV4());
+  } catch (e) { /* приватный режим */ }
+  authListeners.forEach((fn) => fn(null));
+}
+
+function authError(err) {
+  const map = {
+    invalid_credentials: "Неверный логин или пароль.",
+    login_already_taken: "Этот логин уже занят.",
+    email_already_taken: "Эта почта уже зарегистрирована.",
+    player_already_registered: "Этот прогресс уже привязан к другой учётной записи.",
+    invalid_or_expired_esia_code: "Код входа через Госуслуги устарел. Попробуйте ещё раз."
+  };
+  const e = new Error(map[err.code] || err.message || "Не удалось выполнить запрос.");
+  e.code = err.code;
+  throw e;
+}
+
+export function login(loginName, password) {
+  if (USE_MOCKS) {
+    if (!loginName || !password) return Promise.reject(new Error("Введите логин и пароль."));
+    const role = loginName === "admin" ? "ADMIN" : "USER";
+    return delay(setSession("mock-token", { id: getPlayerId(), login: loginName, email: `${loginName}@demo.local`, displayName: loginName === "admin" ? "Администратор" : loginName, role, verified: false, createdAt: new Date().toISOString() }));
+  }
+  return apiFetch("/api/auth/login", { method: "POST", publicCall: true, noAuth: true, body: JSON.stringify({ login: loginName, password }) })
+    .then((r) => setSession(r.token, r.profile), authError);
+}
+
+export function register({ login: loginName, email, password, displayName }) {
+  if (USE_MOCKS) {
+    return delay(setSession("mock-token", { id: getPlayerId(), login: loginName, email, displayName: displayName || loginName, role: "USER", verified: false, createdAt: new Date().toISOString() }));
+  }
+  return apiFetch("/api/auth/register", { method: "POST", noAuth: true, body: JSON.stringify({ login: loginName, email, password, displayName }) })
+    .then(() => login(loginName, password), authError);
+}
+
+export function refreshAccount() {
+  const token = getToken();
+  if (!token || USE_MOCKS) return Promise.resolve(getAccount());
+  return apiFetch("/api/auth/me", { method: "GET", publicCall: true })
+    .then((profile) => setSession(token, profile), (err) => {
+      if (err.status === 401) logout();
+      return getAccount();
+    });
+}
+
+/** Адрес страницы входа через Госуслуги (демо-провайдер на backend). Возврат — на #/auth/esia?code=… */
+export function esiaAuthorizeUrl() {
+  const back = `${window.location.origin}${window.location.pathname}#/auth/esia`;
+  return `${API_BASE}/api/auth/esia/authorize?redirect_uri=${encodeURIComponent(back)}`;
+}
+
+/** Тестовые граждане демо-ЕСИА (совпадают с backend EsiaMockService) — для режима без backend. */
+export const ESIA_DEMO_CITIZENS = [
+  { code: "ivanova", fullName: "Иванова Мария Сергеевна", snils: "112-233-445 95" },
+  { code: "petrov", fullName: "Петров Алексей Викторович", snils: "223-344-556 06" },
+  { code: "sidorova", fullName: "Сидорова Ольга Дмитриевна", snils: "334-455-667 17" },
+  { code: "kuznetsov", fullName: "Кузнецов Артём Игоревич", snils: "445-566-778 28" }
+];
+
+export function esiaCallback(code) {
+  if (USE_MOCKS) {
+    const c = ESIA_DEMO_CITIZENS.find((x) => x.code === code) || ESIA_DEMO_CITIZENS[0];
+    const prev = getAccount();
+    return delay(setSession("mock-token", { id: getPlayerId(), login: `esia_${c.code}`, email: `${c.code}@esia.mock.local`, displayName: c.fullName, role: prev && prev.role === "ADMIN" ? "ADMIN" : "USER", verified: true, createdAt: new Date().toISOString() }));
+  }
+  return apiFetch("/api/auth/esia/callback", { method: "POST", publicCall: true, noAuth: true, body: JSON.stringify({ code }) })
+    .then((r) => setSession(r.token, r.profile), authError);
+}
+
+// =======================================================================
+// Админ-панель: статистика, редактор сценариев, события. Требуют роль ADMIN (Bearer-токен).
+// =======================================================================
+
+const MOCK_OVERVIEW = { totalPlayers: 128, totalPlaythroughs: 1542, completedPlaythroughs: 1391, inProgressPlaythroughs: 151, avgLoyaltyScore: 63.4, avgSafetyScore: 71.2, successRate: 0.62, partialRate: 0.27, failureRate: 0.11, activePlayers24h: 37, activePlayers7d: 96 };
+
+export function adminOverview() {
+  if (USE_MOCKS) return delay(MOCK_OVERVIEW);
+  return apiFetch("/api/admin/stats/overview");
+}
+
+export function adminBlocks() {
+  if (USE_MOCKS) {
+    return delay(Object.keys(MOCK_BLOCK_KEYS).map((b, i) => ({ block: b, totalPlaythroughs: 90 + i * 17, completedPlaythroughs: 80 + i * 15, successRate: 0.45 + (i % 5) * 0.09, avgLoyaltyScore: 55 + i * 2, avgSafetyScore: 60 + (i % 4) * 6 })));
+  }
+  return apiFetch("/api/admin/stats/blocks");
+}
+
+const MOCK_BLOCK_KEYS = { boarding: 1, baggage: 1, safety: 1, seating: 1, catering: 1, medical: 1, lost_found: 1, conflict: 1, comfort: 1, misc: 1 };
+
+export function adminScenarioStats() {
+  if (USE_MOCKS) {
+    return listScenarios().then((d) => d.situations.slice(0, 12).map((s, i) => ({ scenarioId: s.id, code: s.code || `s-${s.id}`, title: s.title, block: s.block, totalPlaythroughs: 20 + i * 3, completedPlaythroughs: 18 + i * 3, successRate: 0.3 + i * 0.05, avgLoyaltyScore: 50 + i, avgSafetyScore: 55 + i, timeoutRate: 0.2 - i * 0.012 })));
+  }
+  return apiFetch("/api/admin/stats/scenarios");
+}
+
+/** Скачать CSV-выгрузку (players, scenarios, blocks, teams) — с токеном, поэтому через fetch и blob. */
+export function adminDownloadCsv(name) {
+  if (USE_MOCKS) {
+    const blob = new Blob([`block;total\nsafety;42\n`], { type: "text/csv" });
+    return Promise.resolve(saveBlob(blob, `${name}.csv`));
+  }
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return fetch(`${API_BASE}/api/admin/stats/${name}.csv`, { headers }).then((r) => {
+    if (!r.ok) throw new Error(`${r.status}`);
+    return r.blob();
+  }).then((b) => saveBlob(b, `${name}.csv`));
+}
+
+function saveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return true;
+}
+
+export function editorImportMarkdown(markdown, save) {
+  if (USE_MOCKS) return delay(save ? { id: "mock", code: "new-scenario", title: "Новая ситуация" } : { scenario: { code: "preview", title: (markdown.match(/^# (.+)$/m) || [0, "Без названия"])[1], nodes: [] }, graphErrors: [] });
+  return apiFetch(`/api/editor/scenarios/import-markdown?save=${save ? "true" : "false"}`, { method: "POST", body: JSON.stringify({ markdown }) });
+}
+
+export function editorExport(code) {
+  if (USE_MOCKS) return delay({ code, title: "Демо", nodes: [] });
+  return apiFetch(`/api/editor/scenarios/${encodeURIComponent(code)}`);
+}
+
+const MOCK_EVENTS = [];
+
+export function adminEvents() {
+  if (USE_MOCKS) return delay(MOCK_EVENTS.slice());
+  return apiFetch("/api/admin/challenges");
+}
+
+export function adminCreateEvent(body) {
+  if (USE_MOCKS) {
+    const e = { id: `ev-${Date.now()}`, code: `event-${Date.now() % 100000}`, ...body, active: new Date(body.startsAt) <= new Date() && new Date(body.endsAt) >= new Date() };
+    MOCK_EVENTS.unshift(e);
+    return delay(e);
+  }
+  return apiFetch("/api/admin/challenges", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function adminFinishEvent(id) {
+  if (USE_MOCKS) {
+    const e = MOCK_EVENTS.find((x) => x.id === id);
+    if (e) { e.active = false; e.endsAt = new Date().toISOString(); }
+    return delay(e);
+  }
+  return apiFetch(`/api/admin/challenges/${id}/finish`, { method: "POST" });
+}
+
+export function getChallenges() {
+  if (USE_MOCKS) {
+    const now = Date.now();
+    return delay(MOCK_EVENTS.filter((e) => e.active).map((e) => ({ ...e, current: 0, completed: false })).concat([
+      { code: "month-safety", title: "Месяц без критических ошибок", description: "Пройдите 5 ситуаций блока «Порядок и безопасность» без критических ошибок", goalType: "BLOCK_SCENARIOS_NO_FAILURE", targetBlock: "safety", targetCount: 5, rewardPoints: 300, startsAt: new Date(now - 864e5 * 10).toISOString(), endsAt: new Date(now + 864e5 * 20).toISOString(), current: 2, completed: false }
+    ]));
+  }
+  return apiFetch(`/api/gamification/challenges?playerId=${encodeURIComponent(getPlayerId())}`);
+}
+
+const MOCK_AWARDS = [
+  { id: "aw-1", code: "award-demo1", title: "Наставник смены", description: "Помог коллеге-стажёру на рейсе", shape: "shield", glyph: "users", verifiedOnly: false, earned: false, grantedCount: 3 },
+  { id: "aw-2", code: "award-demo2", title: "Благодарность пассажира", description: "Отмечен в отзыве пассажира", shape: "octagon", glyph: "smile", verifiedOnly: true, earned: false, grantedCount: 1 }
+];
+
+export function adminAwards() {
+  if (USE_MOCKS) return delay(MOCK_AWARDS.slice());
+  return apiFetch("/api/admin/awards");
+}
+
+export function adminCreateAward(body) {
+  if (USE_MOCKS) {
+    const a = { id: `aw-${Date.now()}`, code: `award-${Date.now() % 1e5}`, ...body, earned: false, grantedCount: 0 };
+    MOCK_AWARDS.unshift(a);
+    return delay(a);
+  }
+  return apiFetch("/api/admin/awards", { method: "POST", body: JSON.stringify(body) });
+}
+
+export function adminGrantAward(id, player) {
+  if (USE_MOCKS) {
+    const a = MOCK_AWARDS.find((x) => x.id === id);
+    if (a) {
+      a.grantedCount += 1;
+      const acc = getAccount();
+      if (acc && (player === acc.login || player === acc.id)) { a.earned = true; a.earnedAt = new Date().toISOString(); }
+    }
+    return delay(a);
+  }
+  return apiFetch(`/api/admin/awards/${id}/grant`, { method: "POST", body: JSON.stringify({ player }) });
+}
+
+/** Награды администратора с отметкой полученных текущим игроком (пустой список, если backend их не знает). */
+export function getCustomAwards() {
+  if (USE_MOCKS) return delay(MOCK_AWARDS.slice());
+  return apiFetch(`/api/gamification/custom-awards?playerId=${encodeURIComponent(getPlayerId())}`).catch(() => []);
 }
 
 export const api = {

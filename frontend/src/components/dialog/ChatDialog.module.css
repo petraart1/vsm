@@ -97,3 +97,15 @@
   .sheet, .row, .note, .choices li { animation: none; }
 }
 .note[data-tone="scene"] { font-style: italic; color: var(--fg); background: var(--bg-muted); border-radius: 14px; padding: 10px 14px; max-width: 100%; text-align: left; }
+
+/* Десктоп: диалог — боковая панель справа, сцена остаётся видна */
+@media (min-width: 1024px) {
+  .sheet {
+    left: auto; right: var(--s-6); top: calc(var(--s-6) + 60px); bottom: var(--s-6);
+    width: 460px; max-height: none; border-radius: 28px;
+    box-shadow: 0 24px 60px rgba(10, 30, 70, 0.22), inset 0 0.5px 0 var(--glass-edge);
+    animation: panel-in 520ms var(--ease-spring) both;
+  }
+  .grabber { display: none; }
+}
+@keyframes panel-in { from { transform: translateX(110%); } to { transform: none; } }

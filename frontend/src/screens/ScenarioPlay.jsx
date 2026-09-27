@@ -22,7 +22,7 @@ export default function ScenarioPlay({ route }) {
   const [clsKey, setClsKey] = useState(CAR_CLASSES[q] ? q : "STANDARD");
   const cls = CAR_CLASSES[clsKey];
   const local = String(scenarioId).startsWith("local-") ? findStress(String(scenarioId).slice(6)) : null;
-  const variant = local ? String(scenarioId).length * 5 : (Number(scenarioId) * 7) % 40;
+  const variant = local ? (local.looks ? local.looks[0] : String(scenarioId).length * 5) : (Number(scenarioId) * 7) % 40;
   const [localResult, setLocalResult] = useState(null);
   const speaker = { kind: "passenger", variant, mood: local ? local.mood : "calm", name: "Пассажир", role: `Вагон ${cls.car} · ${cls.title}` };
   const remote = useScenarioDialog({ speaker, onDone: () => {} });
@@ -61,10 +61,12 @@ export default function ScenarioPlay({ route }) {
       </header>
 
       <div className={styles.scene} aria-hidden="true">
+        <div className={styles.sceneInner}>
         <div className={styles.window}><span className={styles.hills} /></div>
         <div className={styles.seat} style={{ background: cls.seat }} />
         <div className={styles.passenger}><SeatedPerson variant={variant} size={120} mood={local ? local.mood : "calm"} /></div>
         <div className={styles.conductor}><Person outfit="conductor" facing="left" size={150} talking={dialog.busy} /></div>
+        </div>
       </div>
 
       <ChatDialog
@@ -97,7 +99,7 @@ function LocalDebrief({ result, onAgain }) {
       <p className={styles.debriefVerdict}>{result.verdict}</p>
       <ul className={styles.debriefList}>
         {result.log.map((l, i) => (
-          <li key={i} data-best={l.best || undefined}><b>{l.best ? "Верно" : l.critical ? "Критично" : "Ошибка"}.</b> {l.note}</li>
+          <li key={i} data-best={l.best || undefined}><b>{l.best ? "Верно" : l.critical ? "Серьёзная ошибка" : "Ошибка"}.</b> {l.note}</li>
         ))}
       </ul>
       {mistakes.length === 0 && <p className={styles.debriefNote}>Все решения — по регламенту.</p>}

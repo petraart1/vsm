@@ -23,7 +23,7 @@ const H = 300;
 const SPEED = 140; // px/с мира
 const REACH = 58;
 
-export default function CarScene({ cls, passengers, hotspots = [], signals = [], moods = {}, visitors = [], moving = false, stationName, disabled = false, onInteract, focusSeat = null }) {
+export default function CarScene({ cls, passengers, hotspots = [], signals = [], moods = {}, visitors = [], walkers = [], onWalkerArrive, speed = 1, moving = false, stationName, disabled = false, onInteract, focusSeat = null }) {
   const W = worldWidth(cls);
   const sigX = (sg) => (sg.x === "vestibule" ? W - VESTIBULE * 0.62 : typeof sg.x === "number" ? sg.x : seatX(cls, sg.seat));
   const viewRef = useRef(null);
@@ -187,7 +187,7 @@ export default function CarScene({ cls, passengers, hotspots = [], signals = [],
 
   return (
     <div className={styles.view} ref={viewRef} data-class={cls.key}>
-      <Landscape moving={moving} stationName={stationName} />
+      <Landscape moving={moving} stationName={stationName} speed={speed} />
 
       <div className={styles.world} ref={worldRef} style={{ width: W, height: H }} onPointerDown={onFloor}>
         <svg className={styles.shell} width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
@@ -274,6 +274,9 @@ export default function CarScene({ cls, passengers, hotspots = [], signals = [],
         {visitors.map((v) => (
           <Visitor key={v.key} role={v.role} from={seatX(cls, v.seat) > W / 2 ? W - 40 : 40} to={seatX(cls, v.seat) + v.offset} faceRight={v.offset < 0} />
         ))}
+        {walkers.map((w) => (
+          <Visitor key={w.key} role={w.role} variant={w.variant} mood={w.mood} from={w.from} to={w.to} delay={w.delay} vanish={w.vanish} faceRight={w.faceRight} onArrive={() => onWalkerArrive && onWalkerArrive(w)} />
+        ))}
 
         <div className={styles.hero} ref={heroRef} style={{ top: 138 }}>
           <Person outfit="conductor" walking={pose.walking} facing={pose.facing} size={150} />
@@ -307,19 +310,27 @@ export default function CarScene({ cls, passengers, hotspots = [], signals = [],
 }
 
 /** Сотрудник, который входит из тамбура и подходит к месту (наряд полиции, охрана). */
-function Visitor({ role, from, to, faceRight }) {
+function Visitor({ role, variant = 0, mood, from, to, faceRight, delay = 0, vanish = false, onArrive }) {
   const [x, setX] = useState(from);
-  const [walking, setWalking] = useState(true);
+  const [walking, setWalking] = useState(false);
+  const [gone, setGone] = useState(false);
+  const arriveRef = useRef(onArrive);
+  arriveRef.current = onArrive;
+  const pace = mood === "drunk" ? 70 : 110;
   useEffect(() => {
-    const t = window.setTimeout(() => setX(to), 60);
-    const dur = Math.abs(to - from) / 110 * 1000;
-    const t2 = window.setTimeout(() => setWalking(false), dur + 80);
+    const dur = (Math.abs(to - from) / pace) * 1000;
+    const t = window.setTimeout(() => { setWalking(true); setX(to); }, 60 + delay);
+    const t2 = window.setTimeout(() => {
+      setWalking(false);
+      if (vanish) setGone(true);
+      window.setTimeout(() => arriveRef.current && arriveRef.current(), vanish ? 400 : 0);
+    }, dur + 80 + delay);
     return () => { window.clearTimeout(t); window.clearTimeout(t2); };
-  }, [from, to]);
-  const dur = Math.abs(to - from) / 110;
+  }, [from, to, delay, vanish, pace]);
+  const dur = Math.abs(to - from) / pace;
   return (
-    <div className={styles.visitor} style={{ transform: `translate3d(${x - 33}px,0,0)`, transitionDuration: `${dur}s`, top: 138 }}>
-      <Person outfit={role} walking={walking} facing={walking ? (to > from ? "right" : "left") : (faceRight ? "right" : "left")} size={150} hair={2} />
+    <div className={styles.visitor} data-gone={gone || undefined} style={{ transform: `translate3d(${x - 33}px,0,0)`, transitionDuration: gone ? "400ms" : `${dur}s`, top: 138, opacity: delay && !walking && x === from ? 0 : undefined }}>
+      <Person outfit={role} variant={variant} mood={mood} walking={walking} facing={walking ? (to > from ? "right" : "left") : (faceRight ? "right" : "left")} size={150} hair={role === "passenger" ? variant % 4 : 2} />
     </div>
   );
 }
@@ -343,9 +354,9 @@ function roundRect(x, y, w, h, r) {
 }
 
 /** Пейзаж за окнами: небо, дальние холмы, лес и опоры контактной сети — три слоя параллакса. */
-function Landscape({ moving, stationName }) {
+function Landscape({ moving, stationName, speed = 1 }) {
   return (
-    <div className={styles.land} data-moving={moving || undefined} aria-hidden="true">
+    <div className={styles.land} data-moving={moving || undefined} aria-hidden="true" style={{ "--speed": speed }}>
       <div className={styles.sky} />
       <div className={`${styles.layer} ${styles.hills}`} />
       <div className={`${styles.layer} ${styles.trees}`} />

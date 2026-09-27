@@ -84,7 +84,7 @@
 .head > span { font-size: var(--t-xs); font-weight: 600; color: var(--fg-3); }
 
 .percentile { display: flex; align-items: center; gap: var(--s-4); padding: var(--s-5); margin-bottom: var(--s-5); border-radius: var(--r-lg); background: linear-gradient(135deg, var(--vsm-navy), var(--blue)); color: #fff; }
-.pctNum { font-size: 40px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.pctNum { font-size: 32px; white-space: nowrap; font-weight: 700; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
 .pctText { font-size: var(--t-sm); line-height: 1.4; opacity: 0.9; }
 
 /* iOS-оформление и раскладка */

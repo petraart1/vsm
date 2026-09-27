@@ -34,8 +34,10 @@ export const STRESS_SCENARIOS = [
     block: "safety",
     blockLabel: "Общественный порядок",
     urgent: true,
-    mood: "angry",
+    mood: "drunk",
+    looks: [100, 101],
     removal: true,
+    responders: { onboard: ["guard"], station: ["police"] },
     start: "n1",
     nodes: {
       n1: {
@@ -77,11 +79,14 @@ export const STRESS_SCENARIOS = [
   },
   {
     id: "psychoactive",
+    looks: [104, 105, 106],
+    removal: true,
+    responders: { station: ["medic", "police"] },
     title: "Пассажир с признаками воздействия веществ",
     block: "medical",
     blockLabel: "Медицина и безопасность",
     urgent: true,
-    mood: "unwell",
+    mood: "high",
     start: "n1",
     nodes: {
       n1: {
@@ -118,6 +123,8 @@ export const STRESS_SCENARIOS = [
   },
   {
     id: "fight",
+    looks: [102, 103],
+    responders: { onboard: ["guard"], station: ["police"] },
     title: "Конфликт двух пассажиров переходит в драку",
     block: "conflict",
     blockLabel: "Конфликты",
@@ -191,6 +198,7 @@ export const STRESS_SCENARIOS = [
   },
   {
     id: "unattended-bag",
+    responders: { onboard: ["guard"], station: ["police"] },
     title: "Оставленная сумка без владельца",
     block: "safety",
     blockLabel: "Общественный порядок",
@@ -222,6 +230,8 @@ export const STRESS_SCENARIOS = [
   },
   {
     id: "abuse-staff",
+    looks: [103, 102],
+    responders: { onboard: ["chief"] },
     title: "Пассажир оскорбляет проводника из-за задержки",
     block: "conflict",
     blockLabel: "Конфликты",
@@ -260,6 +270,8 @@ export const STRESS_SCENARIOS = [
   },
   {
     id: "seizure",
+    removal: true,
+    responders: { station: ["medic"] },
     title: "Судорожный приступ у пассажира",
     block: "medical",
     blockLabel: "Медицина и безопасность",
@@ -368,11 +380,11 @@ export const MED_CONDITIONS = {
 };
 
 /** Вероятность «проблемного» заступа — примерно каждая четвёртая смена. */
-export function rollCondition(rand) {
+export function rollCondition(rand, rate = 0.25) {
   const r = rand();
-  if (r < 0.1) return "fever";
-  if (r < 0.18) return "alcohol";
-  if (r < 0.25) return "substances";
+  if (r < rate * 0.4) return "fever";
+  if (r < rate * 0.72) return "alcohol";
+  if (r < rate) return "substances";
   return "fit";
 }
 

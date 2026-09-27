@@ -10,6 +10,7 @@ import { CountUp } from "../components/motion/Motion.jsx";
 import { gradeFor, pluralRu } from "../progress.js";
 import ColleagueSheet from "../components/engagement/ColleagueSheet.jsx";
 import Medal from "../components/awards/Medal.jsx";
+import { rankPhrase } from "../engagement.js";
 import styles from "./Leaderboard.module.css";
 
 function initials(name) {
@@ -71,7 +72,7 @@ export default function Leaderboard() {
 
   const d = s.data;
   const meInTop = d.top.some((t) => t.me);
-  const percentile = d.me && d.total > 1 ? Math.round(((d.total - d.me.rank) / (d.total - 1)) * 100) : null;
+  const place = d.me ? rankPhrase(d.me.rank, d.total) : null;
   const max = d.top.length ? d.top[0].totalScore : 0;
 
   return (
@@ -83,10 +84,10 @@ export default function Leaderboard() {
 
       <div className={styles.layout}>
       <aside className={styles.aside}>
-      {percentile !== null && (
+      {place && (
         <div className={`${styles.percentile} rv`} style={{ "--i": 1 }}>
-          <span className={styles.pctNum}><CountUp value={percentile} />%</span>
-          <span className={styles.pctText}>Ваш результат лучше, чем у {percentile}% проводников. Место {d.me.rank} из {d.total}.</span>
+          <span className={styles.pctNum}>{place.short}</span>
+          <span className={styles.pctText}>{place.long}</span>
         </div>
       )}
       {d.top.length >= 3 && (
