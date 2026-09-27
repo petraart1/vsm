@@ -9,7 +9,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import DrawScope
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.dp
@@ -28,7 +28,7 @@ import kotlin.math.min
  * транспортной полиции или пассажир. SeatedPerson — пассажир в кресле.
  */
 
-private val INK = Color(0xFF1D1F24)
+internal val INK = Color(0xFF1D1F24)
 
 /** Оттенки кожи (SKIN) и волос (HAIR) — те же значения, что в People.jsx. */
 val SKIN_TONES = listOf(
@@ -171,6 +171,7 @@ fun Person(
 fun SeatedPerson(
     variant: Int = 0,
     kid: Boolean = false,
+    phone: Boolean = false,
     mood: String = "calm",
     modifier: Modifier = Modifier
 ) {
@@ -183,7 +184,7 @@ fun SeatedPerson(
     Canvas(modifier = modifier) {
         val s = min(this.size.width / w, this.size.height / h) * scale
         withTransformScale(s) {
-            drawSeated(o, skinC, hairC, mood)
+            drawSeated(o, skinC, hairC, mood, phone)
         }
     }
 }
@@ -204,14 +205,14 @@ fun PersonBust(outfit: String = "conductor", size: androidx.compose.ui.unit.Dp =
 // Геометрия (androidx.compose.ui.graphics.drawscope) — координаты как в исходном viewBox.
 // ---------------------------------------------------------------------------
 
-private inline fun DrawScope.withTransformScale(
+internal inline fun DrawScope.withTransformScale(
     s: Float,
     block: DrawScope.() -> Unit
 ) {
     scale(scaleX = s, scaleY = s, pivot = Offset.Zero) { block() }
 }
 
-private fun DrawScope.drawFront(o: Outfit, skinC: Color, hairC: Color, hairStyle: String, mood: String?) {
+internal fun DrawScope.drawFront(o: Outfit, skinC: Color, hairC: Color, hairStyle: String, mood: String?, mouthScaleY: Float = 1f) {
     val long = hairStyle == "long"
     if (long) drawPath(svgPath("M21,34 Q19,62 24,80 L56,80 Q61,62 59,34 Z"), hairC)
     o.backpack?.let { drawPath(svgPath("M21,60 h38 v40 a8,8 0 0 1 -8,8 h-22 a8,8 0 0 1 -8,-8 Z"), it) }
@@ -335,14 +336,20 @@ private fun DrawScope.drawFront(o: Outfit, skinC: Color, hairC: Color, hairStyle
     }
     drawCircle(Color(0xFFF09A86).copy(alpha = 0.28f), 2.6f, Offset(29f, 41f))
     drawCircle(Color(0xFFF09A86).copy(alpha = 0.28f), 2.6f, Offset(51f, 41f))
-    drawPath(svgPath("M37.6,43.4 Q40,45.2 42.4,43.4"), Color(0xFF8B4A3A), style = Stroke(width = 1.2f, cap = StrokeCap.Round))
+    if (mouthScaleY == 1f) {
+        drawPath(svgPath("M37.6,43.4 Q40,45.2 42.4,43.4"), Color(0xFF8B4A3A), style = Stroke(width = 1.2f, cap = StrokeCap.Round))
+    } else {
+        scale(scaleX = 1f, scaleY = mouthScaleY, pivot = Offset(40f, 43.4f)) {
+            drawPath(svgPath("M37.6,43.4 Q40,45.2 42.4,43.4"), Color(0xFF8B4A3A), style = Stroke(width = 1.2f, cap = StrokeCap.Round))
+        }
+    }
     drawMoodFace(mood, skinC)
     if (o.hoodUp) drawPath(svgPath("M19,30 Q20,10 40,10 Q60,10 61,30 Q58,16 40,15 Q22,16 19,30 Z"), o.shade)
     o.beanie?.let { drawPath(svgPath("M20,26 Q20,7 40,7 Q60,7 60,26 L60,28 L20,28 Z"), it) }
     drawHat(o.hat, o.cap, o.capBrim)
 }
 
-private fun DrawScope.drawHair(style: String, color: Color) {
+internal fun DrawScope.drawHair(style: String, color: Color) {
     val d = when (style) {
         "messy" -> "M21,33 Q17,9 40,9 Q63,9 59,33 Q58,22 52,20 L50,26 L46,19 L42,25 L38,18 L34,25 L30,19 Q24,22 23,34 Z"
         "long" -> "M21,36 Q19,11 40,11 Q61,11 59,36 Q58,24 50,20 Q46,27 34,26 Q27,26 23,34 Z"
@@ -353,7 +360,7 @@ private fun DrawScope.drawHair(style: String, color: Color) {
     drawPath(svgPath(d), color)
 }
 
-private fun DrawScope.drawMoodFace(mood: String?, skinC: Color) {
+internal fun DrawScope.drawMoodFace(mood: String?, skinC: Color) {
     when (mood) {
         "drunk" -> {
             drawCircle(Color(0xFFE8615A).copy(alpha = 0.45f), 4.2f, Offset(29f, 41f))
@@ -378,7 +385,7 @@ private fun DrawScope.drawMoodFace(mood: String?, skinC: Color) {
     }
 }
 
-private fun DrawScope.drawHat(kind: String?, cap: Color?, brim: Color?) {
+internal fun DrawScope.drawHat(kind: String?, cap: Color?, brim: Color?) {
     if (kind == "rail" || kind == "police") {
         drawPath(svgPath("M17,20 Q19,6 40,5.5 Q61,6 63,20 Q63,24 58,24.5 L22,24.5 Q17,24 17,20 Z"), if (kind == "police") Color(0xFF34466E) else Color(0xFF1C3170))
         drawRect(Color(0xFFD6312F), Offset(21.5f, 20.5f), Size(37f, 6f))
@@ -402,7 +409,7 @@ private fun DrawScope.drawHat(kind: String?, cap: Color?, brim: Color?) {
 // Сидящий пассажир
 // ---------------------------------------------------------------------------
 
-private fun DrawScope.drawSeated(o: Outfit, skinC: Color, hairC: Color, mood: String) {
+private fun DrawScope.drawSeated(o: Outfit, skinC: Color, hairC: Color, mood: String, phone: Boolean = false) {
     val long = o.hairStyle == "long"
     if (long) drawPath(svgPath("M20,22 Q18,44 22,56 L48,56 Q52,44 50,22 Z"), hairC)
     if (o.hoodUp) drawPath(svgPath("M17,26 Q16,2 35,2 Q54,2 53,26 Q53,38 45,40 L25,40 Q17,38 17,26 Z"), o.top)
@@ -439,6 +446,7 @@ private fun DrawScope.drawSeated(o: Outfit, skinC: Color, hairC: Color, mood: St
     o.backpack?.let { drawRoundRect(it, Offset(21f, 60f), Size(28f, 18f), 5f) }
     o.handbag?.let { drawRoundRect(it, Offset(42f, 62f), Size(14f, 12f), 3f) }
     if (o.briefcase) drawRoundRect(Color(0xFF23252B), Offset(22f, 64f), Size(26f, 12f), 2f)
+    if (phone) drawRoundRect(Color(0xFF1C1C1E), Offset(30f, 62f), Size(10f, 14f), 2f)
     if (o.bottle) {
         drawRoundRect(Color(0xFF3F6B3A), Offset(50f, 60f), Size(6.5f, 15f), 2f)
         drawRoundRect(Color(0xFF3F6B3A), Offset(51.9f, 54f), Size(2.7f, 7f), 1f)
@@ -525,10 +533,10 @@ private fun DrawScope.drawSeatedMood(mood: String, skinC: Color) {
 // единственная с другой семантикой (x,y = центр, как cx/cy у SVG <ellipse>), поэтому у неё
 // отдельное имя, чтобы не совпасть по сигнатуре с DrawScope.drawOval(color, topLeft, size). ---
 
-private fun DrawScope.drawRoundRect(color: Color, topLeft: Offset, size: Size, radius: Float) =
+internal fun DrawScope.drawRoundRect(color: Color, topLeft: Offset, size: Size, radius: Float) =
     drawRoundRect(color = color, topLeft = topLeft, size = size, cornerRadius = CornerRadius(radius, radius))
 
-private fun DrawScope.drawRoundRect(
+internal fun DrawScope.drawRoundRect(
     color: Color,
     topLeft: Offset,
     size: Size,
@@ -537,5 +545,5 @@ private fun DrawScope.drawRoundRect(
     border: Color
 ) = drawRoundRect(color = border, topLeft = topLeft, size = size, cornerRadius = CornerRadius(radius, radius), style = style)
 
-private fun DrawScope.drawOvalCentered(color: Color, center: Offset, size: Size) =
+internal fun DrawScope.drawOvalCentered(color: Color, center: Offset, size: Size) =
     drawOval(color = color, topLeft = Offset(center.x - size.width / 2, center.y - size.height / 2), size = size)
