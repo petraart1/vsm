@@ -26,3 +26,26 @@ enum class ExamStatusDto { IN_PROGRESS, COMPLETED }
 
 @Serializable
 enum class ExamGradeDto { EXCELLENT, GOOD, SATISFACTORY, UNSATISFACTORY }
+
+/**
+ * `ru.vsm.backend.gamification.domain.NotificationType` — [UNKNOWN] не существует на backend,
+ * это локальный запасной вариант: вместе с `coerceInputValues = true` в конфигурации `Json`
+ * (см. `AppContainer`) он подставляется вместо падения парсинга, если backend когда-нибудь
+ * добавит новый тип раньше, чем обновится клиент.
+ */
+@Serializable
+enum class NotificationTypeDto {
+    ACHIEVEMENT_UNLOCKED,
+    NEW_PERSONAL_BEST,
+    LEADERBOARD_RANK_UP,
+    RECOMMENDED_SCENARIO,
+    CHALLENGE_COMPLETED,
+    TEAM_RANK_UP,
+    EXAM_COMPLETED,
+    NEW_SCENARIO,
+    NEW_CHALLENGE,
+    POINTS_EXPIRING,
+    POINTS_EXPIRED,
+    LEVEL_UP,
+    UNKNOWN,
+}

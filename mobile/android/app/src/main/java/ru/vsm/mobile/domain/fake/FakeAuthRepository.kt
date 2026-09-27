@@ -41,8 +41,22 @@ class FakeAuthRepository : AuthRepository {
         user.value = null
     }
 
+    override fun esiaAuthorizeUrl(redirectUri: String): String = "fake://esia/authorize?redirect_uri=$redirectUri"
+
+    override suspend fun loginWithEsia(code: String): Result<AuthUser> {
+        if (code == FAIL_ESIA_CODE) {
+            return Result.failure(DomainError.Api(400, "invalid_or_expired_esia_code", "Код ЕСИА недействителен или истёк"))
+        }
+        val fake = AuthUser(id = "fake-esia-$code", login = "esia-$code", displayName = "Тестовый гражданин", role = UserRole.USER)
+        user.value = fake
+        return Result.success(fake)
+    }
+
     companion object {
         /** Логин, при котором [register]/[login] всегда возвращают ошибку — для проверки UI без сети. */
         const val FAIL_LOGIN = "fail"
+
+        /** Код, при котором [loginWithEsia] всегда возвращает ошибку — для проверки UI без сети. */
+        const val FAIL_ESIA_CODE = "fail"
     }
 }

@@ -63,7 +63,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "${FRONTEND_HOST_PORT:-3000}:80"
+      - "${FRONTEND_HOST_PORT:-3000}:8080"
 
 volumes:
   vsm-postgres-data:

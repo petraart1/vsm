@@ -33,3 +33,13 @@ data class UserProfileResponseDto(
 /** `ru.vsm.backend.auth.web.dto.LoginResponse` — токен для заголовка `Authorization: Bearer <token>` + профиль. */
 @Serializable
 data class LoginResponseDto(val token: String, val profile: UserProfileResponseDto)
+
+/**
+ * Тело `POST /api/auth/esia/callback` — `ru.vsm.backend.auth.web.esia.dto.EsiaCallbackRequest`.
+ * `code` — значение параметра `?code=` из редиректа демо-заглушки входа через Госуслуги/ЕСИА
+ * (см. `ru.vsm.backend.auth.web.esia.EsiaMockController`: `GET .../authorize` открывается в
+ * веб-вьюхе, выбор гражданина -> редирект с кодом -> этот вызов меняет код на тот же формат
+ * ответа, что и обычный логин).
+ */
+@Serializable
+data class EsiaCallbackRequestDto(val code: String)

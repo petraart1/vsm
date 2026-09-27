@@ -56,6 +56,7 @@ class AuthRepositoryImplTest {
             sessionStore = sessionStore,
             playerRepository = FakePlayerRepository(fixedPlayerId = DEVICE_PLAYER_ID),
             safeApiCall = SafeApiCall(json),
+            baseUrl = server.url("/").toString(),
         )
     }
 

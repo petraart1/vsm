@@ -130,7 +130,7 @@ class AppContainer(
         if (useFakes) {
             FakeAuthRepository()
         } else {
-            AuthRepositoryImpl(retrofit.create(AuthApi::class.java), authSessionStore, playerRepository, safeApiCall)
+            AuthRepositoryImpl(retrofit.create(AuthApi::class.java), authSessionStore, playerRepository, safeApiCall, baseUrl)
         }
 
     /** Делегирует прохождение каждого пункта [scenarioRepository] — сам протокол хода по графу не меняется. */

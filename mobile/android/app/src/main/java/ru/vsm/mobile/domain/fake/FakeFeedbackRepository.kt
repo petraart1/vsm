@@ -16,7 +16,7 @@ import ru.vsm.mobile.domain.repository.FeedbackRepository
 /** Фейковая реализация для UI-слоя до готовности сетевого data-слоя: один фиксированный разбор и аналитика. */
 class FakeFeedbackRepository : FeedbackRepository {
 
-    override suspend fun getDebrief(userProgressId: String): Result<Debrief> {
+    override suspend fun getDebrief(userProgressId: String, playerId: String): Result<Debrief> {
         delay(200)
         return Result.success(
             Debrief(

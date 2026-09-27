@@ -1,58 +1,80 @@
 package ru.vsm.mobile.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
+import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = VsmColorsLight.actionPrimary,
+    onPrimary = VsmColorsLight.textOnAccent,
+    primaryContainer = VsmColorsLight.actionSecondary,
+    onPrimaryContainer = VsmColorsLight.textPrimary,
+    secondary = VsmColorsLight.borderStrong,
+    onSecondary = VsmColorsLight.textOnAccent,
+    background = VsmColorsLight.backgroundCanvas,
+    onBackground = VsmColorsLight.textPrimary,
+    surface = VsmColorsLight.backgroundSurface,
+    onSurface = VsmColorsLight.textPrimary,
+    surfaceVariant = VsmColorsLight.backgroundSurfaceRaised,
+    onSurfaceVariant = VsmColorsLight.textSecondary,
+    error = VsmColorsLight.actionDestructive,
+    onError = VsmColorsLight.textOnAccent,
+    outline = VsmColorsLight.borderDefault,
+    outlineVariant = VsmColorsLight.borderStrong,
 )
 
+private val DarkColorScheme = darkColorScheme(
+    primary = VsmColorsDark.actionPrimary,
+    onPrimary = VsmColorsDark.textOnAccent,
+    primaryContainer = VsmColorsDark.actionSecondary,
+    onPrimaryContainer = VsmColorsDark.textPrimary,
+    secondary = VsmColorsDark.borderStrong,
+    onSecondary = VsmColorsDark.textOnAccent,
+    background = VsmColorsDark.backgroundCanvas,
+    onBackground = VsmColorsDark.textPrimary,
+    surface = VsmColorsDark.backgroundSurface,
+    onSurface = VsmColorsDark.textPrimary,
+    surfaceVariant = VsmColorsDark.backgroundSurfaceRaised,
+    onSurfaceVariant = VsmColorsDark.textSecondary,
+    error = VsmColorsDark.actionDestructive,
+    onError = VsmColorsDark.textOnAccent,
+    outline = VsmColorsDark.borderDefault,
+    outlineVariant = VsmColorsDark.borderStrong,
+)
+
+/**
+ * Цвета шкал и статусов обратной связи, отдельно от `MaterialTheme.colorScheme` — им не находится
+ * прямого аналога среди ролей M3, а используются они по всему приложению (шкалы, таймеры, ачивки).
+ */
+object VsmPalette {
+    val loyalty: Color
+        @Composable get() = if (isSystemInDarkTheme()) VsmColorsDark.loyaltyFillHigh else VsmColorsLight.loyaltyFillHigh
+
+    val safety: Color
+        @Composable get() = if (isSystemInDarkTheme()) VsmColorsDark.safetyFillHigh else VsmColorsLight.safetyFillHigh
+
+    val success: Color
+        @Composable get() = if (isSystemInDarkTheme()) VsmColorsDark.feedbackSuccess else VsmColorsLight.feedbackSuccess
+
+    val warning: Color
+        @Composable get() = if (isSystemInDarkTheme()) VsmColorsDark.feedbackWarning else VsmColorsLight.feedbackWarning
+
+    val danger: Color
+        @Composable get() = if (isSystemInDarkTheme()) VsmColorsDark.feedbackDanger else VsmColorsLight.feedbackDanger
+}
+
 @Composable
-fun MobileTheme(
+fun VsmTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
+        content = content,
     )
 }

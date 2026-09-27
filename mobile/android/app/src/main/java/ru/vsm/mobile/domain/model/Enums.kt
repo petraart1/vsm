@@ -64,3 +64,25 @@ enum class CarClass {
     BUSINESS,
     FIRST,
 }
+
+/**
+ * Тип уведомления игрока ([Notification.type]) — 1:1 с `ru.vsm.backend.gamification.domain.NotificationType`.
+ * [UNKNOWN] не приходит с backend, это безопасный запасной вариант на случай нового типа,
+ * ещё не известного этой версии клиента (см. `NotificationTypeDto`) — UI должен уметь отрисовать
+ * его как обычное уведомление (заголовок/текст всё равно приходят), просто без специфичной иконки.
+ */
+enum class NotificationType {
+    ACHIEVEMENT_UNLOCKED,
+    NEW_PERSONAL_BEST,
+    LEADERBOARD_RANK_UP,
+    RECOMMENDED_SCENARIO,
+    CHALLENGE_COMPLETED,
+    TEAM_RANK_UP,
+    EXAM_COMPLETED,
+    NEW_SCENARIO,
+    NEW_CHALLENGE,
+    POINTS_EXPIRING,
+    POINTS_EXPIRED,
+    LEVEL_UP,
+    UNKNOWN,
+}

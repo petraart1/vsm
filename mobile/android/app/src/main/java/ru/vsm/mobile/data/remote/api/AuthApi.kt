@@ -4,12 +4,13 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import ru.vsm.mobile.data.remote.dto.EsiaCallbackRequestDto
 import ru.vsm.mobile.data.remote.dto.LoginRequestDto
 import ru.vsm.mobile.data.remote.dto.LoginResponseDto
 import ru.vsm.mobile.data.remote.dto.RegisterRequestDto
 import ru.vsm.mobile.data.remote.dto.UserProfileResponseDto
 
-/** `ru.vsm.backend.auth.web.AuthController` */
+/** `ru.vsm.backend.auth.web.AuthController` + `ru.vsm.backend.auth.web.esia.EsiaMockController` */
 interface AuthApi {
 
     @POST("api/auth/register")
@@ -25,4 +26,12 @@ interface AuthApi {
     /** `Authorization: Bearer <token>` добавляется [ru.vsm.mobile.data.remote.AuthInterceptor] автоматически. */
     @GET("api/auth/me")
     suspend fun me(): UserProfileResponseDto
+
+    /**
+     * Обмен кода авторизации демо-ЕСИА на токен — тот же формат ответа, что [login]. `GET
+     * .../authorize` и `.../select` (HTML-страница выбора гражданина и её редирект с кодом)
+     * не JSON-эндпоинты — открываются в веб-вьюхе напрямую по URL, без Retrofit.
+     */
+    @POST("api/auth/esia/callback")
+    suspend fun esiaCallback(@Body request: EsiaCallbackRequestDto): LoginResponseDto
 }

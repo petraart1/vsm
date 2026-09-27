@@ -55,7 +55,11 @@ class GamificationRepositoryImplTest {
                   "totalScenariosAvailable": 51,
                   "blockProgress": [],
                   "recentAchievements": [],
-                  "leaderboardRank": null
+                  "leaderboardRank": null,
+                  "level": 1,
+                  "levelTitle": "Стажёр",
+                  "levelProgress": 0,
+                  "pointsToNextLevel": 100
                 }
                 """.trimIndent(),
             ),
@@ -77,7 +81,7 @@ class GamificationRepositoryImplTest {
                 """
                 {
                   "top": [
-                    {"rank": 1, "playerId": "p1", "displayName": "Лидер", "totalScore": 500, "scenariosCompleted": 30}
+                    {"rank": 1, "publicId": "0123456789abcdef", "displayName": "Лидер", "totalScore": 500, "scenariosCompleted": 30, "me": false, "level": 4, "levelTitle": "Наставник"}
                   ],
                   "me": null
                 }

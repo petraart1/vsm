@@ -54,7 +54,7 @@ class FeedbackRepositoryImplTest {
             ),
         )
 
-        val result = repository.getDebrief("p1")
+        val result = repository.getDebrief("p1", "11111111-1111-1111-1111-111111111111")
 
         assertTrue(result.isFailure)
         val error = result.exceptionOrNull() as DomainError.Api
@@ -72,7 +72,7 @@ class FeedbackRepositoryImplTest {
             ),
         )
 
-        val result = repository.getDebrief("p404")
+        val result = repository.getDebrief("p404", "11111111-1111-1111-1111-111111111111")
 
         assertTrue(result.isFailure)
         val error = result.exceptionOrNull() as DomainError.Api

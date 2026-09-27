@@ -7,6 +7,9 @@ import ru.vsm.mobile.data.mapper.toDomain
 import ru.vsm.mobile.data.mapper.toSession
 import ru.vsm.mobile.data.remote.SafeApiCall
 import ru.vsm.mobile.data.remote.api.AuthApi
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import ru.vsm.mobile.data.remote.dto.EsiaCallbackRequestDto
 import ru.vsm.mobile.data.remote.dto.LoginRequestDto
 import ru.vsm.mobile.data.remote.dto.RegisterRequestDto
 import ru.vsm.mobile.domain.model.AuthUser
@@ -18,6 +21,8 @@ class AuthRepositoryImpl(
     private val sessionStore: AuthSessionStore,
     private val playerRepository: PlayerRepository,
     private val safeApiCall: SafeApiCall,
+    /** Тот же базовый URL, что у Retrofit-клиента ([ru.vsm.mobile.di.AppContainer]) — используется только для сборки [esiaAuthorizeUrl]. */
+    private val baseUrl: String,
 ) : AuthRepository {
 
     override val currentUser: Flow<AuthUser?> = sessionStore.session.map { it?.toDomain() }
@@ -49,5 +54,21 @@ class AuthRepositoryImpl(
 
     override suspend fun logout() {
         sessionStore.clear()
+    }
+
+    override fun esiaAuthorizeUrl(redirectUri: String): String {
+        val encoded = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8.name())
+        return "${baseUrl.trimEnd('/')}/api/auth/esia/authorize?redirect_uri=$encoded"
+    }
+
+    override suspend fun loginWithEsia(code: String): Result<AuthUser> {
+        val result = safeApiCall.call { api.esiaCallback(EsiaCallbackRequestDto(code)) }
+        return result.fold(
+            onSuccess = { response ->
+                sessionStore.save(response.profile.toSession(response.token))
+                Result.success(response.profile.toDomain())
+            },
+            onFailure = { Result.failure(it) },
+        )
     }
 }

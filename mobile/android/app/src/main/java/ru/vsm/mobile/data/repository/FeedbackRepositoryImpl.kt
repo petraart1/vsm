@@ -21,8 +21,8 @@ class FeedbackRepositoryImpl(
      * машиночитаемый код), поэтому здесь любой `409` этого вызова нормализуется в
      * [DomainError.DEBRIEF_UNAVAILABLE_DURING_EXAM] независимо от того, что пришло в теле.
      */
-    override suspend fun getDebrief(userProgressId: String): Result<Debrief> = safeApiCall.call {
-        api.getDebrief(userProgressId).toDomain()
+    override suspend fun getDebrief(userProgressId: String, playerId: String): Result<Debrief> = safeApiCall.call {
+        api.getDebrief(userProgressId, playerId).toDomain()
     }.recoverCatching { error ->
         if (error is DomainError.Api && error.statusCode == 409) {
             throw error.copy(errorCode = DomainError.DEBRIEF_UNAVAILABLE_DURING_EXAM)

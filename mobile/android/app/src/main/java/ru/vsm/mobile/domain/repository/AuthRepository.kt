@@ -43,4 +43,20 @@ interface AuthRepository {
 
     /** Очищает сохранённый токен ([currentUser] становится `null`). Анонимный playerId устройства не трогается. */
     suspend fun logout()
+
+    /**
+     * URL демо-страницы выбора тестового гражданина (заглушка входа через Госуслуги/ЕСИА) —
+     * открывается в веб-вьюхе. [redirectUri] — своя схема приложения (например `vsm://esia`), на
+     * которую backend сделает редирект с `?code=...` после выбора; перехват этого редиректа и
+     * извлечение `code` — задача UI-слоя (см. [loginWithEsia]).
+     */
+    fun esiaAuthorizeUrl(redirectUri: String): String
+
+    /**
+     * Обмен кода авторизации демо-ЕСИА (см. [esiaAuthorizeUrl]) на сессию — сохраняет токен,
+     * обновляет [currentUser], как [login]. В отличие от [register] анонимный playerId устройства
+     * не передаётся и не связывается — тестовый гражданин уже имеет собственный фиксированный id
+     * на backend (см. `EsiaMockService`), накопленный анонимный прогресс переносить некуда.
+     */
+    suspend fun loginWithEsia(code: String): Result<AuthUser>
 }
