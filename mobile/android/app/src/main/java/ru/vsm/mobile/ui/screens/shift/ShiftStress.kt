@@ -35,8 +35,8 @@ data class StressScenario(
 
 private fun n(
     id: String, speaker: String, text: String, context: String? = null, timer: Int? = null,
-    choices: List<DialogChoice> = emptyList(), end: Boolean = false,
-) = DialogNode(id = id, speaker = speaker, text = text, context = context, timerSeconds = timer, choices = choices, end = end)
+    choices: List<DialogChoice> = emptyList(), end: Boolean = false, speakerOverride: DialogSpeaker? = null,
+) = DialogNode(id = id, speaker = speaker, text = text, context = context, timerSeconds = timer, choices = choices, end = end, speakerOverride = speakerOverride)
 
 private fun ch(id: String, text: String, safety: Int, loyalty: Int, note: String, next: String? = null, reply: String? = null, critical: Boolean = false) =
     DialogChoice(id = id, text = text, safety = safety, loyalty = loyalty, note = note, next = next, reply = reply, critical = critical)
