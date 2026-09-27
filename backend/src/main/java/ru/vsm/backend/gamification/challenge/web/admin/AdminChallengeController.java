@@ -21,12 +21,20 @@ import ru.vsm.backend.gamification.challenge.domain.Challenge;
 import ru.vsm.backend.gamification.challenge.domain.ChallengeGoalType;
 import ru.vsm.backend.gamification.challenge.repository.ChallengeRepository;
 import ru.vsm.backend.gamification.domain.AchievementCode;
+import ru.vsm.backend.gamification.domain.NotificationType;
+import ru.vsm.backend.gamification.service.NotificationService;
 
 /**
  * Админ-панель: события (челленджи) — список, создание и досрочное завершение. Путь под
  * {@code /api/admin/**}, поэтому доступен только роли ADMIN (см. {@code SecurityConfig}).
  * Удаления нет намеренно: по событию уже может быть прогресс игроков, поэтому событие
  * завершается (конец периода = сейчас) и остаётся в истории.
+ *
+ * <p>Создание события рассылает всем уже известным профилям игрока уведомление
+ * {@code NEW_CHALLENGE} ({@link NotificationService#notifyAllPlayers}) — в отличие от личного
+ * {@code CHALLENGE_COMPLETED} при выполнении, это уведомление о самом факте появления цели.
+ * Сидер стартовых челленджей месяца ({@code ChallengeSeeder}) этот путь не использует и
+ * уведомлений не рассылает.
  */
 @RestController
 @RequestMapping("/api/admin/challenges")
@@ -34,6 +42,7 @@ import ru.vsm.backend.gamification.domain.AchievementCode;
 public class AdminChallengeController {
 
     private final ChallengeRepository challengeRepository;
+    private final NotificationService notificationService;
 
     @GetMapping
     @Transactional(readOnly = true)
@@ -77,6 +86,8 @@ public class AdminChallengeController {
                 .rewardAchievementCode(achievement)
                 .build();
         Challenge saved = challengeRepository.save(challenge);
+        notificationService.notifyAllPlayers(NotificationType.NEW_CHALLENGE,
+                "Новое событие: " + saved.getTitle(), saved.getDescription());
         return ResponseEntity.status(HttpStatus.CREATED).body(AdminChallengeDto.from(saved, Instant.now()));
     }
 

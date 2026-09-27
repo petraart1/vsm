@@ -1,9 +1,11 @@
 package ru.vsm.backend.scenario.web;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.vsm.backend.scenario.domain.Scenario;
+import ru.vsm.backend.scenario.event.ScenarioPublishedEvent;
 import ru.vsm.backend.scenario.repository.ScenarioRepository;
 import ru.vsm.backend.scenario.seed.ScenarioSeedDto;
 import ru.vsm.backend.scenario.seed.ScenarioSeedExporter;
@@ -57,6 +60,7 @@ public class EditorScenarioController {
     private final ScenarioRepository scenarioRepository;
     private final ScenarioMarkdownParser scenarioMarkdownParser;
     private final ObjectMapper objectMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     /** Проверка графа без сохранения — список проблем (узел/выбор/что не так), пуст = граф валиден. */
     @PostMapping("/scenarios/validate")
@@ -79,6 +83,7 @@ public class EditorScenarioController {
         UUID id = scenarioSeedService.upsertForEditor(dto);
         Scenario saved = scenarioRepository.findById(id)
                 .orElseThrow(() -> new ScenarioNotFoundException("Сценарий '" + dto.getCode() + "' не найден"));
+        publishIfNew(isNew, saved);
         ScenarioSummaryResponse body = toSummary(saved);
         return ResponseEntity.status(isNew ? HttpStatus.CREATED : HttpStatus.OK).body(body);
     }
@@ -133,7 +138,21 @@ public class EditorScenarioController {
         UUID id = scenarioSeedService.upsertForEditor(dto);
         Scenario saved = scenarioRepository.findById(id)
                 .orElseThrow(() -> new ScenarioNotFoundException("Сценарий '" + dto.getCode() + "' не найден"));
+        publishIfNew(isNew, saved);
         return ResponseEntity.status(isNew ? HttpStatus.CREATED : HttpStatus.OK).body(toSummary(saved));
+    }
+
+    /**
+     * Публикует {@link ScenarioPublishedEvent} только для только что созданного сценария
+     * (не для обновления существующего графа) — источник уведомления {@code NEW_SCENARIO} в
+     * gamification. Вызывается уже после того, как {@code upsertForEditor} закоммитил
+     * транзакцию сохранения, поэтому слушатели видят гарантированно сохранённый сценарий.
+     */
+    private void publishIfNew(boolean isNew, Scenario saved) {
+        if (isNew) {
+            eventPublisher.publishEvent(new ScenarioPublishedEvent(
+                    saved.getId(), saved.getCode(), saved.getTitle(), saved.getBlock(), Instant.now()));
+        }
     }
 
     /** Тело запроса — JSON {@code {"markdown": "..."}}, если начинается с {@code '{'}, иначе сырой markdown как есть. */

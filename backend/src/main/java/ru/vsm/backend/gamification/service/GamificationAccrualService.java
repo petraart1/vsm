@@ -168,6 +168,10 @@ public class GamificationAccrualService {
             profile.setScenariosCompleted(profile.getScenariosCompleted() + 1);
         }
         profile.setUpdatedAt(Instant.now());
+        // Реальная активность игрока — используется PointsExpiryService, чтобы не путать
+        // "неактивен" с изменением профиля самим сгоранием баллов (которое тоже трогает
+        // updatedAt, но не должно сбрасывать отсчёт неактивности).
+        profile.setLastActivityAt(Instant.now());
         playerProfileRepository.save(profile);
 
         // Компетенции по шкалам — как есть, независимо от awardable (см. комментарий выше).

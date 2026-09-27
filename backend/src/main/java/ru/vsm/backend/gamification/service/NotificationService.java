@@ -10,21 +10,30 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import ru.vsm.backend.gamification.domain.Notification;
 import ru.vsm.backend.gamification.domain.NotificationType;
+import ru.vsm.backend.gamification.domain.PlayerProfile;
 import ru.vsm.backend.gamification.repository.NotificationRepository;
+import ru.vsm.backend.gamification.repository.PlayerProfileRepository;
 import ru.vsm.backend.gamification.web.dto.NotificationDto;
 
 /**
- * Создание и чтение уведомлений игрока. Создание вызывается из
+ * Создание и чтение уведомлений игрока. Начисление-связанные уведомления (ачивка/личный
+ * рекорд/рост в лидерборде/выполнение челленджа/командный рейтинг/экзамен) создаются из
  * {@link GamificationAccrualService} внутри того же обработчика {@code ScenarioCompletedEvent},
- * что и начисление очков — отдельной идемпотентности здесь не требуется: весь метод
- * {@code GamificationAccrualService#processEvent} пропускается целиком при повторной доставке
- * уже обработанного {@code userProgressId}.
+ * что и начисление очков, через package-private {@link #create} — отдельной идемпотентности там
+ * не требуется: весь метод {@code GamificationAccrualService#processEvent} пропускается целиком
+ * при повторной доставке уже обработанного {@code userProgressId}.
+ *
+ * <p>{@link #notify} и {@link #notifyAllPlayers} — публичные обёртки для уведомлений, не
+ * привязанных к обработке {@code ScenarioCompletedEvent} (новый сценарий, новое событие/челлендж,
+ * сгорание баллов — см. вызывающих в {@code gamification.event}/{@code gamification.expiry}/
+ * {@code gamification.challenge.web.admin}).
  */
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final PlayerProfileRepository playerProfileRepository;
 
     /** Вызывается только из {@code GamificationAccrualService.processEvent} (та же транзакция). */
     void create(UUID playerId, NotificationType type, String title, String body, UUID sourceUserProgressId) {
@@ -35,6 +44,36 @@ public class NotificationService {
                 .body(body)
                 .sourceUserProgressId(sourceUserProgressId)
                 .build());
+    }
+
+    /** Точечное уведомление одному игроку вне обработки {@code ScenarioCompletedEvent}. */
+    @Transactional
+    public void notify(UUID playerId, NotificationType type, String title, String body) {
+        create(playerId, type, title, body, null);
+    }
+
+    /**
+     * Рассылает одно и то же уведомление всем уже известным профилям игрока
+     * ({@code gamification_player_profile}) — используется для широковещательных уведомлений
+     * (новый сценарий, новое событие/челлендж), а не для персональных начислений. Игрок, у
+     * которого ещё нет строки профиля (ни одного прохождения), уведомление не получает — узнать
+     * о нём просто негде.
+     *
+     * @return число разосланных уведомлений (= число известных профилей)
+     */
+    @Transactional
+    public int notifyAllPlayers(NotificationType type, String title, String body) {
+        List<Notification> notifications = playerProfileRepository.findAll().stream()
+                .map(PlayerProfile::getId)
+                .map(playerId -> Notification.builder()
+                        .playerId(playerId)
+                        .type(type)
+                        .title(title)
+                        .body(body)
+                        .build())
+                .toList();
+        notificationRepository.saveAll(notifications);
+        return notifications.size();
     }
 
     @Transactional(readOnly = true)

@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: gamification-015-player-profile-last-activity
+      author: vsm
+      comment: >
+        Добавляет gamification_player_profile.last_activity_at (момент последнего реального
+        начисления игроку, обновляется в GamificationAccrualService.processEvent) и
+        last_points_expiry_at (момент последнего сгорания баллов этого игрока, если было) — оба
+        нужны PointsExpiryService, чтобы отличать "неактивен с последнего реального события" от
+        "неактивен с последнего сгорания баллов" и не путать это с обычным updated_at, который
+        меняется и самим сгоранием баллов.
+      changes:
+        - addColumn:
+            tableName: gamification_player_profile
+            columns:
+              - column:
+                  name: last_activity_at
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_points_expiry_at
+                  type: timestamp
+                  remarks: >-
+                    Null, пока у игрока ещё ни разу не сгорали баллы.

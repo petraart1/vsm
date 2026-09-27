@@ -51,4 +51,23 @@ public class PlayerProfile {
     @Column(name = "updated_at", nullable = false)
     @Builder.Default
     private Instant updatedAt = Instant.now();
+
+    /**
+     * Момент последнего РЕАЛЬНОГО действия игрока (начисление за прохождение сценария, см.
+     * {@code GamificationAccrualService#processEvent}) — в отличие от {@link #updatedAt}, не
+     * меняется, когда профиль трогает только {@code PointsExpiryService} (сгорание баллов не
+     * должно "сбрасывать" неактивность самим фактом своей работы).
+     */
+    @Column(name = "last_activity_at", nullable = false)
+    @Builder.Default
+    private Instant lastActivityAt = Instant.now();
+
+    /**
+     * Момент последнего сгорания баллов этого игрока за неактивность ({@code
+     * PointsExpiryService}); {@code null}, если ещё ни разу не сгорали. Вместе с {@link
+     * #lastActivityAt} задаёт точку отсчёта следующего периода неактивности — см. javadoc
+     * {@code PointsExpiryService#referencePoint}.
+     */
+    @Column(name = "last_points_expiry_at")
+    private Instant lastPointsExpiryAt;
 }
