@@ -55,6 +55,6 @@ jobs:
           java-version: '21'
           cache: gradle
       - name: Build and test mobile
-        run: cd mobile && ./gradlew test assembleDebug --no-daemon
+        run: cd mobile/android && ./gradlew test assembleDebug --no-daemon
         env:
           ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}

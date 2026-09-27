@@ -6,7 +6,7 @@
 
 - `backend/` — Spring Boot монолит (Java 25, REST на виртуальных потоках).
 - `frontend/` — React 18 без сборки (UMD + Babel standalone с CDN), демо-статика раздаётся тем же backend'ом.
-- `mobile/` — Android-приложение, разрабатывается отдельно.
+- `mobile/android/` — Android-приложение (Kotlin + Jetpack Compose).
 
 ## Запуск
 
