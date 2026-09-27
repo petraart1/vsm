@@ -24,18 +24,7 @@ import ru.vsm.backend.gamification.domain.AchievementCode;
 import ru.vsm.backend.gamification.domain.NotificationType;
 import ru.vsm.backend.gamification.service.NotificationService;
 
-/**
- * Админ-панель: события (челленджи) — список, создание и досрочное завершение. Путь под
- * {@code /api/admin/**}, поэтому доступен только роли ADMIN (см. {@code SecurityConfig}).
- * Удаления нет намеренно: по событию уже может быть прогресс игроков, поэтому событие
- * завершается (конец периода = сейчас) и остаётся в истории.
- *
- * <p>Создание события рассылает всем уже известным профилям игрока уведомление
- * {@code NEW_CHALLENGE} ({@link NotificationService#notifyAllPlayers}) — в отличие от личного
- * {@code CHALLENGE_COMPLETED} при выполнении, это уведомление о самом факте появления цели.
- * Сидер стартовых челленджей месяца ({@code ChallengeSeeder}) этот путь не использует и
- * уведомлений не рассылает.
- */
+/** Админ-панель: события (челленджи) — список, создание и досрочное завершение. Путь под */
 @RestController
 @RequestMapping("/api/admin/challenges")
 @RequiredArgsConstructor

@@ -19,32 +19,7 @@ import ru.vsm.backend.gamification.repository.PlayerProfileRepository;
 import ru.vsm.backend.scenario.domain.ExamGrade;
 import ru.vsm.backend.scenario.event.ExamCompletedEvent;
 
-/**
- * Бонусное начисление очков за завершение экзамена целиком, по {@link ExamCompletedEvent} (см.
- * {@code ru.vsm.backend.gamification.event.ExamCompletedEventListener}).
- *
- * <p><b>Зачем отдельный бонус, а не переиспользование очков за пункты экзамена</b>: каждый
- * отдельный сценарий экзамена по-прежнему публикует {@code ScenarioCompletedEvent}
- * ({@code examMode = true}), но {@code GamificationAccrualService} намеренно не начисляет за него
- * полные очки (см. Javadoc {@code GamificationAccrualService#processEvent}, поле
- * {@code awardable}) — иначе экзамен вознаграждался бы дважды: и за каждый пункт по отдельности, и
- * за итоговую аттестацию. Единственная награда за экзамен — этот фиксированный бонус по итоговой
- * оценке, начисляемый один раз при завершении.
- *
- * <p><b>Таблица бонусов</b> (см. {@link #bonusPoints}) — фиксированные очки по {@link ExamGrade},
- * не зависящие от суточного антифрод-потолка {@code GamificationLimitsProperties} (экзамен — редкое
- * целенаправленное действие, а не сценарий, который можно гонять по кругу за секунды; сам факт
- * начисления один раз на {@code examId} — самостоятельная защита от повторного начисления за один
- * и тот же результат).
- *
- * <p><b>{@code propagation = REQUIRES_NEW}</b> — по той же причине, что и
- * {@code GamificationAccrualService#processEvent}: метод вызывается из
- * {@code @TransactionalEventListener(AFTER_COMMIT)} слушателя, и без отдельной физической
- * транзакции {@code save()} не закоммитились бы (см. подробный разбор там же).
- *
- * <p><b>Идемпотентность</b> — по {@link ExamAccrualLogRepository#existsByExamId}: повторная
- * доставка {@link ExamCompletedEvent} с тем же {@code examId} не начисляет бонус дважды.
- */
+/** Бонусное начисление очков за завершение экзамена целиком, по {@link ExamCompletedEvent} (см. */
 @Slf4j
 @Service
 @RequiredArgsConstructor

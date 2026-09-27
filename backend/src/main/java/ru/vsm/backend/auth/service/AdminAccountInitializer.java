@@ -12,12 +12,7 @@ import ru.vsm.backend.auth.domain.UserRole;
 import ru.vsm.backend.auth.repository.AppUserRepository;
 import ru.vsm.backend.config.AdminAccountProperties;
 
-/**
- * Создаёт дефолтную учётную запись администратора при старте, если её ещё нет — из
- * {@code app.auth.admin.login}/{@code app.auth.admin.password} (по умолчанию годится только
- * для демо, см. README про смену в проде). Email синтезируется из логина: отдельного свойства
- * для него нет, а {@code AppUser.email} должен быть заполнен и уникален.
- */
+/** Создаёт дефолтную учётную запись администратора при старте, если её ещё нет — из */
 @Component
 @RequiredArgsConstructor
 @Slf4j

@@ -14,11 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Членство игрока в команде — один игрок состоит не более чем в одной команде
- * ({@code uq_team_membership_player} на {@link #playerId}). Смена команды — обновление
- * {@link #teamId} у уже существующей строки, а не новая запись (см. {@code TeamService#join}).
- */
+/** Членство игрока в команде — один игрок состоит не более чем в одной команде */
 @Getter
 @Setter
 @Builder

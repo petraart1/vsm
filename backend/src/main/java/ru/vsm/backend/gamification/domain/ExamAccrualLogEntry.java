@@ -17,18 +17,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.vsm.backend.scenario.domain.ExamGrade;
 
-/**
- * Журнал одного бонусного начисления за завершение экзамена целиком ({@code ExamCompletedEvent}).
- *
- * <p>Отдельно от {@link AccrualLogEntry}, который пишется по каждому завершённому сценарию (в т.ч.
- * пунктам экзамена — но с {@code totalPointsAwarded = 0}, см. Javadoc {@code
- * GamificationAccrualService#processEvent}, поле {@code awardable}): экзамен вознаграждается
- * итоговым бонусом по оценке ровно один раз, а не за каждый входящий в него сценарий.
- *
- * <p>{@link #examId} уникален (см. {@code uq_exam_accrual_log_exam}) — механизм идемпотентности:
- * {@code ExamAccrualService} проверяет, нет ли уже записи с таким {@code examId}, прежде чем
- * начислить бонус повторно доставленному событию.
- */
+/** Журнал одного бонусного начисления за завершение экзамена целиком ({@code ExamCompletedEvent}). */
 @Getter
 @Setter
 @Builder

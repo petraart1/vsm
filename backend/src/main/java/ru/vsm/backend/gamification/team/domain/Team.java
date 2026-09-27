@@ -14,12 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Бригада/депо — единица командного рейтинга. Заполняется идемпотентным сидером
- * ({@code TeamSeeder}) на старте приложения; игрок вступает в команду отдельным действием
- * ({@code TeamService#join}), профиль игрока (см. {@code gamification.domain.PlayerProfile})
- * командой не владеет.
- */
+/** Бригада/депо — единица командного рейтинга. Заполняется идемпотентным сидером */
 @Getter
 @Setter
 @Builder

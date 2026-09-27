@@ -5,12 +5,7 @@ import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * DTO для десериализации seed-файла сценария из {@code classpath:scenarios/*.json}.
- *
- * <p>Один файл = один сценарий с полным графом узлов и выборов, ключ идемпотентности — {@link #code}.
- * Обычные POJO с Lombok (не record) — так безопаснее для Jackson-биндинга без явных {@code @JsonCreator}.
- */
+/** DTO для десериализации seed-файла сценария из {@code classpath:scenarios/*.json}. */
 @Data
 @NoArgsConstructor
 public class ScenarioSeedDto {
@@ -30,11 +25,7 @@ public class ScenarioSeedDto {
 
     private boolean flagship = false;
 
-    /**
-     * Версия контента графа, по умолчанию 1. Растёт при содержательных правках seed-файла — так
-     * {@code ScenarioSeedService} узнаёт, что уже загруженный сценарий с тем же {@link #code} нужно
-     * перезаписать (см. javadoc {@code ScenarioSeedService.seed}), а не просто пропустить.
-     */
+    /** Версия контента графа, по умолчанию 1. Растёт при содержательных правках seed-файла — так */
     private int version = 1;
 
     /** Код узла, с которого начинается прохождение — должен существовать среди {@link #nodes}. */

@@ -18,11 +18,7 @@ public interface AccrualLogRepository extends JpaRepository<AccrualLogEntry, UUI
             """)
     Optional<Integer> findMaxTotalPointsByPlayerIdAndScenarioCode(UUID playerId, String scenarioCode);
 
-    /**
-     * Сумма уже начисленных игроку очков начиная с {@code since} (включительно) — основа для
-     * суточного антифрод-лимита в {@code GamificationAccrualService}. {@code coalesce} — 0, а не
-     * {@code null}, если сегодня начислений ещё не было.
-     */
+    /** Сумма уже начисленных игроку очков начиная с {@code since} (включительно) — основа для */
     @Query("""
             select coalesce(sum(a.totalPointsAwarded), 0) from AccrualLogEntry a
             where a.playerId = :playerId and a.createdAt >= :since

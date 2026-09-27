@@ -25,13 +25,7 @@ public class AuthRegistrationService {
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
 
-    /**
-     * @param anonymousPlayerId необязательный {@code X-Player-Id} анонимной сессии, из которой
-     *                          регистрируется игрок — если задан и ещё не занят учёткой, становится
-     *                          id новой учётной записи вместо случайного, чтобы уже накопленный
-     *                          прогресс/очки (та же id-схема во всех доменах) остались доступны под
-     *                          новой учёткой без переноса данных.
-     */
+    /** @param anonymousPlayerId необязательный {@code X-Player-Id} анонимной сессии, из которой */
     @Transactional
     public UserProfileResponse register(RegisterRequest request, UUID anonymousPlayerId) {
         validate(request);

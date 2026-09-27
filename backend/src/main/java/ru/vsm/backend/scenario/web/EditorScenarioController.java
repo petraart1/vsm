@@ -33,21 +33,7 @@ import ru.vsm.backend.scenario.web.dto.ScenarioSummaryResponse;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Редактор сценариев: добавить новую ситуацию (или отредактировать существующую) без пересборки
- * приложения — тот же JSON-формат, что и seed-файлы в {@code classpath:scenarios/*.json}
- * ({@link ScenarioSeedDto}), принимается по REST и сразу доступен в каталоге
- * ({@code GET /api/scenarios}) и для прохождения ({@code ScenarioPlayController}).
- *
- * <p>Включается свойством {@code app.editor.enabled} (по умолчанию {@code true} — назначение
- * этого API демонстрационное: без авторизации, доступно всем, кто может достучаться до backend.
- * В продовом контуре редактор должен быть либо выключен ({@code app.editor.enabled=false}), либо
- * закрыт отдельным слоем авторизации — это не входит в MVP.
- *
- * <p>Правила версионирования обновления существующего сценария — см. javadoc
- * {@code ScenarioSeedService.upsertForEditor}: обновление графа сценария, по которому уже есть
- * прохождения, запрещено (409), чтобы не порвать историю уже пройденных игр.
- */
+/** Редактор сценариев: добавить новую ситуацию (или отредактировать существующую) без пересборки */
 @RestController
 @RequestMapping("/api/editor")
 @RequiredArgsConstructor
@@ -100,27 +86,7 @@ public class EditorScenarioController {
         return ScenarioSeedTemplateFactory.build();
     }
 
-    /**
-     * Импорт ситуации из простого построчного markdown-формата (README, раздел «Импорт из
-     * markdown») вместо JSON seed-формата — тело запроса принимает как сырой {@code text/markdown},
-     * так и {@code application/json} вида {@code {"markdown": "..."}} (тип содержимого не
-     * проверяется по заголовку, а определяется по первому символу тела: {@code '{'} — JSON).
-     *
-     * <p>Ошибки самой разметки (строка не распознана, отсутствуют обязательные метаданные) — сразу
-     * {@code 400 invalid_markdown} со списком "строка: причина" в {@code details}
-     * ({@link MarkdownImportException}, маппится в {@link ru.vsm.backend.config.error.ApiError} в
-     * {@link ScenarioExceptionHandler}). Если разметка разобрана, граф всегда прогоняется через тот
-     * же {@link ScenarioGraphValidator}, что и {@code POST /scenarios}:
-     * <ul>
-     *   <li>{@code save=false} (по умолчанию) — граф не сохраняется, ответ содержит разобранный
-     *       seed-JSON и список проблем графа (пуст, если граф валиден) — для предпросмотра перед
-     *       сохранением;</li>
-     *   <li>{@code save=true} — проблемы графа сразу дают {@code 400 invalid_graph} (как у
-     *       {@code POST /scenarios}), иначе сценарий сохраняется тем же
-     *       {@code ScenarioSeedService.upsertForEditor} (создание — 201, обновление — 200, конфликт
-     *       с уже пройденным сценарием — 409).</li>
-     * </ul>
-     */
+    /** Импорт ситуации из простого построчного markdown-формата (README, раздел «Импорт из */
     @PostMapping("/scenarios/import-markdown")
     public ResponseEntity<?> importMarkdown(
             @RequestBody String rawBody, @RequestParam(defaultValue = "false") boolean save) {
@@ -142,12 +108,7 @@ public class EditorScenarioController {
         return ResponseEntity.status(isNew ? HttpStatus.CREATED : HttpStatus.OK).body(toSummary(saved));
     }
 
-    /**
-     * Публикует {@link ScenarioPublishedEvent} только для только что созданного сценария
-     * (не для обновления существующего графа) — источник уведомления {@code NEW_SCENARIO} в
-     * gamification. Вызывается уже после того, как {@code upsertForEditor} закоммитил
-     * транзакцию сохранения, поэтому слушатели видят гарантированно сохранённый сценарий.
-     */
+    /** Публикует {@link ScenarioPublishedEvent} только для только что созданного сценария */
     private void publishIfNew(boolean isNew, Scenario saved) {
         if (isNew) {
             eventPublisher.publishEvent(new ScenarioPublishedEvent(

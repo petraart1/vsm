@@ -33,13 +33,7 @@ import ru.vsm.backend.scenario.repository.ScenarioChoiceRepository;
 import ru.vsm.backend.scenario.repository.ScenarioRepository;
 import ru.vsm.backend.scenario.repository.UserProgressRepository;
 
-/**
- * Аналитика компетенций игрока — агрегат по всем его завершённым прохождениям, в отличие от
- * {@link DebriefService}, который разбирает одно прохождение. Как и {@code DebriefService},
- * читает данные сценария строго read-only через репозитории — ничего в таблицы scenario не пишет
- * и своих таблиц не заводит (собирает всё на лету из {@code user_progress} +
- * {@code scenario_choice_history} + {@code scenario_choices}/{@code scenarios} при каждом запросе).
- */
+/** Аналитика компетенций игрока — агрегат по всем его завершённым прохождениям, в отличие от */
 @Service
 @RequiredArgsConstructor
 public class CompetencyAnalyticsService {
@@ -110,16 +104,7 @@ public class CompetencyAnalyticsService {
                 block, total, avgLoyalty, avgSafety, (double) successCount / total, (double) failureCount / total, false);
     }
 
-    /**
-     * Просевшая компетенция = блок ситуаций, где среди завершённых прохождений игрока
-     * {@code blockScore = successRate - failureRate} (диапазон -1..1, доля SUCCESS минус доля
-     * FAILURE) наименьший среди блоков, где игрок прошёл хотя бы один сценарий. Берутся до
-     * {@value #MAX_WEAK_COMPETENCIES} худших блоков, но только те, где {@code blockScore < 1.0} —
-     * если блок пройден исключительно с исходом SUCCESS, он не считается просевшим, даже если
-     * формально попадает в "три худших" по отношению к другим идеальным блокам. При равенстве
-     * {@code blockScore} блок с большим числом прохождений — более надёжный сигнал и идёт выше;
-     * при полном равенстве — по алфавиту кода блока, для детерминированного результата.
-     */
+    /** Просевшая компетенция = блок ситуаций, где среди завершённых прохождений игрока */
     private Set<String> findWeakCompetencies(List<BlockCompetencyStatsDto> blockStats) {
         return blockStats.stream()
                 .filter(s -> s.successRate() - s.failureRate() < 1.0)
@@ -192,14 +177,7 @@ public class CompetencyAnalyticsService {
                 .toList();
     }
 
-    /**
-     * Кандидаты на "пройти следующим": в приоритете сценарии просевших компетенций — сперва
-     * вообще непройденные ({@link RecommendationReason#NOT_PLAYED}), затем те, где последнее
-     * завершённое прохождение закончилось FAILURE/PARTIAL (по одному кандидату на сценарий, самый
-     * свежий {@code completedAt}). Если просевших компетенций нет (включая пустое состояние — игрок
-     * ещё ничего не проходил), рекомендуются просто первые непройденные активные сценарии по всему
-     * каталогу (по {@code situationRefId}), чтобы направить игрока на новый контент.
-     */
+    /** Кандидаты на "пройти следующим": в приоритете сценарии просевших компетенций — сперва */
     private List<ScenarioRecommendationDto> buildRecommendations(
             UUID playerId,
             List<UserProgress> allProgress,

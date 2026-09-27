@@ -4,13 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * Секрет и срок жизни JWT, выпускаемых при логине (см. {@code auth.security.JwtService}).
- *
- * <p>Bound from {@code app.auth.jwt.secret}/{@code app.auth.jwt.expiration-minutes}. Дефолтный
- * секрет годится только для демо — для боевого окружения сменить через переменную окружения
- * {@code APP_AUTH_JWT_SECRET} (см. README). HS256 требует секрет длиной не меньше 32 байт.
- */
+/** Секрет и срок жизни JWT, выпускаемых при логине (см. {@code auth.security.JwtService}). */
 @ConfigurationProperties(prefix = "app.auth.jwt")
 @Getter
 @Setter

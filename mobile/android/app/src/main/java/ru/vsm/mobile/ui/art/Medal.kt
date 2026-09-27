@@ -235,12 +235,21 @@ private fun MedalFace(
                         translate(58f, 58f) { scaleDraw(3.5f) { drawPath(svgPath(d), f.ink, style = Stroke(1.5f)) } }
                     }
                 } else if (text != null) {
+                    // Числовая медаль (серия дней и т. п.) — тот же приём, что в Medal.jsx/.num:
+                    // жирная тёмная подложка со сдвигом по Y даёт лёгкий эффект тиснения под основной цифрой.
                     val fontSize = if (text.length > 2) 46f else 64f
-                    val ty = if (text.length > 2) 113f else 119f
-                    val shadow = measurer.measure(text, TextStyle(fontSize = TextUnit(fontSize, TextUnitType.Sp), color = Color.Black.copy(alpha = 0.25f)))
-                    drawText(shadow, topLeft = Offset(100f - shadow.size.width / 2f, ty - shadow.size.height * 0.75f - 1.5f))
-                    val result = measurer.measure(text, TextStyle(fontSize = TextUnit(fontSize, TextUnitType.Sp), color = f.ink))
-                    drawText(result, topLeft = Offset(100f - result.size.width / 2f, ty - result.size.height * 0.75f))
+                    val tyShadow = if (text.length > 2) 116f else 122f
+                    val tyInk = if (text.length > 2) 113f else 119f
+                    fun numStyle(color: Color) = TextStyle(
+                        fontSize = TextUnit(fontSize, TextUnitType.Sp),
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = TextUnit(-0.02f, TextUnitType.Em),
+                        color = color,
+                    )
+                    val shadow = measurer.measure(text, numStyle(Color.Black.copy(alpha = 0.25f)))
+                    drawText(shadow, topLeft = Offset(100f - shadow.size.width / 2f, tyShadow - shadow.firstBaseline))
+                    val result = measurer.measure(text, numStyle(f.ink))
+                    drawText(result, topLeft = Offset(100f - result.size.width / 2f, tyInk - result.firstBaseline))
                 }
 
                 // Бегущий блик — диагональная светлая полоса поверх лица медали.

@@ -5,12 +5,7 @@ import java.util.UUID;
 import ru.vsm.backend.auth.domain.AppUser;
 import ru.vsm.backend.auth.domain.UserRole;
 
-/**
- * Профиль учётной записи без пароля — ответ регистрации/логина/{@code /api/auth/me}.
- *
- * @param verified подтверждённая личность (сейчас — только через демо-заглушку Госуслуг/ЕСИА,
- *                 см. {@code ru.vsm.backend.auth.esia}); обычная регистрация логином/паролем даёт {@code false}
- */
+/** Профиль учётной записи без пароля — ответ регистрации/логина/{@code /api/auth/me}. */
 public record UserProfileResponse(
         UUID id, String login, String email, String displayName, UserRole role, boolean verified, Instant createdAt) {
 

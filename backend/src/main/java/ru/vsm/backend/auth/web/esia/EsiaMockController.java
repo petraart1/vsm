@@ -19,17 +19,7 @@ import ru.vsm.backend.auth.esia.service.EsiaMockService;
 import ru.vsm.backend.auth.web.dto.LoginResponse;
 import ru.vsm.backend.auth.web.esia.dto.EsiaCallbackRequest;
 
-/**
- * Демо-заглушка входа через Госуслуги/ЕСИА (см. javadoc {@link EsiaMockService} — почему заглушка,
- * а не настоящая интеграция). Гейтится свойством {@code app.esia.mock.enabled} (по умолчанию
- * {@code true}) — при {@code false} бин контроллера не создаётся, все три пути отвечают 404, как
- * любой незамапленный путь.
- *
- * <p>Поток намеренно повторяет форму OAuth2 authorization code (без реального протокола ЕСИА):
- * {@code GET /authorize} — HTML-страница выбора тестового гражданина вместо формы логина Госуслуг;
- * выбор -> редирект на {@code redirect_uri} с {@code ?code=...}; {@code POST /callback} обменивает
- * код на наш JWT (тем же форматом ответа, что {@code POST /api/auth/login}).
- */
+/** Демо-заглушка входа через Госуслуги/ЕСИА (см. javadoc {@link EsiaMockService} — почему заглушка, */
 @RestController
 @RequestMapping("/api/auth/esia")
 @ConditionalOnProperty(prefix = "app.esia.mock", name = "enabled", havingValue = "true", matchIfMissing = true)

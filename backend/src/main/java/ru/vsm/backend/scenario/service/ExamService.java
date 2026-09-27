@@ -41,32 +41,7 @@ import ru.vsm.backend.scenario.web.dto.ExamResultResponse;
 import ru.vsm.backend.scenario.web.dto.ExamScenarioResponse;
 import ru.vsm.backend.scenario.web.dto.ProgressStateResponse;
 
-/**
- * Режим экзамена: набор из нескольких активных сценариев из разных блоков (2-3 из них —
- * флагманские), пройденных подряд без раскрытия дельт/шкал по ходу (см. Javadoc
- * {@code ChoiceAppliedResponse}), с единым итогом по завершении.
- *
- * <p><b>Отбор сценариев</b> ({@link #createExam}): сначала распределяются 2-3 флагманских
- * сценария по случайным различным блокам, затем остаток мест — по одному случайному сценарию из
- * оставшихся ещё не занятых блоков; если размер экзамена больше числа блоков датасета, остаток
- * добирается случайными ещё не выбранными сценариями из общего пула (уникальность
- * {@code scenarioId} в рамках одного экзамена гарантирована всегда, уникальность блока — пока
- * хватает различных блоков).
- *
- * <p><b>Прохождение</b> — обычный {@link ScenarioPlayService}: {@link #startCurrentScenario}
- * лишь создаёт/возвращает {@code UserProgress} текущего пункта экзамена с
- * {@code examMode=true}/{@code examId}, дальше игрок ходит по нему через
- * {@code POST /api/scenarios/progress/{id}/choices/{choiceId}} как обычно.
- *
- * <p><b>Учёт завершения пункта</b> ({@link #recordScenarioCompleted}) не требует прямой
- * зависимости от {@link ScenarioPlayService} (которая, наоборот, зависит от этого сервиса через
- * {@link #startCurrentScenario} — циклическая зависимость сервисов не заводится): отдельный бин
- * {@link ru.vsm.backend.scenario.event.ExamCompletionListener} слушает уже существующий
- * {@link ScenarioCompletedEvent}, публикуемый на каждое завершение прохождения, достаёт
- * {@code examId} из связанного {@link UserProgress} — если он не {@code null}, значит это
- * завершение относится к экзамену — и вызывает {@link #recordScenarioCompleted} этого сервиса
- * (через Spring-прокси, не self-invocation — см. Javadoc метода).
- */
+/** Режим экзамена: набор из нескольких активных сценариев из разных блоков (2-3 из них — */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -196,12 +171,7 @@ public class ExamService {
         return selected;
     }
 
-    /**
-     * Кандидаты из {@code candidatePool}, ещё не занятые ({@code usedScenarios}) — нефлагманские,
-     * если такие есть, иначе (весь пул исчерпан флагманами) любые оставшиеся. Держит итоговое
-     * число флагманов экзамена равным ровно тому, что отобрал проход 1 (см. Javadoc
-     * {@link #pickExamScenarios}), а не "минимум 2-3".
-     */
+    /** Кандидаты из {@code candidatePool}, ещё не занятые ({@code usedScenarios}) — нефлагманские, */
     private List<Scenario> pickNonFlagshipFirst(List<Scenario> candidatePool, Set<UUID> usedScenarios) {
         List<Scenario> nonFlagship = candidatePool.stream()
                 .filter(s -> !usedScenarios.contains(s.getId()) && !s.isFlagship())
@@ -250,14 +220,7 @@ public class ExamService {
         return response;
     }
 
-    /**
-     * Точка входа для разбора прохождения ({@code DebriefService.buildDebrief}, читает-только
-     * зависимость из feedback в scenario, симметрично уже существующим прямым обращениям
-     * feedback к репозиториям scenario): разбор недоступен, пока экзамен, к которому относится это
-     * прохождение, не завершён целиком — иначе игрок получил бы подсказку по текущему пункту
-     * экзамена, разобрав уже пройденный. Прохождения вне экзамена ({@code examId == null}) не
-     * ограничены.
-     */
+    /** Точка входа для разбора прохождения ({@code DebriefService.buildDebrief}, читает-только */
     @Transactional(readOnly = true)
     public void assertDebriefAllowed(UUID userProgressId) {
         UserProgress progress = userProgressRepository.findById(userProgressId).orElse(null);
@@ -271,26 +234,7 @@ public class ExamService {
         }
     }
 
-    /**
-     * Вызывается только из {@link ru.vsm.backend.scenario.event.ExamCompletionListener}
-     * (отдельный бин, {@code @TransactionalEventListener(AFTER_COMMIT)} на
-     * {@link ScenarioCompletedEvent}) — НЕ напрямую другим методом этого же класса.
-     *
-     * <p><b>{@code propagation = REQUIRES_NEW}, а не self-invocation этим же классом</b>: раньше
-     * этот метод вызывался как {@code this.recordScenarioCompleted(...)} из
-     * {@code @TransactionalEventListener}-метода этого же {@code ExamService} — тот же баг-паттерн,
-     * что подробно разобран в javadoc {@code GamificationAccrualService#processEvent}: Spring-прокси
-     * с {@code @Transactional} перехватывает только вызовы ИЗВНЕ бина; self-invocation идёт в обход
-     * прокси как обычный вызов метода того же объекта, поэтому объявленная пропагация вообще не
-     * применялась — метод присоединялся к уже закоммиченной (умирающей) транзакции AFTER_COMMIT
-     * колбэка, `SELECT`ы отрабатывали, но `save()` физически не коммитились. Экзамен из-за этого
-     * нельзя было пройти целиком: пункт никогда не помечался завершённым, {@code currentIndex} не
-     * рос, итоговая оценка не считалась — без единой строки в логе. Вынос слушателя в отдельный бин
-     * ({@link ru.vsm.backend.scenario.event.ExamCompletionListener}) исключает self-invocation:
-     * вызов {@code examService.recordScenarioCompleted(...)} идёт через Spring-прокси этого бина, и
-     * {@code REQUIRES_NEW} гарантирует отдельную физическую транзакцию, не зависящую от уже
-     * закоммиченных ресурсов исходной.
-     */
+    /** Вызывается только из {@link ru.vsm.backend.scenario.event.ExamCompletionListener} */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordScenarioCompleted(
             UUID examId, UUID scenarioId, ScenarioOutcome outcome, int loyaltyScore, int safetyScore) {

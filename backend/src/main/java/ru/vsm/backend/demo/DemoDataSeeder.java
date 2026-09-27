@@ -109,14 +109,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         log.info("Demo data seeding completed");
     }
 
-    /**
-     * Распределяет фиксированных демо-игроков по командам (round-robin), для наглядного
-     * командного рейтинга в демо. Выполняется после сидирования прохождений, чтобы у игроков,
-     * успевших набрать очки, они уже учитывались; игрокам без единого завершённого прохождения
-     * (например, если все попытки в {@link #playScenario} завершились исключением) строка
-     * профиля создаётся здесь же — иначе внешний ключ {@code gamification_team_membership} не
-     * даст сохранить членство. Идемпотентно — уже привязанный игрок пропускается.
-     */
+    /** Распределяет фиксированных демо-игроков по командам (round-robin), для наглядного */
     private void assignPlayersToTeams() {
         List<Team> teams = teamRepository.findAll();
         if (teams.isEmpty()) {

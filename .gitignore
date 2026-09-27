@@ -15,5 +15,9 @@ local.properties
 
 *.log
 .env
+.env.local
+.env.render
 __pycache__/
 *.zip
+.neon
+node_modules/

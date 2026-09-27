@@ -14,16 +14,7 @@ import ru.vsm.backend.auth.security.PlayerAccessGuard;
 import ru.vsm.backend.gamification.service.NotificationService;
 import ru.vsm.backend.gamification.web.dto.NotificationDto;
 
-/**
- * Уведомления игрока (новая ачивка / личный рекорд / рост в лидерборде / рекомендация).
- * Создаются автоматически при начислении очков за завершённое прохождение сценария
- * ({@code GamificationAccrualService}) — этот контроллер только читает и отмечает прочитанным.
- *
- * <p>Доступ на всех трёх операциях — только владелец (JWT либо {@code X-Player-Id}) или ADMIN,
- * иначе {@code 403 forbidden} (см. {@link PlayerAccessGuard}). Для {@code POST /{id}/read}
- * владелец — не параметр запроса, а поле самого уведомления ({@link NotificationService#ownerOf}),
- * т.к. id уведомления сам по себе не говорит, чьё оно.
- */
+/** Уведомления игрока (новая ачивка / личный рекорд / рост в лидерборде / рекомендация). */
 @RestController
 @RequestMapping("/api/gamification/notifications")
 @RequiredArgsConstructor

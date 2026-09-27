@@ -16,13 +16,7 @@ import ru.vsm.backend.scenario.service.ScenarioPlayService;
 import ru.vsm.backend.scenario.web.dto.ChoiceAppliedResponse;
 import ru.vsm.backend.scenario.web.dto.ProgressStateResponse;
 
-/**
- * Прохождение сценария: старт, текущий узел, выбор варианта, явный таймаут.
- *
- * <p>Идентификация игрока — простая, без Spring Security: заголовок {@value #PLAYER_ID_HEADER}
- * с UUID игрока на каждый запрос. Это тот же UUID, что домен gamification использует как {@code playerId}
- * (общее пространство идентификаторов между доменами, без FK в БД — см. Javadoc {@code UserProgress.userId}).
- */
+/** Прохождение сценария: старт, текущий узел, выбор варианта, явный таймаут. */
 @RestController
 @RequestMapping("/api/scenarios")
 @RequiredArgsConstructor
@@ -32,12 +26,7 @@ public class ScenarioPlayController {
 
     private final ScenarioPlayService scenarioPlayService;
 
-    /**
-     * {@code carClass} — необязательный класс вагона ("портрет пассажира", см. {@link CarClass}),
-     * по умолчанию {@code STANDARD} — старые клиенты, не передающие параметр, ведут себя как
-     * раньше. Игнорируется, если у игрока уже есть незавершённое прохождение этого сценария (см.
-     * javadoc {@code ScenarioPlayService.start}).
-     */
+    /** по умолчанию {@code STANDARD} — старые клиенты, не передающие параметр, ведут себя как */
     @PostMapping("/{scenarioId}/progress")
     @ResponseStatus(HttpStatus.CREATED)
     public ProgressStateResponse start(

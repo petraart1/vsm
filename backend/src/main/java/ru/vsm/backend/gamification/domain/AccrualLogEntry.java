@@ -17,14 +17,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 
-/**
- * Журнал одного начисления очков за одно завершённое прохождение сценария.
- *
- * <p>{@link #userProgressId} уникален (см. {@code uq_accrual_log_user_progress}) — это и есть
- * механизм идемпотентности: перед обработкой {@code ScenarioCompletedEvent}
- * {@code GamificationAccrualService} проверяет, нет ли уже записи с таким
- * {@code userProgressId}, и если есть — пропускает событие без повторного начисления.
- */
+/** Журнал одного начисления очков за одно завершённое прохождение сценария. */
 @Getter
 @Setter
 @Builder

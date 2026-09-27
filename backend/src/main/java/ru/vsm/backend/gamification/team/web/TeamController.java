@@ -14,13 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.vsm.backend.gamification.team.service.TeamService;
 import ru.vsm.backend.gamification.team.web.dto.TeamDto;
 
-/**
- * Каталог команд (бригад/депо) и вступление в команду. Идентификация игрока — тот же заголовок
- * {@value #PLAYER_ID_HEADER}, что у остальных пишущих игровых эндпоинтов (см.
- * {@code ScenarioPlayController}); при валидном {@code Authorization: Bearer} значение
- * подменяется playerId из токена ещё до контроллера ({@code JwtAuthenticationFilter}), так что
- * этот код одинаково работает и для анонимного заголовка, и для авторизованного игрока.
- */
+/** Каталог команд (бригад/депо) и вступление в команду. Идентификация игрока — тот же заголовок */
 @RestController
 @RequestMapping("/api/gamification/teams")
 @RequiredArgsConstructor

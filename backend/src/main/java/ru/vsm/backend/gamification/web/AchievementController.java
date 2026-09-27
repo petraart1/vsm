@@ -12,14 +12,7 @@ import ru.vsm.backend.auth.security.PlayerAccessGuard;
 import ru.vsm.backend.gamification.service.GamificationQueryService;
 import ru.vsm.backend.gamification.web.dto.AchievementDto;
 
-/**
- * GET /api/gamification/achievements?playerId=... — полный каталог (см.
- * design/screens/achievements.md). Без {@code playerId} все ачивки возвращаются как
- * {@code earned=false} (локальный просмотр каталога целей без привязки к игроку) — этот случай
- * доступа не требует проверки, личных данных не раскрывается. С {@code playerId} — только
- * владелец (JWT либо {@code X-Player-Id}) или ADMIN, иначе {@code 403 forbidden} (см.
- * {@link PlayerAccessGuard}).
- */
+/** GET /api/gamification/achievements?playerId=... — полный каталог (см. */
 @RestController
 @RequestMapping("/api/gamification/achievements")
 @RequiredArgsConstructor

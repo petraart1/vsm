@@ -34,16 +34,7 @@ import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 import ru.vsm.backend.scenario.domain.ProgressStatus;
 import ru.vsm.backend.scenario.repository.ScenarioRepository;
 
-/**
- * Только чтение: агрегированная статистика для административной панели (JSON и CSV-экспорт —
- * см. {@code AdminStatsController}). Начисление очков этот сервис не трогает — он лишь читает
- * {@code scenario}/{@code gamification} таблицы через read-only репозитории домена (см.
- * {@code AdminProgressStatsRepository}, {@code AdminChoiceHistoryStatsRepository}), уже
- * существующий {@link ScenarioRepository} и командный рейтинг ({@link TeamService},
- * {@code gamification.team}).
- *
- * <p>Доступ ограничен ролью {@code ADMIN} на уровне {@code /api/admin/**} (см. {@code SecurityConfig}).
- */
+/** Только чтение: агрегированная статистика для административной панели (JSON и CSV-экспорт — */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -136,13 +127,7 @@ public class AdminStatsService {
                 rate(timeoutChoices, totalChoices));
     }
 
-    /**
-     * По одной строке на игрока хотя бы с одним прохождением (независимо от статуса).
-     * {@code teamName} собирается одним групповым запросом по всем командам/членствам, а не
-     * поштучным поиском на игрока — не N+1, несмотря на то что {@link TeamMembershipRepository}
-     * не даёт метода "найти команды по списку игроков". Отсортировано по {@code totalScore}
-     * по убыванию, как личный лидерборд ({@code GamificationQueryService#getLeaderboard}).
-     */
+    /** По одной строке на игрока хотя бы с одним прохождением (независимо от статуса). */
     public List<PlayerStatsEntryDto> getPlayerStats() {
         List<PlayerAggregateRow> rows = progressStatsRepository.aggregateByPlayer();
 

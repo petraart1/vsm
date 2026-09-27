@@ -8,18 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.vsm.backend.auth.service.exception.TooManyAttemptsException;
 
-/**
- * Простой in-memory лимит попыток входа по паре логин+IP — HIGH из аудита безопасности
- * ("нет ограничения брутфорса логина", см. {@code progress/reports/security-audit.md}, находка
- * #3). Не заменяет полноценный rate-limit (Redis/Bucket4j и т.п. в базовый стек хакатона не
- * входят, см. {@code STATUS.md} "Известные решения"), но закрывает конкретный сценарий:
- * неограниченный онлайн-перебор пароля одного логина с одного IP.
- *
- * <p>Состояние — {@link ConcurrentHashMap} в памяти процесса (переживает рестарт не нужно —
- * блокировка на несколько минут, демо однопроцессное). Ключ — {@code login.toLowerCase() + "|" +
- * ip}: блокировка per-логин-per-IP, а не глобальная, чтобы один шумный клиент не блокировал вход
- * администратора с другого адреса и наоборот.
- */
+/** Простой in-memory лимит попыток входа по паре логин+IP — HIGH из аудита безопасности */
 @Component
 @Slf4j
 public class LoginRateLimiter {

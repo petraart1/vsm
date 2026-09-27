@@ -15,18 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/**
- * Шаг 2 включения авторизации: если запрос несёт {@code Authorization: Bearer <jwt>} и токен
- * валиден, playerId для всего остального конвейера (REST-контроллеры, дальше по цепочке) берётся
- * из токена, а не из клиентского заголовка {@code X-Player-Id} — см.
- * {@link PlayerIdOverridingRequestWrapper}. Так существующие контроллеры доменов (scenario и
- * др.), читающие {@code X-Player-Id} напрямую, не нужно менять.
- *
- * <p>Без токена (или с невалидным/просроченным) запрос идёт как раньше — по заголовку
- * {@code X-Player-Id} без аутентификации (анонимный игрок). Авторизация по ролям (доступ к
- * {@code /api/editor/**} и т.п.) появится на шаге 3 — сейчас {@code SecurityFilterChain} остаётся
- * {@code permitAll()}, аутентификация здесь нужна только для {@code /api/auth/me} и на будущее.
- */
+/** Шаг 2 включения авторизации: если запрос несёт {@code Authorization: Bearer <jwt>} и токен */
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {

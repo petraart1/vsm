@@ -17,16 +17,7 @@ import ru.vsm.backend.scenario.repository.ScenarioRepository;
 import ru.vsm.backend.scenario.web.dto.AdminScenarioPatchRequest;
 import ru.vsm.backend.scenario.web.dto.AdminScenarioSummaryResponse;
 
-/**
- * Административный список сценариев (включая неактивные) и переключатель доступности. Путь под
- * {@code /api/admin/**}, доступен только роли {@code ADMIN} (см. {@code SecurityConfig}).
- *
- * <p>В отличие от {@link ScenarioCatalogController#list}, здесь возвращаются все сценарии
- * независимо от {@code active} — иначе администратор не смог бы снова включить уже выключенный
- * сценарий. Выключенный сценарий по-прежнему не отдаётся {@code GET /api/scenarios} и недоступен
- * для начала нового прохождения (см. {@code ScenarioPlayController}), но уже начатые прохождения
- * не прерывает.
- */
+/** Административный список сценариев (включая неактивные) и переключатель доступности. Путь под */
 @RestController
 @RequestMapping("/api/admin/scenarios")
 @RequiredArgsConstructor

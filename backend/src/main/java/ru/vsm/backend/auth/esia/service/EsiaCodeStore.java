@@ -8,11 +8,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
-/**
- * In-memory хранилище одноразовых кодов авторизации демо-ЕСИА (аналог короткоживущего
- * {@code authorization_code} из настоящего OAuth2/OIDC). Переживает только время работы процесса —
- * для демо-заглушки этого достаточно, персистентность не нужна.
- */
+/** In-memory хранилище одноразовых кодов авторизации демо-ЕСИА (аналог короткоживущего */
 @Component
 public class EsiaCodeStore {
 

@@ -8,24 +8,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import ru.vsm.backend.gamification.service.GamificationAccrualService;
 import ru.vsm.backend.scenario.event.ScenarioCompletedEvent;
 
-/**
- * Слушатель {@link ScenarioCompletedEvent} на стороне gamification.
- *
- * <p><b>Почему {@code @TransactionalEventListener(AFTER_COMMIT)}, а не простой
- * {@code @EventListener}</b>: событие публикуется внутри транзакции при завершении сценария,
- * которая переводит {@code UserProgress.status} в {@code COMPLETED} (и пишет историю выборов).
- * Обычный {@code @EventListener} выполняется синхронно в той же транзакции — если начисление
- * очков здесь упадёт, откатится и завершение прохождения, хотя эти два домена по контракту
- * связаны только событием, не общей транзакцией. AFTER_COMMIT гарантирует: (1) gamification
- * видит только зафиксированные прохождения, (2) сбой в начислении не может откатить сценарий,
- * (3) обработка идёт в собственной новой транзакции (см. {@code GamificationAccrualService#processEvent}, {@code @Transactional}).
- *
- * <p>{@code fallbackExecution = true} — на случай, если событие будет опубликовано вне
- * активной транзакции (например, в тесте через
- * {@code ApplicationEventPublisher#publishEvent} без транзакции): без этого флага
- * Spring молча не вызвал бы listener вовсе, что для начисления очков хуже, чем обработка
- * без строгой гарантии "после commit".
- */
+/** Слушатель {@link ScenarioCompletedEvent} на стороне gamification. */
 @Slf4j
 @Component
 @RequiredArgsConstructor

@@ -15,14 +15,7 @@ import ru.vsm.backend.gamification.admin.web.dto.PlayerStatsEntryDto;
 import ru.vsm.backend.gamification.admin.web.dto.ScenarioStatsEntryDto;
 import ru.vsm.backend.gamification.team.web.dto.TeamLeaderboardEntryDto;
 
-/**
- * Read-only статистика для административной панели. Доступ ограничен ролью {@code ADMIN} через
- * {@code /api/admin/**} (см. {@code SecurityConfig}) — не выдаёт персональных данных сверх уже
- * открытых лидерборда/профиля, но требует токен, в отличие от них.
- *
- * <p>Каждый JSON-эндпоинт продублирован CSV-версией ({@code *.csv}) для выгрузки в Excel — см.
- * {@link CsvExport} про выбор {@code ;} как разделителя и UTF-8 BOM.
- */
+/** Read-only статистика для административной панели. Доступ ограничен ролью {@code ADMIN} через */
 @RestController
 @RequestMapping("/api/admin/stats")
 @RequiredArgsConstructor

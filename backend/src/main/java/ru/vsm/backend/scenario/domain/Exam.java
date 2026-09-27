@@ -16,19 +16,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Экзамен: набор из нескольких сценариев ({@link ExamScenario}, порядок фиксирован при создании),
- * пройденных подряд без подсказок (см. {@link UserProgress#isExamMode()}), с единым итогом.
- *
- * <p>{@link #playerId} — как и {@link UserProgress#getUserId()}, без FK на пользователя (домен
- * gamification, связь только по id). {@link #carClass} фиксируется на весь экзамен (единый
- * "портрет пассажира" для всех входящих в него сценариев), в отличие от обычного прохождения,
- * где класс выбирается за один сценарий.
- *
- * <p>Агрегаты ({@link #avgLoyaltyScore}/{@link #avgSafetyScore}/{@link #successRate}/{@link #grade})
- * и {@link #finishedAt} заполняются только при переходе {@link #status} в {@link ExamStatus#COMPLETED}
- * (см. {@code ExamService.finishExam}) — до этого момента они {@code null}.
- */
+/** Экзамен: набор из нескольких сценариев ({@link ExamScenario}, порядок фиксирован при создании), */
 @Getter
 @Setter
 @Builder

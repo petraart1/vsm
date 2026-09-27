@@ -14,14 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Учётная запись. {@link #id} — тот же {@code playerId}, что используется остальным приложением
- * (заголовок {@code X-Player-Id}, {@code gamification_player_profile.id}, {@code user_progress.player_id}):
- * отдельной FK-связи нет, домены связаны только по id, как и между собой.
- *
- * <p>Публичные игровые эндпоинты пока не требуют учётной записи — совместимость на время
- * поэтапного включения авторизации, см. запись в договорённостях проекта.
- */
+/** Учётная запись. {@link #id} — тот же {@code playerId}, что используется остальным приложением */
 @Getter
 @Setter
 @Builder
@@ -51,11 +44,7 @@ public class AppUser {
     @Column(nullable = false, length = 16)
     private UserRole role;
 
-    /**
-     * Подтверждённая личность — сейчас выставляется только демо-заглушкой входа через Госуслуги/ЕСИА
-     * ({@code ru.vsm.backend.auth.esia}), при обычной регистрации логином/паролем остаётся {@code false}.
-     * Подготовка для будущего антифрода, см. {@code PlayerVerificationService.isVerified}.
-     */
+    /** Подтверждённая личность — сейчас выставляется только демо-заглушкой входа через Госуслуги/ЕСИА */
     @Column(nullable = false)
     @Builder.Default
     private boolean verified = false;

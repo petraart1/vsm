@@ -19,24 +19,7 @@ import ru.vsm.backend.scenario.service.exception.ProgressNotFoundException;
 import ru.vsm.backend.scenario.web.dto.ProgressStateResponse;
 import ru.vsm.backend.ws.dto.ProgressWsMessage;
 
-/**
- * Обычный WebSocket (не STOMP) на {@code /ws/progress/{progressId}?playerId=<uuid>} — живой
- * таймер и шкалы для уже начатого прохождения. Владение проверяется тем же способом, что и в
- * REST ({@code ScenarioPlayService.getProgress}, тот же {@code playerId}), поэтому чужое
- * прохождение по WebSocket недоступно так же, как и по REST.
- *
- * <p>{@code ?token=<jwt>} — альтернатива {@code playerId} для авторизованных клиентов (тот же
- * токен, что выдаёт {@code POST /api/auth/login}): playerId берётся из токена, query-параметр
- * {@code playerId} в этом случае игнорируется. Невалидный/просроченный токен равносилен его
- * отсутствию — сервер откатывается на {@code playerId}, а если и его нет, закрывает соединение.
- * Если включён {@code app.auth.require-token} (см. находку CRITICAL в аудите безопасности —
- * {@code X-Player-Id}/{@code playerId} как самодостаточная личность становится небезопасен, когда
- * playerId раскрывается на публичных эндпоинтах), откат на {@code playerId} отключается совсем —
- * без валидного {@code token} соединение закрывается.
- *
- * <p>Клиент не обязан ничего слать — сообщения от клиента игнорируются (нет клиент→сервер
- * протокола); подключение только читает события. Формат событий — {@link ProgressWsMessage}.
- */
+/** Обычный WebSocket (не STOMP) на {@code /ws/progress/{progressId}?playerId=<uuid>} — живой */
 @Slf4j
 @Component
 @RequiredArgsConstructor

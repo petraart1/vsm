@@ -7,12 +7,7 @@ import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 import ru.vsm.backend.config.CorsProperties;
 
-/**
- * Регистрирует {@link ProgressWebSocketHandler} на {@code /ws/progress/{progressId}} (обычный
- * WebSocket, не STOMP). Допустимые origin'ы переиспользуют {@link CorsProperties}
- * ({@code app.cors.allowed-origins}) — тот же список, что и у REST CORS (dev-фронт на {@code :3000}
- * и т.п.), чтобы не заводить отдельную настройку только для WebSocket.
- */
+/** Регистрирует {@link ProgressWebSocketHandler} на {@code /ws/progress/{progressId}} (обычный */
 @Configuration
 @EnableWebSocket
 @RequiredArgsConstructor

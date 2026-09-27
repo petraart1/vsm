@@ -12,13 +12,7 @@ import ru.vsm.backend.auth.security.PlayerAccessGuard;
 import ru.vsm.backend.gamification.challenge.service.ChallengeQueryService;
 import ru.vsm.backend.gamification.challenge.web.dto.ChallengeDto;
 
-/**
- * GET /api/gamification/challenges?playerId=... — активные челленджи месяца с прогрессом игрока
- * (current/target, completed). Идентификация игрока — как у остальных игровых эндпоинтов
- * ({@code playerId} query-параметром); без него каталог возвращается с нулевым прогрессом (не
- * требует проверки — личных данных не раскрывается). С {@code playerId} — только владелец (JWT
- * либо {@code X-Player-Id}) или ADMIN, иначе {@code 403 forbidden} (см. {@link PlayerAccessGuard}).
- */
+/** GET /api/gamification/challenges?playerId=... — активные челленджи месяца с прогрессом игрока */
 @RestController
 @RequestMapping("/api/gamification/challenges")
 @RequiredArgsConstructor

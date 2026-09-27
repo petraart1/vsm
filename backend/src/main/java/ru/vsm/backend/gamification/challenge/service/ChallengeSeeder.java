@@ -17,18 +17,7 @@ import ru.vsm.backend.gamification.challenge.domain.ChallengeGoalType;
 import ru.vsm.backend.gamification.challenge.repository.ChallengeRepository;
 import ru.vsm.backend.gamification.domain.AchievementCode;
 
-/**
- * Заполняет каталог челленджей на текущий календарный месяц при каждом старте приложения.
- * Идемпотентно: код челленджа включает год-месяц ({@code "<ключ шаблона>-<YYYY-MM>"}), поэтому
- * повторный старт в том же месяце ничего не создаёт заново ({@link ChallengeRepository#findByCode}
- * по каждому шаблону), а переход на новый месяц заводит новый набор строк без релиза — даты
- * периода не захардкожены в миграции.
- *
- * <p>Награда каждого шаблона — очки + ачивка {@link AchievementCode#CHALLENGE_CHAMPION} (одна
- * общая ачивка "за выполнение любого челленджа месяца" — выдаётся один раз, повторное выполнение
- * другого челленджа в том же или следующем месяце очков ачивки не добавляет, но продолжает
- * начислять {@code rewardPoints}).
- */
+/** Заполняет каталог челленджей на текущий календарный месяц при каждом старте приложения. */
 @Slf4j
 @Component
 @RequiredArgsConstructor

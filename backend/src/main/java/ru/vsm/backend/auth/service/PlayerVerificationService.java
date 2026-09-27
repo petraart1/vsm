@@ -6,12 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.vsm.backend.auth.domain.AppUser;
 import ru.vsm.backend.auth.repository.AppUserRepository;
 
-/**
- * Подготовка для будущего антифрода (см. договорённости проекта): проверка, подтверждена ли
- * личность игрока (сейчас единственный источник — демо-заглушка входа через Госуслуги/ЕСИА,
- * {@code ru.vsm.backend.auth.esia}). На этом шаге результат нигде не используется при начислении
- * очков/ачивок — это отдельная задача домена геймификации.
- */
+/** Подготовка для будущего антифрода (см. договорённости проекта): проверка, подтверждена ли */
 @Service
 @RequiredArgsConstructor
 public class PlayerVerificationService {

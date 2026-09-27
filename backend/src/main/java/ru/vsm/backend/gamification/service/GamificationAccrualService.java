@@ -33,65 +33,7 @@ import ru.vsm.backend.gamification.team.service.TeamService;
 import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 import ru.vsm.backend.scenario.event.ScenarioCompletedEvent;
 
-/**
- * Начисление очков компетенций и ачивок по {@link ScenarioCompletedEvent}. Тем же обработчиком
- * создаются уведомления игрока (новая ачивка / личный рекорд по сценарию / рост в лидерборде)
- * через {@link NotificationService} — см. {@link #evaluateAchievements},
- * {@link #evaluatePersonalBest}, {@link #evaluateRankUp}.
- *
- * <p><b>Формула начисления</b> (простая и объяснимая):
- * <pre>
- * base(outcome)      = SUCCESS: 100, PARTIAL: 50, FAILURE: 20 (очки за участие)
- * loyaltyGain        = max(0, event.loyaltyScore())   -- в очки компетенций блока не уходит "в минус"
- * safetyGain         = max(0, event.safetyScore())
- * timeoutPenalty     = event.hadTimeout() ? 5 : 0
- * rawPoints          = max(0, base(outcome) + loyaltyGain + safetyGain - timeoutPenalty)
- * totalPoints        = applyAntifraudLimits(rawPoints)  -- множитель неподтверждённости + суточный потолок
- *
- * profile.totalScore        += totalPoints
- * profile.scenariosCompleted += 1
- * competency(block).loyaltyPoints += loyaltyGain
- * competency(block).safetyPoints  += safetyGain
- * </pre>
- *
- * <p><b>Антифрод</b> (см. {@link #applyAntifraudLimits}): {@code loyaltyGain}/{@code safetyGain} —
- * компетенции по конкретной шкале, ограничениям не подвергаются (это оценка навыка, а не "очки"
- * для лидерборда/накрутки); ограничивается только {@code totalPoints} — то, что уходит в
- * {@code profile.totalScore} и в лог начислений (а значит и в личный рекорд/суточную сумму).
- *
- * <p><b>Зачётность прохождения</b> ({@code awardable} в {@link #processEvent}) — второй, более
- * строгий антифрод-гейт поверх суточного потолка: {@code profile.totalScore}/
- * {@code scenariosCompleted}, ачивки ({@link #evaluateAchievements}) и прогресс челленджей
- * ({@link #evaluateChallenges}) начисляются, только если {@link ScenarioCompletedEvent#examMode()}
- * {@code == false} и {@link ScenarioCompletedEvent#firstCompletion()} {@code == true} — иначе
- * повторное прохождение уже завершённого сценария (новый {@code userProgressId} на каждый заход,
- * идемпотентность выше его не ловит) или прохождение пункта экзамена (который вознаграждается
- * отдельно за итоговую оценку, см. {@code ExamAccrualService}) приносили бы очки без ограничения.
- * Компетенции по шкалам ({@code CompetencyScore}) и журнал начислений (см. ниже) от этого гейта
- * не зависят — они нужны аналитике компетенций/разбору решений, которым важны все реальные попытки
- * игрока, а не только зачётные.
- *
- * <p><b>Идемпотентность</b>: перед начислением проверяется {@link AccrualLogRepository
- * #existsByUserProgressId}. Запись в журнал и все обновления профиля/компетенций/ачивок
- * происходят в одной транзакции — повторная доставка события с тем же {@code userProgressId}
- * (например, ретрай слушателя) не начисляет очки дважды.
- *
- * <p><b>{@code propagation = REQUIRES_NEW} на {@link #processEvent}, а не дефолтный
- * {@code REQUIRED}</b>: метод вызывается из {@code ScenarioCompletedEventListener}
- * (`@TransactionalEventListener(AFTER_COMMIT)`). В {@code AbstractPlatformTransactionManager}
- * {@code triggerAfterCommit()} выполняется ДО {@code cleanupAfterCompletion()}, которая
- * физически отвязывает {@code EntityManagerHolder} уже закоммиченной транзакции от потока —
- * то есть в момент вызова AFTER_COMMIT-синхронизации Spring ещё "видит" старую (фактически уже
- * завершённую) транзакцию как текущую. С {@code REQUIRED} метод присоединился бы к этому
- * умирающему контексту: SELECT'ы через ещё живую Hibernate-сессию отработали бы (это и вводило
- * в заблуждение — в логе была строка "Начислено N очков"), но новые {@code save()} никогда не
- * коммитятся — их подчищает {@code cleanupAfterCompletion()} без физического commit. Баг был
- * обнаружен на реальном REST-прохождении (frontend e2e): таблицы {@code gamification_*}
- * оставались пустыми, хотя метод отрабатывал без исключений. {@code REQUIRES_NEW} гарантирует
- * отдельную физическую транзакцию/подключение, не зависящую от уже закоммиченных ресурсов
- * исходной.
- */
-@Slf4j
+/** Начисляет очки компетенций, ачивки, уведомления за завершение сценария. */@Slf4j
 @Service
 @RequiredArgsConstructor
 @EnableConfigurationProperties(GamificationLimitsProperties.class)

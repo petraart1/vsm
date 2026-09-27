@@ -17,15 +17,7 @@ import ru.vsm.backend.scenario.repository.ScenarioNodeRepository;
 import ru.vsm.backend.scenario.repository.ScenarioRepository;
 import ru.vsm.backend.scenario.service.exception.ScenarioNotFoundException;
 
-/**
- * Обратное преобразование персистентного графа сценария (id-ссылки) в {@link ScenarioSeedDto}
- * (код-ссылки) — тот же JSON-формат, что и файлы {@code classpath:scenarios/*.json}.
- *
- * <p>Используется редактором сценариев (экспорт существующего сценария для правки/round-trip)
- * и {@code ScenarioGraphValidationIntegrationTest} — единая точка "БД -> seed-формат", чтобы
- * граф из БД можно было прогнать через тот же {@code ScenarioGraphValidator}, что и граф из
- * входящего JSON редактора, без дублирования логики маппинга.
- */
+/** Обратное преобразование персистентного графа сценария (id-ссылки) в {@link ScenarioSeedDto} */
 @Component
 @RequiredArgsConstructor
 public class ScenarioSeedExporter {

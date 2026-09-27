@@ -3,15 +3,7 @@ package ru.vsm.backend.scenario.seed;
 import ru.vsm.backend.scenario.domain.NodeType;
 import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 
-/**
- * Шаблон простого сценария для {@code GET /api/editor/template} — отправная точка для новой
- * ситуации в редакторе: один вводный DIALOGUE-узел с тремя вариантами ответа, каждый ведёт в свой
- * терминальный узел (твёрдый отказ по норме / уступка с нарушением нормы / лучший вариант со всеми
- * шагами ролевой модели) — тот же паттерн, что у большинства простых (нефлагманских) сценариев
- * каталога. Возвращаемый объект — валидный {@link ScenarioSeedDto} (проходит
- * {@code ScenarioGraphValidator} как есть), но с плейсхолдерными кодом/текстами, которые нужно
- * заменить перед сохранением ({@code code} обязан быть уникален в каталоге).
- */
+/** Шаблон простого сценария для {@code GET /api/editor/template} — отправная точка для новой */
 public final class ScenarioSeedTemplateFactory {
 
     private ScenarioSeedTemplateFactory() {

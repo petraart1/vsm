@@ -14,16 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Сценарий — шапка графа узлов ({@link ScenarioNode}). Соответствует одной ситуации
- * из {@code dataset/scenarios/situations-index.json} (см. {@link #situationRefId}).
- *
- * <p>Внешние ключи между scenario/node/choice хранятся как обычные UUID-колонки, а не как
- * JPA-ассоциации ({@code @ManyToOne}/{@code @OneToMany}): граф может содержать циклы и
- * "вперёд смотрящие" ссылки (выбор в узле N ссылается на узел N+3 или на себя), а сидер
- * заполняет их в несколько проходов (см. {@code seed/ScenarioSeedLoader}). Такой подход проще
- * и предсказуемее, чем управлять Hibernate-графом с отложенными ссылками и каскадами.
- */
+/** Сценарий — шапка графа узлов ({@link ScenarioNode}). Соответствует одной ситуации */
 @Getter
 @Setter
 @Builder

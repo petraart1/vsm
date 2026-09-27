@@ -3,11 +3,7 @@ package ru.vsm.backend.scenario.web.dto;
 import java.util.UUID;
 import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 
-/**
- * Один пункт экзамена в порядке прохождения. {@code userProgressId} — {@code null}, пока игрок ещё
- * не начал этот пункт; {@code completed}/{@code outcome}/{@code loyaltyScore}/{@code safetyScore} —
- * заполняются только после того, как соответствующее прохождение завершилось.
- */
+/** Один пункт экзамена в порядке прохождения. {@code userProgressId} — {@code null}, пока игрок ещё */
 public record ExamScenarioResponse(
         int sortOrder,
         UUID scenarioId,

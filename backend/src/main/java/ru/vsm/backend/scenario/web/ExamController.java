@@ -16,11 +16,7 @@ import ru.vsm.backend.scenario.service.ExamService;
 import ru.vsm.backend.scenario.web.dto.ExamResponse;
 import ru.vsm.backend.scenario.web.dto.ProgressStateResponse;
 
-/**
- * Режим экзамена: набор сценариев, пройденных подряд без подсказок (см. Javadoc {@link ExamService}).
- * Идентификация игрока — тот же заголовок {@value ScenarioPlayController#PLAYER_ID_HEADER}, что и у
- * обычного прохождения (подменяется проверенным JWT, если он есть — см. {@code JwtAuthenticationFilter}).
- */
+/** Режим экзамена: набор сценариев, пройденных подряд без подсказок (см. Javadoc {@link ExamService}). */
 @RestController
 @RequestMapping("/api/exams")
 @RequiredArgsConstructor
@@ -47,11 +43,7 @@ public class ExamController {
         return examService.getExam(examId, parsePlayerId(playerIdHeader));
     }
 
-    /**
-     * Начинает (или возвращает уже начатое) прохождение текущего непройденного пункта экзамена.
-     * Дальше игрок ходит по нему обычными эндпоинтами {@link ScenarioPlayController}
-     * ({@code choices}/{@code timeout}) — этот метод только создаёт прохождение с {@code examMode}.
-     */
+    /** Начинает (или возвращает уже начатое) прохождение текущего непройденного пункта экзамена. */
     @PostMapping("/{examId}/current")
     public ProgressStateResponse startCurrent(
             @PathVariable UUID examId, @RequestHeader(ScenarioPlayController.PLAYER_ID_HEADER) String playerIdHeader) {

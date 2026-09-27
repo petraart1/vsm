@@ -18,20 +18,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-/**
- * Обработчик ошибок framework-уровня (валидация, невалидные параметры, неизвестный
- * путь/метод, необработанные исключения) — единственный источник формы {@link ApiError} для
- * всего, что не покрыто доменными {@code @RestControllerAdvice} модулей ({@code auth.web},
- * {@code scenario.web}: см. {@code AuthExceptionHandler}/{@code ScenarioExceptionHandler}).
- *
- * <p>{@code @Order(Ordered.LOWEST_PRECEDENCE)} — этот advice применяется ко ВСЕМ контроллерам
- * (без {@code basePackages}), в том числе к тем, что уже покрыты доменными advice с более высоким
- * приоритетом ({@code @Order} на них ниже числом): при наличии конфликта по типу исключения
- * Spring перебирает применимые advice-бины в порядке {@code @Order} и берёт первый подходящий
- * метод, так что доменные обработчики всегда выигрывают у этого для своих типов исключений, а
- * этот остаётся честным fallback'ом для остальных модулей (gamification/feedback) и framework-уровня
- * везде.
- */
+/** Обработчик ошибок framework-уровня (валидация, невалидные параметры, неизвестный */
 @Slf4j
 @RestControllerAdvice
 @Order(Ordered.LOWEST_PRECEDENCE)
@@ -82,11 +69,7 @@ public class GlobalExceptionHandler {
         return respond(HttpStatus.valueOf(statusCode.value()), defaultCodeFor(statusCode), message, null, request);
     }
 
-    /**
-     * Запрос к чужим игровым/личным данным без роли ADMIN (см. {@code PlayerAccessGuard}) — 403 с
-     * отдельным кодом {@code forbidden}, не {@code access_denied} (тот зарезервирован за отказом
-     * Spring Security по роли на {@code /api/admin/**}/{@code /api/editor/**}, см. {@code SecurityConfig}).
-     */
+    /** Запрос к чужим игровым/личным данным без роли ADMIN (см. {@code PlayerAccessGuard}) — 403 с */
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ApiError> handleForbidden(ForbiddenException e, HttpServletRequest request) {
         return respond(HttpStatus.FORBIDDEN, "forbidden", e.getMessage(), null, request);

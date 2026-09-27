@@ -8,12 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Подменяет заголовок {@code X-Player-Id} значением из проверенного JWT — так playerId из токена
- * доходит до существующих контроллеров ({@code ScenarioPlayController} и т.п.), которые читают
- * этот заголовок напрямую, без изменений в их коде: приоритет токена над заголовком, если
- * запрос прислал оба, и токен работает даже там, где клиент вовсе не прислал заголовок.
- */
+/** Подменяет заголовок {@code X-Player-Id} значением из проверенного JWT — так playerId из токена */
 class PlayerIdOverridingRequestWrapper extends HttpServletRequestWrapper {
 
     static final String PLAYER_ID_HEADER = "X-Player-Id";

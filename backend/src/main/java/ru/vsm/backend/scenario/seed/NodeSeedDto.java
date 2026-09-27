@@ -41,12 +41,7 @@ public class NodeSeedDto {
 
     private String outcomeSummary;
 
-    /**
-     * «Портрет пассажира»: переопределение {@link #text} по классу вагона (ключ — имя
-     * {@link ru.vsm.backend.scenario.domain.CarClass}, например {@code "FIRST"}). Опционально —
-     * если для класса записи нет, используется общий {@link #text}. См. javadoc
-     * {@link ru.vsm.backend.scenario.domain.ScenarioNodePortrait}.
-     */
+    /** «Портрет пассажира»: переопределение {@link #text} по классу вагона (ключ — имя */
     private Map<String, String> passengerPortraits = new LinkedHashMap<>();
 
     private List<ChoiceSeedDto> choices = new ArrayList<>();

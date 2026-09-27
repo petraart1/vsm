@@ -12,20 +12,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Component;
 
-/**
- * Загружает сценарии при старте приложения из {@code classpath:scenarios/*.json} (после того как
- * Liquibase применил миграции — {@code ApplicationRunner}'ы выполняются после инициализации
- * контекста, куда входит и {@code spring-boot-starter-liquibase}).
- *
- * <p>Формат файла и правила идемпотентности — см. {@link ScenarioSeedDto} и
- * {@link ScenarioSeedService}.
- *
- * <p>Использует собственный {@link ObjectMapper} (не Spring-бин): в Spring Boot 4.1 основной
- * автоконфигурируемый JSON-маппер — Jackson 3 ({@code tools.jackson.databind.ObjectMapper}),
- * а классический Jackson 2 ({@code com.fasterxml.jackson.databind}, который используем здесь —
- * он проще и не завязан на web-конфигурацию) присутствует на classpath транзитивно, но бином
- * Spring не публикуется. Для одноразового парсинга seed-файлов при старте это не критично.
- */
+/** Загружает сценарии при старте приложения из {@code classpath:scenarios/*.json} (после того как */
 @Slf4j
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)

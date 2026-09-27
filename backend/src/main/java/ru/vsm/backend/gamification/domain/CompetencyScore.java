@@ -14,12 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Накопленные очки компетенций одного игрока по одному блоку ситуаций
- * (boarding/baggage/safety/seating/comfort/catering/medical/lost_found/conflict/misc),
- * раздельно по двум шкалам. Одна строка на пару (player, block) — см.
- * {@code uq_competency_score_player_block}.
- */
+/** Накопленные очки компетенций одного игрока по одному блоку ситуаций */
 @Getter
 @Setter
 @Builder

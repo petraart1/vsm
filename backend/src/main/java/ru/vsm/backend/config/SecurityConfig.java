@@ -20,25 +20,7 @@ import ru.vsm.backend.auth.security.JwtAuthenticationFilter;
 import ru.vsm.backend.config.error.ApiError;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Все 3 шага включения авторизации (роли USER/ADMIN, идея из бэклога — админ-кабинет и редактор
- * сценариев только для ADMIN). {@link JwtAuthenticationFilter} (шаг 2) населяет
- * {@code SecurityContext}/подменяет {@code X-Player-Id} при валидном токене.
- *
- * <p>Шаг 3: {@code /api/admin/**} и {@code /api/editor/**} требуют роль ADMIN (валидный JWT с
- * {@code role=ADMIN} — см. {@code JwtAuthenticationFilter}); всё остальное (игровые эндпоинты по
- * {@code X-Player-Id} без логина, {@code /ws/**}, Swagger, actuator, {@code /api/auth/**})
- * по-прежнему {@code permitAll()}, ничего в этой части не меняется. Гейтится свойством
- * {@code app.auth.admin-protection-enabled} (по умолчанию {@code true}) — {@code false}
- * временно возвращает обе группы эндпоинтов к {@code permitAll()}, например для демо до того, как
- * на фронте появится экран логина; независим от {@code app.editor.enabled}, который решает,
- * существует ли редактор вообще (см. {@code EditorScenarioController}), а не кто имеет к нему
- * доступ. 401/403 отдаются той же единой формой {@link ApiError}, что и остальные ошибки API
- * (см. {@code ru.vsm.backend.config.error.GlobalExceptionHandler}), а не HTML/plain text по
- * умолчанию от Spring Security — эти два случая пишутся вручную в тело ответа, а не через
- * {@code @ExceptionHandler}, потому что security-исключения перехватываются
- * {@code ExceptionTranslationFilter} до того, как запрос вообще доходит до DispatcherServlet.
- */
+/** Конфигурирует HTTP Security: роли USER/ADMIN, авторизация по JWT. */
 @Configuration
 @EnableWebSecurity
 @EnableConfigurationProperties({AdminAccountProperties.class, JwtProperties.class, PlayerPublicIdProperties.class})
@@ -46,27 +28,8 @@ import tools.jackson.databind.ObjectMapper;
 public class SecurityConfig {
 
     private static final String[] ADMIN_ONLY_PATHS = {"/api/admin/**", "/api/editor/**"};
-
-    /**
-     * "Игровые" эндпоинты, идентифицирующие игрока по {@code X-Player-Id}/{@code ?playerId=}
-     * (см. находку CRITICAL в аудите безопасности) — при {@code app.auth.require-token=true}
-     * требуют валидный {@code Authorization: Bearer}, эти заголовок/параметр перестают
-     * приниматься как самостоятельное доказательство личности. Публичные лидерборды (игроков и
-     * команд) и каталог команд сюда намеренно не входят — их можно читать анонимно всегда.
-     */
     private static final String[] GAME_PATHS = {
-            "/api/scenarios/**",
-            "/api/exams/**",
-            "/api/gamification/profile/**",
-            "/api/gamification/showcase",
-            "/api/gamification/custom-awards",
-            "/api/gamification/achievements",
-            "/api/gamification/achievements/**",
-            "/api/gamification/notifications",
-            "/api/gamification/notifications/**",
-            "/api/gamification/challenges",
-            "/api/gamification/challenges/**",
-            "/api/gamification/teams/*/join",
+            "/api/scenarios/**", "/api/exams/**",
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;

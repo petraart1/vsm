@@ -39,44 +39,7 @@ import ru.vsm.backend.scenario.web.dto.ChoiceOptionResponse;
 import ru.vsm.backend.scenario.web.dto.NodeStateResponse;
 import ru.vsm.backend.scenario.web.dto.ProgressStateResponse;
 
-/**
- * Прохождение сценария игроком: старт, чтение текущего узла, применение выбора, явный таймаут.
- *
- * <p><b>Серверный таймер</b> — источник истины: {@link UserProgress#getNodeDeadlineAt()}
- * проставляется при входе в узел с {@code timerSeconds} (now + timerSeconds) и сверяется при
- * каждом выборе. Если выбор пришёл после дедлайна — он игнорируется и применяется
- * {@code defaultChoice} узла (с пометкой {@code wasTimeout=true} в истории), а не то, что прислал
- * клиент. WebSocket-пуш обратного отсчёта (следующая задача) только визуализирует этот дедлайн,
- * не заменяет проверку здесь.
- *
- * <p><b>Раскрытие дельт шкал</b>: {@link ChoiceOptionResponse} (до выбора) не содержит
- * loyalty/safety дельт — они появляются только в {@link ChoiceAppliedResponse} после того, как
- * выбор уже сделан и применён.
- *
- * <p><b>«Портрет пассажира»</b>: {@link UserProgress#getCarClass()} фиксируется один раз при
- * старте прохождения ({@link #start}) и модифицирует дельту лояльности каждого применённого
- * выбора (см. {@link CarClass#modifyLoyaltyDelta}, применяется до {@link #clampScale}), а также
- * подменяет текст узла на переопределение для этого класса, если оно задано (см.
- * {@link #toNodeState}). Рейтинг безопасности от класса вагона не зависит.
- *
- * <p><b>Завершение прохождения</b> происходит в двух случаях: (1) выбор ведёт в узел с
- * {@code terminal=true} — тогда исход берётся из {@code terminalOutcome} этого узла; (2) у самого
- * выбора {@code target == null} (конец сразу после выбора, без отдельного терминального узла) —
- * такой путь пока не используется во флагманских сценариях, но схема (см. Javadoc
- * {@link ScenarioChoice#getTargetNodeId()}) его допускает, поэтому обрабатывается здесь с
- * fallback-исходом {@link ScenarioOutcome#PARTIAL} (нет текста/резюме — их взять неоткуда).
- * В обоих случаях {@link ScenarioCompletedEvent} публикуется через
- * {@link ApplicationEventPublisher#publishEvent(Object)} внутри этого же {@code @Transactional}
- * метода (до коммита) — слушатели домена (gamification/feedback) используют
- * {@code @TransactionalEventListener(phase = AFTER_COMMIT)}, чтобы не видеть событие, если
- * транзакция потом откатится.
- *
- * <p>Каждое применение выбора (в {@link #applyResolvedChoice}) также публикует
- * {@link ru.vsm.backend.scenario.event.ProgressStateChangedEvent} — точка подписки для
- * WebSocket-пакета {@code ru.vsm.backend.ws} (живые обновления шкал/узла/статуса для
- * подключённых клиентов), не только для {@link ScenarioCompletedEvent} на завершении.
- */
-@Slf4j
+/** Управляет прохождением сценария: старт, навигация, применение выборов, таймауты. */@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ScenarioPlayService {
@@ -89,30 +52,12 @@ public class ScenarioPlayService {
     private final ScenarioNodePortraitRepository scenarioNodePortraitRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    /**
-     * Начинает новое прохождение сценария игроком, либо возвращает уже начатое (IN_PROGRESS) —
-     * повторный вызов start для того же (playerId, scenarioId) не плодит дубликаты прогресса.
-     *
-     * <p>{@code carClass} — класс вагона ("портрет пассажира", см. {@link CarClass}), в котором
-     * игрок проходит сценарий; фиксируется только при создании нового прохождения и модифицирует
-     * дельту лояльности каждого применённого выбора до конца этого прохождения. Если уже есть
-     * незавершённое прохождение того же (playerId, scenarioId) — его класс не меняется, даже
-     * если в этом вызове передан другой (менять класс на середине прохождения означало бы
-     * задним числом переинтерпретировать уже применённые дельты).
-     */
-    @Transactional
+    /** Начинает новое прохождение или возвращает существующее. Класс вагона фиксируется при создании. */@Transactional
     public ProgressStateResponse start(UUID scenarioId, UUID playerId, CarClass carClass) {
         return start(scenarioId, playerId, carClass, null);
     }
 
-    /**
-     * Как {@link #start(UUID, UUID, CarClass)}, но помечает создаваемое прохождение как пункт
-     * экзамена ({@code examId != null}) — используется только {@code ExamService.startCurrentScenario}.
-     * Прохождение с {@code examMode=true} ведёт себя как обычное во всём, кроме одного отличия: в
-     * {@link ChoiceAppliedResponse} каждого применённого выбора не раскрываются дельты/итоговые
-     * значения шкал (см. Javadoc {@link ChoiceAppliedResponse}).
-     */
-    @Transactional
+    /** Начинает прохождение как пункт экзамена (скрывает дельты шкал в ответах). */@Transactional
     public ProgressStateResponse start(UUID scenarioId, UUID playerId, CarClass carClass, UUID examId) {
         Scenario scenario = scenarioRepository.findById(scenarioId)
                 .filter(Scenario::isActive)
@@ -247,16 +192,7 @@ public class ScenarioPlayService {
         return response;
     }
 
-    /**
-     * Шкалы прохождения ограничены {@code [0, 100]} (см. находку code-review: без клампа
-     * {@code loyaltyScore}/{@code safetyScore} уходили в отрицательные значения на провальных
-     * ветках, а фронтовый {@code ScaleBar} и так предполагает 0-100 и лишь маскировал нарушение
-     * инварианта на отображении). Клампится итоговый счёт, а не сырая дельта выбора — поэтому
-     * {@code loyaltyDeltaApplied}/{@code safetyDeltaApplied} в истории и в {@link ChoiceAppliedResponse}
-     * могут быть меньше по модулю, чем {@link ScenarioChoice#getLoyaltyDelta()}/{@code getSafetyDelta()}
-     * seed-данных — это фактически применённый эффект, честный для разбора прохождения.
-     */
-    private int clampScale(int value) {
+    /** Ограничивает шкалы значениями [0, 100]. */private int clampScale(int value) {
         return Math.max(0, Math.min(100, value));
     }
 
@@ -268,16 +204,7 @@ public class ScenarioPlayService {
         progress.setCompletedAt(now);
     }
 
-    /**
-     * Публикуется до коммита транзакции, которая перевела прогресс в COMPLETED (см. Javadoc
-     * класса) — слушатели читают {@code @TransactionalEventListener(AFTER_COMMIT)}.
-     *
-     * <p>Здесь же вычисляются {@link ScenarioCompletedEvent#examMode()} (напрямую из
-     * {@link UserProgress#isExamMode()}) и {@link ScenarioCompletedEvent#firstCompletion()} —
-     * gamification использует оба флага, чтобы не начислять полные очки/ачивки/челленджи за
-     * экзаменационные и повторные прохождения (см. Javadoc полей события).
-     */
-    private void publishCompletion(UserProgress progress) {
+    /** Публикует событие завершения с флагами examMode и firstCompletion. */private void publishCompletion(UserProgress progress) {
         Scenario scenario = requireScenario(progress.getScenarioId());
         List<ScenarioChoiceHistory> history =
                 scenarioChoiceHistoryRepository.findByUserProgressIdOrderBySequenceIndex(progress.getId());
@@ -307,12 +234,7 @@ public class ScenarioPlayService {
                 firstCompletion));
     }
 
-    /**
-     * true, если по совокупности всех выборов прохождения хотя бы раз встретился каждый из 4
-     * шагов ролевой модели (объединение флагов, не пересечение по одному выбору — см. Javadoc
-     * {@link ScenarioCompletedEvent#allRoleStepsFollowed}).
-     */
-    private boolean allRoleStepsFollowed(List<ScenarioChoiceHistory> history) {
+    /** true, если все 4 шага ролевой модели встречаются в прохождении. */private boolean allRoleStepsFollowed(List<ScenarioChoiceHistory> history) {
         List<UUID> choiceIds = history.stream().map(ScenarioChoiceHistory::getChoiceId).toList();
         Map<UUID, ScenarioChoice> choicesById = scenarioChoiceRepository.findAllById(choiceIds).stream()
                 .collect(Collectors.toMap(ScenarioChoice::getId, c -> c));
@@ -376,13 +298,7 @@ public class ScenarioPlayService {
                 progress.getLoyaltyScore(), progress.getSafetyScore(), nodeResponse);
     }
 
-    /**
-     * {@code carClass} резолвит «портрет пассажира» — переопределение {@link ScenarioNode#getText()}
-     * для этого класса вагона, если оно задано в {@code scenario_node_portraits} (см. javadoc
-     * {@link ru.vsm.backend.scenario.domain.ScenarioNodePortrait}); иначе используется обычный
-     * текст узла, общий для всех классов.
-     */
-    private NodeStateResponse toNodeState(
+    /** Возвращает состояние узла с учётом класса вагона (переопределения текста). */private NodeStateResponse toNodeState(
             ScenarioNode node, List<ScenarioChoice> choices, Instant deadlineAt, CarClass carClass) {
         List<ChoiceOptionResponse> options = choices.stream()
                 .map(c -> new ChoiceOptionResponse(c.getId(), c.getCode(), c.getText()))
@@ -411,12 +327,7 @@ public class ScenarioPlayService {
                 .orElseThrow(() -> new ProgressNotFoundException("Прохождение '" + progressId + "' не найдено"));
     }
 
-    /**
-     * Как {@link #requireProgress}, но с пессимистичной блокировкой строки (см. Javadoc
-     * {@link UserProgressRepository#findByIdForUpdate}) — использовать перед любым изменением
-     * состояния прохождения ({@code choose}/{@code timeout}), не для read-only чтения.
-     */
-    private UserProgress requireProgressForUpdate(UUID progressId) {
+    /** Читает прогресс с пессимистичной блокировкой для обновления. */private UserProgress requireProgressForUpdate(UUID progressId) {
         return userProgressRepository.findByIdForUpdate(progressId)
                 .orElseThrow(() -> new ProgressNotFoundException("Прохождение '" + progressId + "' не найдено"));
     }

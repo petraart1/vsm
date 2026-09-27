@@ -13,13 +13,7 @@ import ru.vsm.backend.auth.service.exception.TooManyAttemptsException;
 import ru.vsm.backend.auth.service.exception.UserAlreadyExistsException;
 import ru.vsm.backend.config.error.ApiError;
 
-/**
- * Маппинг исключений домена auth в HTTP-ответы с единой формой {@link ApiError}. {@code @Order(10)}
- * — выше приоритетом (проверяется раньше), чем framework-уровневый
- * {@code ru.vsm.backend.config.error.GlobalExceptionHandler} (LOWEST_PRECEDENCE), для случаев,
- * когда оба advice-бина применимы к одному контроллеру (например {@code IllegalArgumentException}
- * не переопределяется в глобальном обработчике именно поэтому).
- */
+/** Маппинг исключений домена auth в HTTP-ответы с единой формой {@link ApiError}. {@code @Order(10)} */
 @RestControllerAdvice(basePackages = "ru.vsm.backend.auth.web")
 @Order(10)
 public class AuthExceptionHandler {

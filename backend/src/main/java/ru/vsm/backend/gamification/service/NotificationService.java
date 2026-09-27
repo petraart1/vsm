@@ -16,19 +16,7 @@ import ru.vsm.backend.gamification.repository.NotificationRepository;
 import ru.vsm.backend.gamification.repository.PlayerProfileRepository;
 import ru.vsm.backend.gamification.web.dto.NotificationDto;
 
-/**
- * Создание и чтение уведомлений игрока. Начисление-связанные уведомления (ачивка/личный
- * рекорд/рост в лидерборде/выполнение челленджа/командный рейтинг/экзамен) создаются из
- * {@link GamificationAccrualService} внутри того же обработчика {@code ScenarioCompletedEvent},
- * что и начисление очков, через package-private {@link #create} — отдельной идемпотентности там
- * не требуется: весь метод {@code GamificationAccrualService#processEvent} пропускается целиком
- * при повторной доставке уже обработанного {@code userProgressId}.
- *
- * <p>{@link #notify} и {@link #notifyAllPlayers} — публичные обёртки для уведомлений, не
- * привязанных к обработке {@code ScenarioCompletedEvent} (новый сценарий, новое событие/челлендж,
- * сгорание баллов — см. вызывающих в {@code gamification.event}/{@code gamification.expiry}/
- * {@code gamification.challenge.web.admin}).
- */
+/** Создание и чтение уведомлений игрока. Начисление-связанные уведомления (ачивка/личный */
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
@@ -53,15 +41,7 @@ public class NotificationService {
         create(playerId, type, title, body, null);
     }
 
-    /**
-     * Рассылает одно и то же уведомление всем уже известным профилям игрока
-     * ({@code gamification_player_profile}) — используется для широковещательных уведомлений
-     * (новый сценарий, новое событие/челлендж), а не для персональных начислений. Игрок, у
-     * которого ещё нет строки профиля (ни одного прохождения), уведомление не получает — узнать
-     * о нём просто негде.
-     *
-     * @return число разосланных уведомлений (= число известных профилей)
-     */
+    /** Рассылает одно и то же уведомление всем уже известным профилям игрока */
     @Transactional
     public int notifyAllPlayers(NotificationType type, String title, String body) {
         List<Notification> notifications = playerProfileRepository.findAll().stream()
@@ -77,13 +57,7 @@ public class NotificationService {
         return notifications.size();
     }
 
-    /**
-     * Уведомление {@link NotificationType#LEVEL_UP}, если {@code scoreAfter} пересёк порог нового
-     * уровня (см. {@link PlayerLevel}) по сравнению со {@code scoreBefore}. Вызывается из мест
-     * начисления очков ({@code GamificationAccrualService}, {@code ExamAccrualService}) сразу после
-     * обновления {@code PlayerProfile.totalScore} — само начисление тем же событием пересчитывать
-     * не нужно, уровень выводится из {@code totalScore} без отдельного поля.
-     */
+    /** Уведомление {@link NotificationType#LEVEL_UP}, если {@code scoreAfter} пересёк порог нового */
     void notifyLevelUpIfChanged(UUID playerId, int scoreBefore, int scoreAfter, UUID sourceUserProgressId) {
         PlayerLevel before = PlayerLevel.forScore(scoreBefore);
         PlayerLevel after = PlayerLevel.forScore(scoreAfter);

@@ -47,11 +47,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(profile);
     }
 
-    /**
-     * Лимит брутфорса — HIGH из аудита безопасности (п. 3): не больше
-     * {@code app.auth.login-rate-limit.max-attempts} неудачных попыток подряд для пары логин+IP,
-     * иначе {@code 429 too_many_attempts} (см. {@link LoginRateLimiter}) до истечения блокировки.
-     */
+    /** Лимит брутфорса — HIGH из аудита безопасности (п. 3): не больше */
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         String login = request.login();

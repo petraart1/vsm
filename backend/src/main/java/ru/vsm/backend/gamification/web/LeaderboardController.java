@@ -11,14 +11,7 @@ import ru.vsm.backend.auth.security.PlayerAccessGuard;
 import ru.vsm.backend.gamification.service.GamificationQueryService;
 import ru.vsm.backend.gamification.web.dto.LeaderboardResponse;
 
-/**
- * GET /api/gamification/leaderboard?limit=N — см. design/screens/leaderboard.md. Публичный,
- * без аутентификации: строки не содержат реального {@code playerId} (см.
- * {@code ru.vsm.backend.gamification.web.dto.LeaderboardEntryDto}). "Ваше место" ({@code me} в
- * ответе) заполняется по личности самого запроса (JWT либо {@code X-Player-Id}), а не по
- * query-параметру — раньше {@code ?playerId=} позволял подставить чужой id и прочитать его
- * строку как "свою" (см. находку CRITICAL в аудите безопасности).
- */
+/** GET /api/gamification/leaderboard?limit=N — см. design/screens/leaderboard.md. Публичный, */
 @RestController
 @RequestMapping("/api/gamification/leaderboard")
 @RequiredArgsConstructor

@@ -24,16 +24,7 @@ import ru.vsm.backend.gamification.team.repository.TeamRepository;
 import ru.vsm.backend.gamification.team.web.dto.TeamDto;
 import ru.vsm.backend.gamification.team.web.dto.TeamLeaderboardEntryDto;
 
-/**
- * Командный рейтинг (бригады/депо): каталог команд, вступление/смена команды, лидерборд.
- *
- * <p><b>Почему рейтинг сортируется по среднему баллу участника, а не по сумме</b>: сумма даёт
- * преимущество командам с бОльшим числом игроков независимо от их результативности — команда
- * из 20 слабых игроков обгонит команду из 3 сильных просто числом. Средний балл нормирует по
- * размеру состава, поэтому {@link #getLeaderboard()} ранжирует именно по
- * {@link TeamLeaderboardEntryDto#averageScore()}; сумма и число прохождений остаются в ответе
- * как вспомогательные метрики для экрана, но не участвуют в сортировке.
- */
+/** Командный рейтинг (бригады/депо): каталог команд, вступление/смена команды, лидерборд. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -50,14 +41,7 @@ public class TeamService {
                 .toList();
     }
 
-    /**
-     * Вступление в команду; смена команды разрешена — повторный вызов с другим {@code teamId}
-     * просто обновляет существующее членство игрока, не создавая вторую строку (см.
-     * {@code uq_team_membership_player}). Если у игрока ещё нет строки профиля (ни разу не
-     * проходил сценарий), она создаётся лениво — тот же приём, что использует
-     * {@code GamificationAccrualService} при первом начислении очков, нужен здесь ради FK
-     * {@code gamification_team_membership.player_id -> gamification_player_profile.id}.
-     */
+    /** Вступление в команду; смена команды разрешена — повторный вызов с другим {@code teamId} */
     @Transactional
     public TeamDto join(UUID teamId, UUID playerId) {
         Team team = teamRepository.findById(teamId)
@@ -79,11 +63,7 @@ public class TeamService {
         return toTeamDto(team, teamMembershipRepository.countByTeamId(teamId));
     }
 
-    /**
-     * Рейтинг команд, отсортированный по среднему баллу участника по убыванию (см. javadoc
-     * класса). Команда без участников попадает в список с нулями по всем метрикам, а не
-     * исключается — состав/приписка видны сразу после сидирования команд.
-     */
+    /** Рейтинг команд, отсортированный по среднему баллу участника по убыванию (см. javadoc */
     public List<TeamLeaderboardEntryDto> getLeaderboard() {
         List<Team> teams = teamRepository.findAll();
 

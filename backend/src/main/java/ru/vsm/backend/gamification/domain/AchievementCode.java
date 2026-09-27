@@ -1,14 +1,6 @@
 package ru.vsm.backend.gamification.domain;
 
-/**
- * Статический каталог ачивок MVP. Условия получения оцениваются в
- * {@code GamificationAccrualService} на основе {@code ScenarioCompletedEvent} и уже
- * накопленного состояния профиля/компетенций игрока (после применения очков за текущее
- * событие).
- *
- * <p>Инклюзивная ачивка за обслуживание МГН (идея — {@code dataset/standards/sto-rzd-mgn.md},
- * раздел "Применимость к нашему проекту") сознательно не в этом списке — не первая очередь.
- */
+/** Статический каталог ачивок MVP. Условия получения оцениваются в */
 public enum AchievementCode {
 
     /** Первое завершённое прохождение любого сценария. */
@@ -33,13 +25,7 @@ public enum AchievementCode {
     /** Выполнен хотя бы один челлендж месяца (см. {@code gamification.challenge}). */
     CHALLENGE_CHAMPION("Чемпион месяца", "Выполните любой челлендж месяца", "challenge"),
 
-    /**
-     * Экзамен ({@code ru.vsm.backend.scenario.service.ExamService}) сдан на оценку "отлично"
-     * ({@code ExamGrade.EXCELLENT}). Выдаётся {@code ExamAccrualService} по
-     * {@code ExamCompletedEvent}, а не {@code GamificationAccrualService} по
-     * {@code ScenarioCompletedEvent} — единственная ачивка каталога, привязанная к итогу
-     * экзамена, а не к отдельному прохождению сценария.
-     */
+    /** Экзамен ({@code ru.vsm.backend.scenario.service.ExamService}) сдан на оценку "отлично" */
     CERTIFICATE("Сертификат", "Сдайте экзамен на оценку «отлично»", "milestone");
 
     private final String title;

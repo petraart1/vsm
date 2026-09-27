@@ -10,18 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.vsm.backend.config.PlayerPublicIdProperties;
 
-/**
- * Стабильный необратимый {@code publicId} для публичных ответов (лидерборды игроков) — см.
- * находку CRITICAL в аудите безопасности: реальный {@code playerId} нельзя отдавать анонимному
- * запросу, потому что он же принимается как самодостаточный идентификатор игрока (заголовок
- * {@code X-Player-Id}) на пишущих игровых эндпоинтах без пароля.
- *
- * <p>{@code HMAC-SHA256(playerId)}, первые 16 hex-символов (8 байт) — детерминированно (один и тот
- * же игрок всегда получает один и тот же {@code publicId}, фронт может стабильно отрисовать
- * "закреплённую" строку), но без секретного ключа {@link PlayerPublicIdProperties} не обратимо к
- * исходному UUID. Коллизии на 8 байтах пренебрежимо маловероятны для масштаба лидерборда (топ-N из
- * не более нескольких тысяч игроков на хакатоне).
- */
+/** Стабильный необратимый {@code publicId} для публичных ответов (лидерборды игроков) — см. */
 @Service
 @RequiredArgsConstructor
 public class PlayerPublicIdService {

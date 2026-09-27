@@ -2,14 +2,7 @@ package ru.vsm.backend.gamification.domain;
 
 import java.util.Optional;
 
-/**
- * Уровень игрока по общему счёту {@code PlayerProfile.totalScore} — виден в профиле и в строке
- * лидерборда. Чисто вычисляемая величина, миграции/хранимого поля не требует.
- *
- * <p>Пороги калиброваны по масштабу очков: за одно прохождение сценария — 20-100 базовых очков
- * (см. {@code GamificationAccrualService}) плюс до ~50 за обе шкалы, всего 51 сценарий;
- * дополнительные очки — за экзамен (до 300, {@code ExamAccrualService}) и челленджи месяца.
- */
+/** Уровень игрока по общему счёту {@code PlayerProfile.totalScore} — виден в профиле и в строке */
 public enum PlayerLevel {
 
     TRAINEE(1, "Стажёр", 0),

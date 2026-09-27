@@ -16,31 +16,7 @@ import ru.vsm.backend.gamification.repository.NotificationRepository;
 import ru.vsm.backend.gamification.repository.PlayerProfileRepository;
 import ru.vsm.backend.gamification.service.NotificationService;
 
-/**
- * Сгорание баллов за длительную неактивность (см. ТЗ: «сгорающие баллы»).
- *
- * <p><b>Точка отсчёта неактивности</b> ({@link #referencePoint}) — не {@code updatedAt} (который
- * меняется и самим этим сервисом при сгорании), а {@code max(lastActivityAt, lastPointsExpiryAt)}:
- * {@code lastActivityAt} обновляет только реальная игра ({@code GamificationAccrualService});
- * {@code lastPointsExpiryAt} обновляет только этот сервис, когда баллы уже сгорели — это начинает
- * отсчёт следующего периода, чтобы неактивный игрок не терял баллы каждый день подряд, а раз в
- * {@code inactivityDays} дней.
- *
- * <p><b>Пороги</b> (см. {@link PointsExpiryProperties}):
- * <ul>
- *   <li>{@code daysSinceReference >= inactivityDays} — сгорает {@code expiryPercent}% от
- *       {@code totalScore} (округление до целого), уведомление {@code POINTS_EXPIRED};</li>
- *   <li>{@code inactivityDays - warningDays <= daysSinceReference < inactivityDays} —
- *       предупреждение {@code POINTS_EXPIRING}, не более одного раза за период (см.
- *       {@link NotificationRepository#existsByPlayerIdAndTypeAndCreatedAtGreaterThanEqual}).</li>
- * </ul>
- *
- * <p>Игрок с {@code totalScore <= 0} пропускается целиком — сгорать нечему, предупреждать не о
- * чем. Прогон идемпотентен в рамках одного дня: как только баллы сгорают, {@code
- * lastPointsExpiryAt} сразу становится {@code now}, поэтому повторный вызов в тот же момент
- * (например, второй клик по демо-эндпоинту) видит {@code daysSinceReference == 0} и ничего не
- * делает.
- */
+/** Сгорание баллов за длительную неактивность (см. ТЗ: «сгорающие баллы»). */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -60,12 +36,7 @@ public class PointsExpiryService {
                 result.warnedPlayers(), result.expiredPlayers(), result.totalPointsExpired());
     }
 
-    /**
-     * @param now момент, относительно которого считается неактивность — {@code Instant.now()} в
-     *            плановом запуске, либо явно заданная дата в демо-эндпоинте
-     *            ({@code POST /api/admin/points-expiry/run?now=...}), чтобы можно было
-     *            воспроизвести сгорание без реального ожидания {@code inactivityDays} дней.
-     */
+    /** @param now момент, относительно которого считается неактивность — {@code Instant.now()} в */
     @Transactional
     public PointsExpiryRunResult run(Instant now) {
         int inactivityDays = properties.getInactivityDays();

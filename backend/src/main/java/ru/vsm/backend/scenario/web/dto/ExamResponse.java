@@ -6,11 +6,7 @@ import java.util.UUID;
 import ru.vsm.backend.scenario.domain.CarClass;
 import ru.vsm.backend.scenario.domain.ExamStatus;
 
-/**
- * Состояние экзамена: упорядоченный список пунктов ({@link #scenarios}, см. {@link ExamScenarioResponse}),
- * {@link #currentIndex} — позиция первого не пройденного пункта. {@link #result} — {@code null}, пока
- * {@link #status} не {@link ExamStatus#COMPLETED}.
- */
+/** Состояние экзамена: упорядоченный список пунктов ({@link #scenarios}, см. {@link ExamScenarioResponse}), */
 public record ExamResponse(
         UUID examId,
         UUID playerId,

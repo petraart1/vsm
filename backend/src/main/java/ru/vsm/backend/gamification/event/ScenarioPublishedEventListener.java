@@ -8,16 +8,7 @@ import ru.vsm.backend.gamification.domain.NotificationType;
 import ru.vsm.backend.gamification.service.NotificationService;
 import ru.vsm.backend.scenario.event.ScenarioPublishedEvent;
 
-/**
- * Слушатель {@link ScenarioPublishedEvent} на стороне gamification: рассылает уведомление
- * {@code NEW_SCENARIO} всем уже известным профилям игрока.
- *
- * <p>Обычный {@code @EventListener}, а не {@code @TransactionalEventListener(AFTER_COMMIT)} —
- * в отличие от {@link ScenarioCompletedEventListener}, событие публикуется в
- * {@code EditorScenarioController} УЖЕ ПОСЛЕ того, как транзакция сохранения сценария
- * ({@code ScenarioSeedService.upsertForEditor}, {@code @Transactional}) зафиксирована (метод
- * контроллера сам не транзакционный), так что дожидаться commit'а здесь нечего.
- */
+/** Слушатель {@link ScenarioPublishedEvent} на стороне gamification: рассылает уведомление */
 @Slf4j
 @Component
 @RequiredArgsConstructor

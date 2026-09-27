@@ -22,11 +22,7 @@ import ru.vsm.backend.scenario.service.exception.ScenarioGraphInvalidException;
 import ru.vsm.backend.scenario.service.exception.ScenarioHasPlaythroughsException;
 import ru.vsm.backend.scenario.service.exception.ScenarioNotFoundException;
 
-/**
- * Маппинг исключений домена scenario (REST прохождения и редактора) в HTTP-ответы с единой формой
- * {@link ApiError}. {@code @Order(10)} — см. javadoc {@code AuthExceptionHandler} про приоритет
- * относительно {@code ru.vsm.backend.config.error.GlobalExceptionHandler}.
- */
+/** Маппинг исключений домена scenario (REST прохождения и редактора) в HTTP-ответы с единой формой */
 @RestControllerAdvice(basePackages = "ru.vsm.backend.scenario.web")
 @Order(10)
 public class ScenarioExceptionHandler {
@@ -101,12 +97,7 @@ public class ScenarioExceptionHandler {
         return respond(HttpStatus.BAD_REQUEST, "missing_header", e, request);
     }
 
-    /**
-     * Defense-in-depth: основная защита от гонки двойного клика — пессимистичная блокировка
-     * {@code UserProgress} в {@code ScenarioPlayService} (см. {@code UserProgressRepository.findByIdForUpdate}),
-     * но если конкурентная запись всё же пробьёт {@code uq_choice_history_progress_sequence}
-     * (миграция {@code scenario/010}), это конфликт состояния, а не внутренняя ошибка сервера.
-     */
+    /** Defense-in-depth: основная защита от гонки двойного клика — пессимистичная блокировка */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handle(DataIntegrityViolationException e, HttpServletRequest request) {
         return respond(HttpStatus.CONFLICT, "concurrent_modification", e, request);

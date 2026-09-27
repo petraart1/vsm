@@ -72,6 +72,7 @@ import ru.vsm.mobile.ui.screens.scenarios.DebriefScreen
 import ru.vsm.mobile.ui.screens.scenarios.ScenarioListScreen
 import ru.vsm.mobile.ui.screens.scenarios.ScenarioPlayScreen
 import ru.vsm.mobile.ui.screens.settings.SettingsPreferences
+import ru.vsm.mobile.ui.screens.shift.ShiftChrome
 import ru.vsm.mobile.ui.screens.shift.ShiftScreen
 import ru.vsm.mobile.ui.screens.today.TodayScreen
 import androidx.compose.ui.platform.LocalContext
@@ -112,6 +113,9 @@ fun VsmNavHost() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val isFullScreen = currentRoute == null || fullScreenRoutes.contains(currentRoute)
+    // «Рейс» внутри «Смены» временно прячет только верхнюю шапку (см. ShiftChrome), чтобы сцене
+    // доставалось больше места — таб-бар внизу остаётся, поэтому это отдельный флаг, а не isFullScreen.
+    val hideTopBarOnly = currentRoute == Routes.SHIFT && ShiftChrome.hideGlobalHeader
 
     val context = LocalContext.current
     // Первый запуск устройства (ни один экран ещё не открывался) — стартуем с логина, с точкой
@@ -138,7 +142,7 @@ fun VsmNavHost() {
 
     Scaffold(
         topBar = {
-            if (!isFullScreen) {
+            if (!isFullScreen && !hideTopBarOnly) {
                 // Компактная шапка (56dp + системная строка состояния), без запаса высоты
                 // Material3 TopAppBar. Справа — только колокольчик и аватар/«Войти»: настройки
                 // переехали внутрь профиля.
@@ -259,11 +263,8 @@ private fun VsmBottomBar(currentRoute: String?, onSelect: (String) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 12.dp, shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp), clip = false)
-            .background(
-                VsmPalette.glass,
-                RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-            )
+            .shadow(elevation = 12.dp, clip = false)
+            .background(VsmPalette.glass)
             .onSizeChanged { barWidthPx = it.width }
             .windowInsetsPadding(WindowInsets.navigationBars),
     ) {

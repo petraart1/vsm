@@ -8,11 +8,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 
-/**
- * Тело {@code POST /api/admin/challenges} — событие (челлендж), созданное администратором.
- * Типы целей и их параметры — те же, что у сидированных челленджей месяца
- * ({@code ChallengeGoalType}); прогресс по новому событию считается тем же механизмом.
- */
+/** Тело {@code POST /api/admin/challenges} — событие (челлендж), созданное администратором. */
 public record AdminChallengeRequest(
         @NotBlank @Size(max = 150) String title,
         @NotBlank @Size(max = 500) String description,

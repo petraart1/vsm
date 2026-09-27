@@ -15,15 +15,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Прогресс одного игрока по одному {@link Challenge}. Одна строка на пару (challenge, player) —
- * см. {@code uq_challenge_progress_challenge_player}.
- *
- * <p>Обновляется в {@code GamificationAccrualService} в том же обработчике
- * {@code ScenarioCompletedEvent}, что и начисление очков — отдельной идемпотентности здесь не
- * требуется: весь метод пропускается целиком при повторной доставке уже обработанного
- * {@code userProgressId} (см. {@code gamification_accrual_log}).
- */
+/** Прогресс одного игрока по одному {@link Challenge}. Одна строка на пару (challenge, player) — */
 @Getter
 @Setter
 @Builder

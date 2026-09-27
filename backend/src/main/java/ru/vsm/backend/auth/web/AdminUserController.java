@@ -23,13 +23,7 @@ import ru.vsm.backend.auth.security.PlayerAccessGuard;
 import ru.vsm.backend.auth.web.dto.AdminUserPatchRequest;
 import ru.vsm.backend.auth.web.dto.UserProfileResponse;
 
-/**
- * Административная консоль: список учётных записей и правка роли/подтверждения/имени. Путь под
- * {@code /api/admin/**}, доступен только роли {@code ADMIN} (см. {@code SecurityConfig}).
- *
- * <p>Снять роль {@code ADMIN} с собственной учётной записи запрещено — иначе администратор мог бы
- * случайно заблокировать себе доступ к этой же консоли без возможности вернуть права.
- */
+/** Административная консоль: список учётных записей и правка роли/подтверждения/имени. Путь под */
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor

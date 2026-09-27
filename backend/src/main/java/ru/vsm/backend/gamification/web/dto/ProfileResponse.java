@@ -3,12 +3,7 @@ package ru.vsm.backend.gamification.web.dto;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Ответ GET /api/gamification/profile/{playerId} — см. design/screens/profile.md.
- *
- * <p>Для нового игрока без завершённых прохождений возвращается с нулевыми счётчиками и
- * пустыми списками (не 404) — так фронт рисует "пустое" состояние профиля, а не ошибку.
- */
+/** Ответ GET /api/gamification/profile/{playerId} — см. design/screens/profile.md. */
 public record ProfileResponse(
         UUID playerId,
         String displayName,

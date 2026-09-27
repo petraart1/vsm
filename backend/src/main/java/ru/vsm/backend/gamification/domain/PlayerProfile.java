@@ -12,14 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Профиль игрока (проводника). {@link #id} — тот же {@code userId}, что публикует
- * {@code scenario.event.ScenarioCompletedEvent}; отдельного домена аутентификации в MVP нет,
- * поэтому id не сгенерирован здесь, а приходит вместе с первым событием/запросом.
- *
- * <p>Строка создаётся лениво в {@code GamificationAccrualService} при первом начисленном
- * событии для этого игрока.
- */
+/** Профиль игрока (проводника). {@link #id} — тот же {@code userId}, что публикует */
 @Getter
 @Setter
 @Builder
@@ -52,22 +45,12 @@ public class PlayerProfile {
     @Builder.Default
     private Instant updatedAt = Instant.now();
 
-    /**
-     * Момент последнего РЕАЛЬНОГО действия игрока (начисление за прохождение сценария, см.
-     * {@code GamificationAccrualService#processEvent}) — в отличие от {@link #updatedAt}, не
-     * меняется, когда профиль трогает только {@code PointsExpiryService} (сгорание баллов не
-     * должно "сбрасывать" неактивность самим фактом своей работы).
-     */
+    /** Момент последнего РЕАЛЬНОГО действия игрока (начисление за прохождение сценария, см. */
     @Column(name = "last_activity_at", nullable = false)
     @Builder.Default
     private Instant lastActivityAt = Instant.now();
 
-    /**
-     * Момент последнего сгорания баллов этого игрока за неактивность ({@code
-     * PointsExpiryService}); {@code null}, если ещё ни разу не сгорали. Вместе с {@link
-     * #lastActivityAt} задаёт точку отсчёта следующего периода неактивности — см. javadoc
-     * {@code PointsExpiryService#referencePoint}.
-     */
+    /** Момент последнего сгорания баллов этого игрока за неактивность ({@code */
     @Column(name = "last_points_expiry_at")
     private Instant lastPointsExpiryAt;
 }

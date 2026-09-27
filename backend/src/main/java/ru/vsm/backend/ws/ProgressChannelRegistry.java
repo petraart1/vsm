@@ -28,33 +28,7 @@ import ru.vsm.backend.scenario.web.dto.ChoiceAppliedResponse;
 import ru.vsm.backend.ws.dto.ProgressWsMessage;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Живой WebSocket-канал прохождения: реестр подключённых сессий по {@code progressId}, тикер
- * обратного отсчёта (Reactor {@link Flux#interval}) и рассылка событий {@code tick}/
- * {@code timeout}/{@code state}/{@code completed} (см. {@link ProgressWsMessage}).
- *
- * <p><b>REST остаётся источником истины</b>: тикер существует только пока к прохождению
- * подключена хотя бы одна WebSocket-сессия (канал создаётся при первом подключении и удаляется
- * при последнем отключении, см. {@link #register}/{@link #unregister}) — клиент без WebSocket не
- * ломается, т.к. {@code ScenarioPlayService.choose} самостоятельно подставляет
- * {@code defaultChoice} при просроченном дедлайне (см. Javadoc сервиса).
- *
- * <p><b>Серверный автотаймаут</b> ({@link #applyServerTimeout}) вызывает тот же
- * {@code ScenarioPlayService.timeout}, что и REST-эндпоинт {@code POST .../timeout} — та же
- * пессимистичная блокировка прохождения, что и у любого REST-запроса (см.
- * {@code UserProgressRepository.findByIdForUpdate}). Если состояние уже успело измениться
- * конкурентно (игрок сам выбрал вариант через REST секундой раньше — прохождение уже не
- * {@code IN_PROGRESS}, либо уже на другом узле без дефолтного выбора), тикер просто игнорирует
- * исключение, не шлёт ничего лишнего: REST-выбор уже разослал {@code state} через
- * {@link #onProgressStateChanged}.
- *
- * <p><b>Точка подписки на изменения из REST</b>: {@link #onProgressStateChanged} слушает
- * {@link ProgressStateChangedEvent}, который {@code ScenarioPlayService} публикует на каждое
- * применение выбора — независимо от того, кто его инициировал (REST-запрос игрока или тикер этого
- * класса). Поэтому REST-выбор игрока с открытой WebSocket-сессией того же прохождения тоже
- * рассылает {@code state} всем подключённым сессиям, и здесь же тикер перепланируется под новый
- * узел (или останавливается, если прохождение завершилось или узел без таймера).
- */
+/** Живой WebSocket-канал прохождения: реестр подключённых сессий по {@code progressId}, тикер */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -94,12 +68,7 @@ public class ProgressChannelRegistry {
         sendQuietly(session, message);
     }
 
-    /**
-     * (Пере)запускает тикер обратного отсчёта до {@code deadline}: раз в секунду шлёт {@code tick}
-     * всем сессиям канала, а по достижении дедлайна — вызывает {@link #applyServerTimeout}.
-     * Предыдущий тикер этого канала (если был) останавливается. Не блокирующий: считает и шлёт на
-     * {@link Schedulers#boundedElastic()}, не на реакторном parallel-планировщике.
-     */
+    /** (Пере)запускает тикер обратного отсчёта до {@code deadline}: раз в секунду шлёт {@code tick} */
     void scheduleTicker(UUID progressId, UUID playerId, Instant deadline) {
         ProgressChannel channel = channels.get(progressId);
         if (channel == null) {
@@ -125,13 +94,7 @@ public class ProgressChannelRegistry {
         }
     }
 
-    /**
-     * Вызывается тикером по достижении дедлайна узла — тот же метод сервиса, что и явный REST
-     * {@code POST .../timeout}, поэтому дублирующегося/конфликтующего с REST кода блокировки нет.
-     * Гонка с параллельным REST-выбором того же прохождения разрешается на уровне
-     * {@code UserProgressRepository.findByIdForUpdate}: кто раньше — тот и применяется, второй
-     * получает доменное исключение здесь и молча игнорируется (см. Javadoc класса).
-     */
+    /** Вызывается тикером по достижении дедлайна узла — тот же метод сервиса, что и явный REST */
     private void applyServerTimeout(UUID progressId, UUID playerId) {
         try {
             ChoiceAppliedResponse response = scenarioPlayService.timeout(progressId, playerId);

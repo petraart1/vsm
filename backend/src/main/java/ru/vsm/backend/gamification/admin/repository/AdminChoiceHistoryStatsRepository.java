@@ -12,11 +12,7 @@ import ru.vsm.backend.scenario.domain.ScenarioChoiceHistory;
  */
 public interface AdminChoiceHistoryStatsRepository extends Repository<ScenarioChoiceHistory, UUID> {
 
-    /**
-     * По одной строке на сценарий: всего сделанных выборов (включая примененные по таймауту)
-     * и сколько из них — таймаут. {@code h.userProgressId = up.id} — обычное соединение по
-     * значению UUID-колонки, не JPA-ассоциация (см. javadoc {@code UserProgress}/{@code Scenario}).
-     */
+    /** По одной строке на сценарий: всего сделанных выборов (включая примененные по таймауту) */
     @Query("""
             select new ru.vsm.backend.gamification.admin.repository.ChoiceTimeoutRow(
                 up.scenarioId,

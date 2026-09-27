@@ -15,12 +15,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
 
     List<Notification> findByPlayerIdAndReadAtIsNull(UUID playerId);
 
-    /**
-     * Использует {@code PointsExpiryService} для дедупликации {@code POINTS_EXPIRING}: если такое
-     * уведомление уже создавалось этому игроку с начала текущего периода неактивности
-     * ({@code createdAtFrom} — точка отсчёта, см. {@code PointsExpiryService#referencePoint}),
-     * второй раз за тот же период оно не создаётся.
-     */
+    /** Использует {@code PointsExpiryService} для дедупликации {@code POINTS_EXPIRING}: если такое */
     boolean existsByPlayerIdAndTypeAndCreatedAtGreaterThanEqual(
             UUID playerId, NotificationType type, Instant createdAtFrom);
 }

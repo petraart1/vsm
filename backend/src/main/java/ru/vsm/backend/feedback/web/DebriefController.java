@@ -10,18 +10,7 @@ import ru.vsm.backend.auth.security.PlayerAccessGuard;
 import ru.vsm.backend.feedback.dto.DebriefResponse;
 import ru.vsm.backend.feedback.service.DebriefService;
 
-/**
- * REST разбора прохождения сценария (экран {@code design/screens/debrief.md}).
- *
- * <p>Эндпоинт: {@code GET /api/feedback/debrief/{userProgressId}} -> {@link DebriefResponse}.
- * {@code userProgressId} — id записи {@code user_progress} из сценария.
- *
- * <p>Доступ — только владелец прохождения (JWT либо {@code X-Player-Id}) или ADMIN, иначе
- * {@code 403 forbidden} (см. {@link PlayerAccessGuard}) — раньше разбор чужого прохождения
- * читался без единой проверки владения. Владелец — не параметр запроса, а поле самого
- * прохождения ({@link DebriefService#ownerOf}), т.к. {@code userProgressId} сам по себе не
- * говорит, чьё это прохождение (тот же паттерн, что {@code NotificationController}).
- */
+/** REST разбора прохождения сценария (экран {@code design/screens/debrief.md}). */
 @RestController
 @RequiredArgsConstructor
 public class DebriefController {

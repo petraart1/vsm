@@ -1,7 +1,15 @@
 package ru.vsm.mobile.ui.screens.shift
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,8 +44,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
@@ -79,10 +92,26 @@ private val CONDITION_LABELS = listOf(
 )
 
 /**
+ * Мостик к корневому навграфу: во время «Рейса» глобальная шапка (заголовок/колокольчик/аватар)
+ * временно скрывается, чтобы сцене вагона и диалогу доставалось больше места — таб-бар внизу при
+ * этом остаётся видимым как обычно, ничего не перестраивая в навграфе постоянно.
+ */
+object ShiftChrome {
+    var hideGlobalHeader by mutableStateOf(false)
+        private set
+
+    fun setHideHeader(hidden: Boolean) {
+        hideGlobalHeader = hidden
+    }
+}
+
+/**
  * «Смена проводника»: выбор режима -> заступ (медосмотр и инструктаж) -> приёмка вагона -> рейс
  * Москва — Санкт-Петербург (вызовы пассажиров) -> итог смены. Перенос `frontend/src/screens/Shift.jsx`.
  * Таб-бар остаётся видимым на всех этапах — своя мини-шапка рисуется поверх обычной только там, где
- * это уместно (заступ/приёмка/рейс), у остальных этапов — обычная шапка навграфа.
+ * это уместно (заступ/приёмка/рейс), у остальных этапов — обычная шапка навграфа. Во время «Рейса»
+ * скрывается и глобальная шапка (см. [ShiftChrome]) — экран сцены не должен скроллиться и не должен
+ * терять место на заголовок, выход доступен системной кнопкой/жестом или через паузу в тулбаре рейса.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,6 +137,9 @@ fun ShiftScreen(navigator: AppNavigator) {
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
+
+    LaunchedEffect(state.stage) { ShiftChrome.setHideHeader(state.stage == ShiftStage.TRIP) }
+    DisposableEffect(Unit) { onDispose { ShiftChrome.setHideHeader(false) } }
 
     Scaffold(
         topBar = {
@@ -462,7 +494,7 @@ private fun TripContent(state: ShiftUiState, vm: ShiftViewModel) {
             VsmBadge(text = "${state.incidents.count { it.status == IncidentStatus.DONE }}")
         }
 
-        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).weight(1f)) {
             CarScene(
                 cls = state.artCls, passengers = state.passengers,
                 signals = state.incidents.filter { it.status == IncidentStatus.ACTIVE }.map { i ->
@@ -480,14 +512,11 @@ private fun TripContent(state: ShiftUiState, vm: ShiftViewModel) {
                 }
             }
 
-            if (state.dialog.active && activeIncident != null) {
-                Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
-                    DialogSheet(
-                        state = state.dialog, onChoose = vm::chooseDialog,
-                        footer = { if (state.dialog.final) VsmButton(text = "Вернуться к работе", onClick = vm::dismissTripDialog, modifier = Modifier.fillMaxWidth()) },
-                    )
-                }
-            }
+            TripDialogPanel(
+                dialogState = state.dialog, incidentActive = activeIncident != null,
+                onChoose = vm::chooseDialog, onDismiss = vm::dismissTripDialog,
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            )
 
             if (state.tripPaused) {
                 Box(Modifier.matchParentSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f)).padding(16.dp), contentAlignment = Alignment.Center) {
@@ -498,6 +527,55 @@ private fun TripContent(state: ShiftUiState, vm: ShiftViewModel) {
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Диалог рейса как выезжающая снизу панель: слайд-ин при появлении вызова, слайд-аут после выбора
+ * ответа или свайпа вниз (только когда диалог уже завершён — свайп не отменяет незавершённый выбор).
+ * Последнее состояние запоминается, чтобы анимация скрытия доигрывала на настоящем контенте, а не на
+ * пустоте, когда вызов уже обнулился в состоянии экрана.
+ */
+@Composable
+private fun TripDialogPanel(
+    dialogState: DialogUiState,
+    incidentActive: Boolean,
+    onChoose: (String) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var lastDialogState by remember { mutableStateOf(dialogState) }
+    if (dialogState.active && incidentActive) lastDialogState = dialogState
+    val visible = dialogState.active && incidentActive
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = slideInVertically(tween(260, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(200)),
+        exit = slideOutVertically(tween(200, easing = FastOutSlowInEasing)) { it } + fadeOut(tween(150)),
+        modifier = modifier,
+    ) {
+        var dragOffset by remember { mutableFloatStateOf(0f) }
+        Box(
+            Modifier.pointerInput(lastDialogState.final) {
+                detectVerticalDragGestures(
+                    onVerticalDrag = { change, dragAmount ->
+                        if (dragAmount > 0) {
+                            dragOffset += dragAmount
+                            change.consume()
+                        }
+                    },
+                    onDragEnd = {
+                        if (lastDialogState.final && dragOffset > 120f) onDismiss()
+                        dragOffset = 0f
+                    },
+                )
+            },
+        ) {
+            DialogSheet(
+                state = lastDialogState, onChoose = onChoose,
+                footer = { if (lastDialogState.final) VsmButton(text = "Вернуться к работе", onClick = onDismiss, modifier = Modifier.fillMaxWidth()) },
+            )
         }
     }
 }

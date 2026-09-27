@@ -30,15 +30,7 @@ import ru.vsm.backend.scenario.repository.ScenarioRepository;
 import ru.vsm.backend.scenario.repository.UserProgressRepository;
 import ru.vsm.backend.scenario.service.ExamService;
 
-/**
- * Строит разбор прохождения сценария (см. {@code design/screens/debrief.md}) по id
- * {@code user_progress}. Читает данные сценария строго read-only через репозитории —
- * ничего в таблицы scenario не пишет.
- *
- * <p>Своих таблиц для MVP не заводит: таймлайн и объяснения собираются на лету из
- * {@code scenario_choice_history} + графа сценария при каждом запросе. Если понадобится
- * кэширование по многим прохождениям — тогда появится смысл в отдельных таблицах.
- */
+/** Строит разбор прохождения сценария (см. {@code design/screens/debrief.md}) по id */
 @Service
 @RequiredArgsConstructor
 public class DebriefService {
@@ -193,14 +185,7 @@ public class DebriefService {
                 normReferences.stream().toList());
     }
 
-    /**
-     * Распознаёт узел со скрытой механикой закадровой коммуникации (например, разговор по
-     * служебной рации, который сам пассажир не слышит) без привязки к конкретному сценарию/узлу:
-     * узел эскалации, где у всех альтернатив одна и та же дельта лояльности (пассажир не видит
-     * разницы), но дельта безопасности различается (формулировка всё равно на неё влияет — риск
-     * случайно быть услышанным, нарушение протокола переговоров и т.п.). Ключевая деталь для
-     * разбора: решение здесь совсем не отражается на реакции пассажира, только на безопасности.
-     */
+    /** Распознаёт узел со скрытой механикой закадровой коммуникации (например, разговор по */
     private boolean isHiddenCommunicationEffect(ScenarioNode node, List<ScenarioChoice> alternatives) {
         if (node.getNodeType() != NodeType.ESCALATION || alternatives.size() < 2) {
             return false;

@@ -16,13 +16,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Прохождение сценария игроком: текущая позиция в графе и накопленные шкалы.
- *
- * <p>{@link #userId} намеренно без FK на таблицу пользователя — она принадлежит домену
- * gamification. Связь между доменами — только по id и через доменное событие
- * {@link ru.vsm.backend.scenario.event.ScenarioCompletedEvent}, не через БД.
- */
+/** Прохождение сценария игроком: текущая позиция в графе и накопленные шкалы. */
 @Getter
 @Setter
 @Builder
@@ -46,12 +40,7 @@ public class UserProgress {
     @Column(name = "current_node_id")
     private UUID currentNodeId;
 
-    /**
-     * Дедлайн решения по {@link #currentNodeId} (now + {@code timerSeconds} узла в момент входа
-     * в него); null — у текущего узла нет таймера, либо прохождение завершено. Источник истины
-     * для серверной проверки таймаута в {@code ScenarioPlayService} — WebSocket-пуш обратного
-     * отсчёта (следующая задача) не заменяет эту проверку, а лишь визуализирует её.
-     */
+    /** Дедлайн решения по {@link #currentNodeId} (now + {@code timerSeconds} узла в момент входа */
     @Column(name = "node_deadline_at")
     private Instant nodeDeadlineAt;
 
@@ -94,15 +83,7 @@ public class UserProgress {
     @Column(name = "completed_at")
     private Instant completedAt;
 
-    /**
-     * {@code true}, если это прохождение — один из пунктов экзамена ({@link Exam}), а не обычная
-     * тренировочная попытка. Задаётся один раз при старте ({@code ScenarioPlayService.start} с
-     * {@code examId != null}) и не меняется. Меняет поведение {@code ScenarioPlayService} и
-     * {@code DebriefService}: в {@code ChoiceAppliedResponse} прикладного выбора не раскрываются
-     * дельты/итоговые значения шкал (без подсказок во время экзамена — см. javadoc
-     * {@code ChoiceAppliedResponse}), а разбор прохождения ({@code GET /api/feedback/debrief/*})
-     * недоступен (409), пока экзамен не завершён целиком (см. {@code ExamService.assertDebriefAllowed}).
-     */
+    /** тренировочная попытка. Задаётся один раз при старте ({@code ScenarioPlayService.start} с */
     @Column(name = "exam_mode", nullable = false)
     @Builder.Default
     private boolean examMode = false;

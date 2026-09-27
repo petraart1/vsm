@@ -17,15 +17,7 @@ import ru.vsm.backend.gamification.showcase.service.ShowcaseService;
 import ru.vsm.backend.gamification.showcase.web.dto.ShowcaseRequest;
 import ru.vsm.backend.gamification.showcase.web.dto.ShowcaseResponse;
 
-/**
- * Витрина наград.
- * <ul>
- *   <li>{@code PUT /api/gamification/showcase} — заменить свою витрину (личность — JWT или
- *   {@code X-Player-Id}, как у остальных игровых эндпоинтов);</li>
- *   <li>{@code GET /api/gamification/showcase/{publicId}} — публичная витрина коллеги по
- *   {@code publicId} из лидерборда. Пустая витрина — 200 с пустым списком.</li>
- * </ul>
- */
+/** Витрина наград. */
 @RestController
 @RequestMapping("/api/gamification/showcase")
 @RequiredArgsConstructor

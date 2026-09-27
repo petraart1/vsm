@@ -24,34 +24,7 @@ import ru.vsm.backend.scenario.repository.ScenarioRepository;
 import ru.vsm.backend.scenario.repository.UserProgressRepository;
 import ru.vsm.backend.scenario.service.exception.ScenarioHasPlaythroughsException;
 
-/**
- * Транзакционная загрузка одного сценария из {@link ScenarioSeedDto} в БД.
- *
- * <p>Идемпотентность и обновление контента, по {@link ScenarioSeedDto#getVersion()}:
- * <ul>
- *   <li>сценария с таким {@code code} ещё нет — создаётся заново;</li>
- *   <li>уже есть, версия в файле <= версии в БД — файл пропускается целиком, граф не трогается
- *       (обычный путь на каждом рестарте для не изменившегося контента);</li>
- *   <li>уже есть, версия в файле больше версии в БД, и по сценарию ещё нет ни одного
- *       {@code UserProgress} (см. {@link UserProgressRepository#existsByScenarioId}) — старый граф
- *       (узлы+выборы) удаляется и пересобирается заново из файла, сама строка {@code scenarios}
- *       обновляется на месте (id сохраняется);</li>
- *   <li>уже есть, версия в файле больше, но по сценарию есть хотя бы одно прохождение (в т.ч.
- *       {@code COMPLETED}) — обновление пропускается с предупреждением в лог: перезапись узлов/выборов
- *       порвала бы FK из {@code scenario_choice_history} (там нет {@code ON DELETE CASCADE} на
- *       {@code scenario_nodes}/{@code scenario_choices}) и/или {@code user_progress.current_node_id}
- *       у ещё не завершённых прохождений. Обновление такого сценария на непустой БД — ручная операция
- *       (например, на staging/демо-стенде, где прохождения можно потерять осознанно).</li>
- * </ul>
- *
- * <p>Удаление старого графа при обновлении — {@link #deleteExistingGraph}, вручную и в строгом
- * порядке (не просто "удалить узлы и положиться на каскад"): {@code scenario_choices.target_node_id}
- * не имеет {@code ON DELETE CASCADE} и в общем случае указывает вперёд на другие узлы того же
- * сценария, поэтому сначала снимаются все обратные/вперёд смотрящие ссылки, и только потом узлы.
- *
- * <p>Вынесено в отдельный бин (а не метод в {@link ScenarioSeedLoader}), чтобы
- * {@code @Transactional} применялся через Spring-прокси, а не терялся на self-invocation.
- */
+/** Транзакционная загрузка одного сценария из {@link ScenarioSeedDto} в БД. */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -205,23 +178,7 @@ public class ScenarioSeedService {
                 dto.getCode(), nodesByCode.size(), choicesByNodeAndCode.size());
     }
 
-    /**
-     * Вариант {@link #seed(ScenarioSeedDto)} для редактора сценариев (в отличие от загрузки при
-     * старте приложения): вызывающий уже проверил граф {@code ScenarioGraphValidator}'ом, здесь
-     * только правила версионирования содержимого.
-     *
-     * <ul>
-     *   <li>сценария с таким {@code code} ещё нет — создаётся (как обычный {@link #seed});</li>
-     *   <li>уже есть, но по нему есть хотя бы одно прохождение — {@link ScenarioHasPlaythroughsException}
-     *       (409 на HTTP-уровне), граф не трогается;</li>
-     *   <li>уже есть и прохождений ещё не было — обновляется ВСЕГДА (в отличие от {@link #seed},
-     *       который тихо пропускает файл при {@code version <= текущая}): версия из {@code dto}
-     *       принудительно поднимается до {@code текущая + 1}, если автор редактора не поднял её
-     *       сам, — иначе правка в редакторе с той же версией молча проигнорировалась бы.</li>
-     * </ul>
-     *
-     * @return id сохранённого сценария (нового или обновлённого)
-     */
+    /** Вариант {@link #seed(ScenarioSeedDto)} для редактора сценариев (в отличие от загрузки при */
     @Transactional
     public UUID upsertForEditor(ScenarioSeedDto dto) {
         Optional<Scenario> existing = scenarioRepository.findByCode(dto.getCode());
@@ -243,26 +200,7 @@ public class ScenarioSeedService {
                 .getId();
     }
 
-    /**
-     * Удаляет весь существующий граф сценария (узлы+выборы) перед перезаписью более новой версией.
-     * Порядок принципиален из-за трёх FK без {@code ON DELETE CASCADE} в обратную сторону
-     * ({@code scenarios.entry_node_id}, {@code scenario_nodes.default_choice_id},
-     * {@code scenario_choices.target_node_id}) — граф в общем случае содержит и "вперёд смотрящие",
-     * и обратные ссылки между узлами (см. javadoc класса про циклы), поэтому нельзя просто удалить
-     * узлы: любой ещё не удалённый выбор, у которого {@code target_node_id} указывает на уже
-     * удаляемый узел, оборвёт constraint. Разрываем ссылки в правильном порядке вместо того чтобы
-     * полагаться на порядок каскадов:
-     * <ol>
-     *   <li>{@code scenarios.entry_node_id} → null (уже сохранённый сценарий не должен указывать
-     *       на узел, который сейчас будет удалён);</li>
-     *   <li>{@code scenario_nodes.default_choice_id} → null на всех узлах сценария (иначе следующий
-     *       шаг не сможет удалить их собственные выборы по умолчанию);</li>
-     *   <li>удалить все {@code scenario_choices} этих узлов (это же снимает все
-     *       {@code target_node_id}-ссылки на другие узлы того же сценария, т.к. ссылающиеся строки
-     *       исчезают целиком);</li>
-     *   <li>удалить сами {@code scenario_nodes} — на них уже никто не ссылается.</li>
-     * </ol>
-     */
+    /** Удаляет весь существующий граф сценария (узлы+выборы) перед перезаписью более новой версией. */
     private void deleteExistingGraph(Scenario scenario) {
         scenario.setEntryNodeId(null);
         scenarioRepository.saveAndFlush(scenario);

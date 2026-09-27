@@ -4,13 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * Дефолтная учётная запись администратора, создаваемая при старте, если ещё не существует.
- *
- * <p>Bound from {@code app.auth.admin.login}/{@code app.auth.admin.password}. Значения по
- * умолчанию годятся только для демо-стенда — для боевого окружения сменить через переменные
- * окружения (см. README).
- */
+/** Дефолтная учётная запись администратора, создаваемая при старте, если ещё не существует. */
 @ConfigurationProperties(prefix = "app.auth.admin")
 @Getter
 @Setter

@@ -2,11 +2,7 @@ package ru.vsm.backend.scenario.web.dto;
 
 import ru.vsm.backend.scenario.domain.Scenario;
 
-/**
- * Элемент административного списка сценариев ({@code GET /api/admin/scenarios}) — в отличие от
- * {@link ScenarioSummaryResponse} каталога включает неактивные сценарии и служебные поля
- * ({@code active}, {@code version}), которые игроку не нужны.
- */
+/** Элемент административного списка сценариев ({@code GET /api/admin/scenarios}) — в отличие от */
 public record AdminScenarioSummaryResponse(
         String code, String title, String block, boolean flagship, boolean active, int version) {
 

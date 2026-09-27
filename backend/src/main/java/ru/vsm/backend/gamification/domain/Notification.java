@@ -16,13 +16,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Уведомление игрока (новая ачивка / личный рекорд / рост в лидерборде / рекомендация).
- * Создаётся в {@code GamificationAccrualService} в том же обработчике
- * {@code ScenarioCompletedEvent}, что и начисление очков — идемпотентность обеспечивает
- * проверка по {@code userProgressId} в {@code gamification_accrual_log} перед обработкой
- * события (повтор события не доходит до создания уведомлений).
- */
+/** Уведомление игрока (новая ачивка / личный рекорд / рост в лидерборде / рекомендация). */
 @Getter
 @Setter
 @Builder

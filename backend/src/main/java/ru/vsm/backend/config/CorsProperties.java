@@ -6,14 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * Dev/deploy-configurable CORS origins for the {@code /api/**} surface.
- *
- * <p>Bound from {@code app.cors.allowed-origins} (comma-separated list, relaxed binding) in
- * {@code application.properties}. Kept as a property rather than a hardcoded origin list so the
- * dev frontend port (3000, since 8080 is taken by the backend) or a future deployed frontend
- * origin can be added without touching Java code — see {@link WebConfig}.
- */
+/** Dev/deploy-configurable CORS origins for the {@code /api/**} surface. */
 @ConfigurationProperties(prefix = "app.cors")
 @Getter
 @Setter

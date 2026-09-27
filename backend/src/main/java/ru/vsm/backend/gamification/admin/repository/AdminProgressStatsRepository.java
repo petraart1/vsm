@@ -10,14 +10,7 @@ import ru.vsm.backend.scenario.domain.ProgressStatus;
 import ru.vsm.backend.scenario.domain.ScenarioOutcome;
 import ru.vsm.backend.scenario.domain.UserProgress;
 
-/**
- * Read-only агрегаты по {@code user_progress} для статистики администратора
- * (см. {@code ru.vsm.backend.gamification.admin.web.AdminStatsController}).
- *
- * <p>Домен {@code scenario} остаётся источником истины и не меняется этим интерфейсом:
- * репозиторий лежит в {@code gamification.admin} и намеренно расширяет маркерный
- * {@link Repository} (не {@code JpaRepository}) — без методов записи/удаления.
- */
+/** Read-only агрегаты по {@code user_progress} для статистики администратора */
 public interface AdminProgressStatsRepository extends Repository<UserProgress, UUID> {
 
     @Query("select count(p) from UserProgress p")
@@ -41,13 +34,7 @@ public interface AdminProgressStatsRepository extends Repository<UserProgress, U
             + "where p.status = ru.vsm.backend.scenario.domain.ProgressStatus.COMPLETED")
     double avgSafetyScoreCompleted();
 
-    /**
-     * По одной строке на сценарий, только для сценариев хотя бы с одним прохождением.
-     * Средние шкалы — только по {@code COMPLETED} прохождениям (та же семантика, что у
-     * {@link #avgLoyaltyScoreCompleted()}/{@link #avgSafetyScoreCompleted()} в overview);
-     * {@code case ... end} без {@code else} даёт {@code NULL} для незавершённых строк,
-     * которые {@code avg} по стандарту SQL просто игнорирует.
-     */
+    /** По одной строке на сценарий, только для сценариев хотя бы с одним прохождением. */
     @Query("""
             select new ru.vsm.backend.gamification.admin.repository.ScenarioAggregateRow(
                 p.scenarioId,
@@ -79,12 +66,7 @@ public interface AdminProgressStatsRepository extends Repository<UserProgress, U
             """)
     List<BlockAggregateRow> aggregateByBlock();
 
-    /**
-     * По одной строке на игрока ({@code userId}), для экспорта статистики администратора
-     * (см. {@code AdminStatsService#getPlayerStats()}). Средние шкалы и {@code successCount} —
-     * та же семантика, что у {@link #aggregateByScenario()}; {@code lastActivity} — момент
-     * последнего обновления любого прохождения игрока, независимо от статуса.
-     */
+    /** По одной строке на игрока ({@code userId}), для экспорта статистики администратора */
     @Query("""
             select new ru.vsm.backend.gamification.admin.repository.PlayerAggregateRow(
                 p.userId,

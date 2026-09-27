@@ -14,11 +14,7 @@ import ru.vsm.backend.gamification.showcase.web.dto.ShowcaseItemDto;
 import ru.vsm.backend.gamification.showcase.web.dto.ShowcaseRequest;
 import ru.vsm.backend.gamification.showcase.web.dto.ShowcaseResponse;
 
-/**
- * Витрина наград: игрок сам выбирает до шести наград, коллеги видят их по {@code publicId}.
- * Сервер хранит снимки как есть и не подтверждает факт получения награды — витрина
- * декоративная и на очки/рейтинг не влияет (антифрод рейтинга — в начислениях).
- */
+/** Витрина наград: игрок сам выбирает до шести наград, коллеги видят их по {@code publicId}. */
 @Service
 @RequiredArgsConstructor
 public class ShowcaseService {
