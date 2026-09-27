@@ -126,6 +126,12 @@
 .bustPerson > svg { top: -2%; }
 .bustTalking { box-shadow: 0 0 0 2px var(--page-bg), 0 0 0 4px var(--blue); }
 
-@media (prefers-reduced-motion: reduce) {
-  .person *, .seated * { animation: none !important; }
-}
+/* «Меньше движения»: без дыхания, моргания, покачивания и шага. Персонажи, идущие по вагону,
+   просто перемещаются (см. .visitor в CarScene). Состояние пассажира, которое передавалось
+   движением, остаётся статичной позой: наклон головы у плохо себя чувствующего, крен у нетрезвого. */
+:global(:root[data-motion="reduce"]) .person *, :global(:root[data-motion="reduce"]) .seated * { animation: none !important; }
+:global(:root[data-motion="reduce"]) .sway > g { transform: rotate(3deg); }
+:global(:root[data-motion="reduce"]) .unwell .seatHead, :global(:root[data-motion="reduce"]) .high .seatHead { transform: rotate(9deg) translateY(1px); }
+:global(:root[data-motion="reduce"]) .drunk .seatHead { transform: rotate(-7deg); }
+:global(:root[data-motion="reduce"]) .drunk .torsoSeat { transform: rotate(-2deg); }
+:global(:root[data-motion="reduce"]) .angry .seatHead { transform: rotate(-3deg); }

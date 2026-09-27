@@ -59,4 +59,6 @@
   .brand { position: absolute; top: var(--s-8); margin: 0; }
   .panel { position: relative; }
 }
-@media (prefers-reduced-motion: reduce) { .card, .bigBadge { animation: none; } }
+:global(:root[data-motion="reduce"]) .card, :global(:root[data-motion="reduce"]) .bigBadge { animation: none; }
+.esiaHead { display: flex; margin-bottom: var(--s-3); }
+.via { display: inline-flex; align-items: center; gap: 8px; font-size: var(--t-sm); font-weight: 600; color: var(--fg-2); margin-top: var(--s-2); }

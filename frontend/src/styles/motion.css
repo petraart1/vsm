@@ -2,7 +2,7 @@
  * Движение в стиле презентаций Apple: не «всё плавно въезжает», а один акцент на экран.
  * - .rv  — блок проявляется из лёгкого размытия и поднимается на 14px (каскад через --i);
  * - .word — слово заголовка проявляется из размытия (SplitText);
- * Все эффекты выключаются при prefers-reduced-motion.
+ * Все эффекты выключаются в режиме «меньше движения» (см. конец файла).
  */
 
 @keyframes rv-in {
@@ -36,11 +36,35 @@
   animation-delay: calc(var(--i, 0) * var(--word-step, 55ms) + var(--word-base, 0ms));
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .rv, .word { animation: none !important; }
-  *, *::before, *::after {
-    animation-duration: 1ms !important;
-    animation-delay: 0ms !important;
-    transition-duration: 1ms !important;
-  }
+/*
+ * «Меньше движения»: data-motion="reduce" на <html> ставит applyMotion (settings.js) —
+ * и по настройке приложения, и по системной prefers-reduced-motion. Это единственный
+ * переключатель: модули проверяют тот же атрибут через :global(:root[data-motion="reduce"]).
+ *
+ * Анимации не выключаются (animation: none), а схлопываются в 1 мс без задержки и с одним
+ * повтором: появление с fill-mode both/backwards сразу заканчивается в конечном кадре
+ * (opacity 1, transform none), а не зависает невидимым на время задержки; бесконечные петли
+ * отыгрывают один незаметный цикл и возвращаются к базовому стилю. Переходы — мгновенные.
+ */
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+/* Отдельным правилом: неподдерживаемый псевдоэлемент не должен ломать правило выше. */
+:root[data-motion="reduce"] *::backdrop { animation: none !important; transition: none !important; }
+
+:root[data-motion="reduce"] .rv,
+:root[data-motion="reduce"] .word { animation: none !important; }
+
+/* Смена темы через View Transitions — без плавного перехода. */
+:root[data-motion="reduce"]::view-transition-group(*),
+:root[data-motion="reduce"]::view-transition-old(*),
+:root[data-motion="reduce"]::view-transition-new(*) {
+  animation: none !important;
 }

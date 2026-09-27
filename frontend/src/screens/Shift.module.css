@@ -81,17 +81,6 @@
 
 /* Медпункт */
 .room { position: relative; flex: 1; min-height: 0; overflow: hidden; }
-.roomWall { position: absolute; inset: 0 0 26% 0; background: linear-gradient(180deg, #f7f9fc, #e9eef5); }
-:global([data-theme="dark"]) .roomWall { background: linear-gradient(180deg, #2a2d33, #222429); }
-.roomFloor { position: absolute; left: 0; right: 0; bottom: 0; height: 26%; background: linear-gradient(180deg, #cfd6e0, #bac3cf); }
-:global([data-theme="dark"]) .roomFloor { background: #1b1d21; }
-.roomSign { position: absolute; top: 14%; left: 50%; transform: translateX(-50%); font-size: var(--t-xs); font-weight: 600; color: var(--fg-2); letter-spacing: 0.02em; white-space: nowrap; }
-.roomPoster { position: absolute; top: 24%; right: 14%; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: #fff; color: var(--blue); box-shadow: 0 2px 8px rgba(10, 30, 70, 0.1); }
-.roomDesk { position: absolute; bottom: 20%; left: 50%; width: 120px; height: 56px; transform: translateX(-10%); background: #dfe5ee; border-radius: 10px 10px 4px 4px; box-shadow: inset 0 6px 0 #eef2f7; }
-:global([data-theme="dark"]) .roomDesk { background: #3a3e46; box-shadow: inset 0 6px 0 #464b55; }
-.roomHero, .roomNpc { position: absolute; bottom: 12%; }
-.roomHero { left: 12%; animation: walk-in 900ms var(--ease-spring) both; }
-.roomNpc { right: 12%; animation: fade-up 600ms var(--ease-spring) both; }
 @keyframes walk-in { from { transform: translateX(-120px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes fade-up { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
 /* В медпункте шторка диалога закрывает нижнюю половину — персонажи стоят выше. */
@@ -162,9 +151,8 @@
   .ringsCard { gap: var(--s-4); padding: var(--s-4); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .toastCard, .coach, .banner, .roomHero, .roomNpc, .pauseSheet, .scrim { animation: none; }
-}
+:global(:root[data-motion="reduce"]) .toastCard, :global(:root[data-motion="reduce"]) .coach, :global(:root[data-motion="reduce"]) .banner, :global(:root[data-motion="reduce"]) .pauseSheet, :global(:root[data-motion="reduce"]) .scrim,
+:global(:root[data-motion="reduce"]) .clock[data-low], :global(:root[data-motion="reduce"]) .setupArt img, :global(:root[data-motion="reduce"]) .setupCrew > * { animation: none; }
 .medSheet { max-height: 52%; }
 
 /* ---------- Заступ: выбор самочувствия, недопуск ---------- */
@@ -175,12 +163,6 @@
 :global([data-theme="dark"]) .segmented button[data-on] { background: #636366; }
 .groupNote { font-size: var(--t-xs); color: var(--fg-2); margin: var(--s-2) var(--s-4) 0; line-height: 1.4; }
 
-.readout {
-  position: absolute; top: 24%; left: 12%; display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 12px; border-radius: 12px; background: var(--bg); font-size: var(--t-sm); font-weight: 700;
-  box-shadow: 0 4px 14px rgba(10, 30, 70, 0.12); animation: fade-up 600ms var(--ease-spring) 400ms both;
-}
-.readout[data-bad] { color: var(--red); }
 
 .hrReject { background: var(--bg); }
 .rejectIcon { flex: none; width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; background: var(--red-soft); color: var(--red); }
@@ -216,11 +198,6 @@
 @media (min-width: 1024px) {
   .medSheet { max-height: none; }
   .stage .room { flex: 1 1 auto; margin-right: 500px; }
-  .roomHero, .roomNpc { bottom: 18%; }
-  .roomHero { left: 16%; }
-  .roomNpc { right: 16%; }
-  .roomHero > *, .roomNpc > * { scale: 1.5; transform-origin: 50% 100%; }
-  .roomDesk { transform: translateX(-10%) scale(1.4); transform-origin: 50% 100%; }
   .scrim { background: rgba(10, 20, 40, 0.08); }
   /* Итог смены: две колонки */
   .summaryInner { width: min(100%, 1180px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 var(--s-8); align-items: start; }
@@ -229,3 +206,52 @@
   .summaryActions { flex-direction: row; max-width: 560px; }
   .summaryActions > * { flex: 1; }
 }
+
+/* ---------- Режимы смены: панель выбора выезжает справа ---------- */
+.setup { animation: panel-in 520ms var(--ease-spring) both; }
+@keyframes panel-in { from { transform: translateX(48px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (min-width: 1024px) {
+  .setupWrap .setup { background: var(--page-bg); box-shadow: -1px 0 0 var(--line), -24px 0 48px rgba(10, 30, 70, 0.08); animation-name: panel-slide; animation-duration: 640ms; }
+  @keyframes panel-slide { from { transform: translateX(100%); } to { transform: none; } }
+}
+:global(:root[data-motion="reduce"]) .setup { animation: none; transform: none; opacity: 1; }
+.setupBody { padding-top: calc(env(safe-area-inset-top) + var(--s-8)); }
+.modeSeg { margin-top: var(--s-6); }
+.modeSeg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 1 1 0; }
+
+.chapters { list-style: none; margin: 0; padding: 0; background: var(--bg); border-radius: var(--r-lg); overflow: hidden; }
+.chapters > li + li { box-shadow: inset 0 0.5px 0 var(--line); }
+.chapter { width: 100%; display: flex; align-items: center; gap: var(--s-3); padding: 12px var(--s-4); border: 0; background: none; text-align: left; cursor: pointer; color: var(--fg); transition: background var(--dur-fast); }
+.chapter[data-on] { background: var(--bg-hover); }
+.chapter:disabled { cursor: default; opacity: 0.55; }
+.chapterNum { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: var(--t-sm); background: var(--bg-muted); color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.chapter[data-on] .chapterNum { background: var(--blue); color: #fff; }
+.chapterNum[data-done] { background: var(--vsm-navy); color: #fff; }
+.chapterBest { flex: none; font-size: var(--t-sm); font-weight: 600; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.groupNote a { color: var(--blue); }
+
+/* ---------- Брифинг перед сменой ---------- */
+.briefWrap { flex: 1; min-height: 100dvh; display: grid; place-items: center; padding: calc(env(safe-area-inset-top) + var(--s-6)) var(--s-4) calc(env(safe-area-inset-bottom) + var(--s-6)); background: var(--page-bg); }
+.briefCard { width: min(100%, 620px); background: var(--bg); border-radius: var(--r-xl, 22px); padding: var(--s-6); box-shadow: 0 1px 0 var(--line), 0 20px 50px rgba(10, 30, 70, 0.08); animation: fade-up 520ms var(--ease-spring) both; }
+:global(:root[data-motion="reduce"]) .briefCard { animation: none; }
+.briefHead { display: flex; align-items: flex-end; gap: var(--s-4); }
+.briefChief { flex: none; width: 96px; height: 120px; overflow: hidden; display: flex; justify-content: center; align-items: flex-end; border-radius: 18px; background: linear-gradient(180deg, var(--bg-muted), transparent); }
+.briefTitle { font-size: var(--t-2xl); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.briefStory { margin-top: var(--s-4); font-size: var(--t-md); line-height: 1.5; color: var(--fg); }
+.briefTasks { margin: 0; padding: var(--s-3) var(--s-4) var(--s-3) calc(var(--s-4) + 18px); background: var(--bg-muted); border-radius: var(--r-lg); display: flex; flex-direction: column; gap: 6px; font-size: var(--t-base); line-height: 1.4; }
+.briefCard .groupLabel { margin-left: 0; margin-top: var(--s-5); }
+.briefFacts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2); margin-top: var(--s-4); }
+.briefFacts div { padding: 10px 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); }
+.briefFacts dt { font-size: var(--t-xs); color: var(--fg-2); }
+.briefFacts dd { margin: 2px 0 0; font-weight: 600; font-size: var(--t-sm); }
+.briefGoal { display: flex; align-items: center; gap: 8px; margin-top: var(--s-4); font-weight: 600; color: var(--blue); }
+.briefActions { display: flex; flex-direction: column; gap: var(--s-2); margin-top: var(--s-5); }
+@media (min-width: 640px) { .briefActions { flex-direction: row-reverse; } .briefActions > * { flex: 1; } }
+
+.chapterResult { margin-top: var(--s-4); padding: var(--s-5); border-radius: var(--r-lg); background: var(--bg); box-shadow: inset 3px 0 0 var(--blue); }
+@media (min-width: 1024px) { .summaryInner > .chapterResult { grid-column: 1 / -1; } }
+@media (max-width: 1023px) {
+  .setupWrap .cta { bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 8px); padding-bottom: var(--s-3); }
+  .setupBody { padding-bottom: calc(var(--tabbar-h) + var(--s-10)); }
+}
+.briefChief { align-items: flex-start; padding-top: 6px; }

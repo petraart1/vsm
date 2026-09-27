@@ -47,7 +47,7 @@
 .reward .week { width: 100%; margin: var(--s-2) 0; }
 .rewardBtn { width: 100%; }
 
-@media (prefers-reduced-motion: reduce) { .showcase li, .reward[open], .rewardFlame, .day[data-today][data-done] i { animation: none; } }
+:global(:root[data-motion="reduce"]) .showcase li, :global(:root[data-motion="reduce"]) .reward[open], :global(:root[data-motion="reduce"]) .rewardFlame, :global(:root[data-motion="reduce"]) .day[data-today][data-done] i, :global(:root[data-motion="reduce"]) .editor[open], :global(:root[data-motion="reduce"]) .pick[data-on] .pickCheck { animation: none; }
 .rewardInner .kicker:focus { outline: none; }
 
 /* Настройка витрины — шторка */

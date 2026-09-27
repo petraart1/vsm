@@ -9,3 +9,6 @@
   from { background-position: 100% 0; }
   to { background-position: -100% 0; }
 }
+
+/* «Меньше движения»: без переливания, ровная заглушка. */
+:global(:root[data-motion="reduce"]) .skeleton { animation: none; background: var(--bg-muted); }

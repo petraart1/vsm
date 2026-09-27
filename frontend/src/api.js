@@ -1137,6 +1137,166 @@ export function getCustomAwards() {
   return apiFetch(`/api/gamification/custom-awards?playerId=${encodeURIComponent(getPlayerId())}`).catch(() => []);
 }
 
+
+// =======================================================================
+// Администрирование: учётные записи, игроки, включение/выключение сценариев.
+// =======================================================================
+
+const MOCK_USERS = [
+  { id: "00000000-0000-0000-0000-000000000001", login: "admin", email: "admin@demo.local", displayName: "Администратор", role: "ADMIN", verified: false, createdAt: "2026-09-01T09:00:00Z" },
+  { id: "00000000-0000-0000-0000-000000000002", login: "esia_ivanova", email: "ivanova@esia.mock.local", displayName: "Иванова Мария Сергеевна", role: "USER", verified: true, createdAt: "2026-09-12T10:20:00Z" },
+  { id: "00000000-0000-0000-0000-000000000003", login: "orlov", email: "orlov@demo.local", displayName: "Орлов Денис", role: "USER", verified: false, createdAt: "2026-09-20T15:05:00Z" },
+  { id: "00000000-0000-0000-0000-000000000004", login: "belova", email: "belova@demo.local", displayName: "Белова Анна", role: "USER", verified: false, createdAt: "2026-09-24T08:40:00Z" }
+];
+
+export function adminUsers(q) {
+  if (USE_MOCKS) {
+    const n = String(q || "").toLowerCase();
+    return delay(MOCK_USERS.filter((u) => !n || [u.login, u.email, u.displayName].some((x) => String(x || "").toLowerCase().includes(n))));
+  }
+  return apiFetch(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+}
+
+export function adminUpdateUser(id, patch) {
+  if (USE_MOCKS) {
+    const u = MOCK_USERS.find((x) => x.id === id);
+    if (u) Object.assign(u, patch);
+    return delay(u);
+  }
+  return apiFetch(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+}
+
+export function adminPlayers() {
+  if (USE_MOCKS) {
+    const names = ["Иванова Мария", "Орлов Денис", "Белова Анна", "Кузнецов Артём", "Смирнова Ольга", "Громов Илья", "Никитина Вера", "Фёдоров Павел"];
+    return delay(names.map((n, i) => ({ playerId: `p-${i}`, displayName: n, teamName: i % 2 ? "Депо Москва-Ленинградская" : "Депо Санкт-Петербург", totalScore: 2400 - i * 230, totalPlaythroughs: 40 - i * 4, successRate: 0.78 - i * 0.05, avgLoyaltyScore: 74 - i * 2, avgSafetyScore: 81 - i * 3, lastActivity: new Date(Date.now() - i * 36e5 * 7).toISOString() })));
+  }
+  return apiFetch("/api/admin/stats/players");
+}
+
+let MOCK_ADMIN_SCENARIOS = null;
+
+export function adminScenarios() {
+  if (USE_MOCKS) {
+    if (MOCK_ADMIN_SCENARIOS) return delay(MOCK_ADMIN_SCENARIOS.slice());
+    return listScenarios().then((d) => {
+      MOCK_ADMIN_SCENARIOS = d.situations.map((s) => ({ code: s.code || `s-${s.id}`, title: s.title, block: s.block, flagship: s.flagship, active: true, version: 1 }));
+      return MOCK_ADMIN_SCENARIOS.slice();
+    });
+  }
+  return apiFetch("/api/admin/scenarios");
+}
+
+export function adminSetScenarioActive(code, active) {
+  if (USE_MOCKS) {
+    const s = (MOCK_ADMIN_SCENARIOS || []).find((x) => x.code === code);
+    if (s) s.active = active;
+    return delay(s);
+  }
+  return apiFetch(`/api/admin/scenarios/${encodeURIComponent(code)}`, { method: "PATCH", body: JSON.stringify({ active }) });
+}
+
+// =======================================================================
+// Экзамен: набор сценариев подряд без подсказок, единая оценка в конце (см. README backend).
+// Во время экзамена шкалы и дельты не показываются, разбор пунктов открывается после завершения.
+// =======================================================================
+
+const MOCK_EXAMS = {};
+
+export function createExam({ carClass = "STANDARD", size = 5 } = {}) {
+  if (USE_MOCKS) {
+    return listScenarios().then((d) => {
+      const byBlock = {};
+      d.situations.forEach((s) => { (byBlock[s.block] = byBlock[s.block] || []).push(s); });
+      const pool = Object.keys(byBlock).map((b) => byBlock[b][Math.floor(Math.random() * byBlock[b].length)]);
+      const picked = pool.sort(() => Math.random() - 0.5).slice(0, size);
+      const exam = {
+        examId: `exam-${Date.now()}`, carClass, status: "IN_PROGRESS", size: picked.length, currentIndex: 0, startedAt: new Date().toISOString(), finishedAt: null, result: null,
+        scenarios: picked.map((s, i) => ({ sortOrder: i, scenarioId: s.id, scenarioCode: s.code, block: s.block, title: s.title, flagship: s.flagship, userProgressId: null, completed: false, outcome: null, loyaltyScore: null, safetyScore: null }))
+      };
+      MOCK_EXAMS[exam.examId] = exam;
+      return delay(examView(exam));
+    });
+  }
+  return apiFetch(`/api/exams?carClass=${encodeURIComponent(carClass)}&size=${size}`, { method: "POST" }).then(examView);
+}
+
+export function getExam(examId) {
+  if (USE_MOCKS) {
+    const exam = MOCK_EXAMS[examId];
+    if (!exam) return Promise.reject(new Error("not_found"));
+    // В моке пункт считается пройденным, когда его прохождение завершено.
+    exam.scenarios.forEach((it) => {
+      const sess = it.userProgressId && MOCK_SESSIONS_FOR_EXAM[it.userProgressId];
+      if (sess && sess.done && !it.completed) {
+        it.completed = true;
+        it.loyaltyScore = sess.scales.loyalty;
+        it.safetyScore = sess.scales.safety;
+        it.outcome = sess.scales.safety >= 60 && sess.scales.loyalty >= 50 ? "SUCCESS" : sess.scales.safety >= 45 ? "PARTIAL" : "FAILURE";
+      }
+    });
+    const next = exam.scenarios.findIndex((it) => !it.completed);
+    exam.currentIndex = next === -1 ? exam.scenarios.length : next;
+    if (next === -1 && !exam.result) {
+      const n = exam.scenarios.length || 1;
+      const avgL = exam.scenarios.reduce((a, it) => a + it.loyaltyScore, 0) / n;
+      const avgS = exam.scenarios.reduce((a, it) => a + it.safetyScore, 0) / n;
+      const sr = exam.scenarios.filter((it) => it.outcome === "SUCCESS").length / n;
+      const grade = avgS < 60 ? (avgS < 45 ? "UNSATISFACTORY" : "SATISFACTORY") : sr >= 0.8 && avgL >= 70 ? "EXCELLENT" : sr >= 0.5 ? "GOOD" : "SATISFACTORY";
+      exam.status = "COMPLETED";
+      exam.finishedAt = new Date().toISOString();
+      exam.result = { avgLoyaltyScore: avgL, avgSafetyScore: avgS, successRate: sr, grade, weakBlocks: exam.scenarios.filter((it) => it.outcome !== "SUCCESS").map((it) => it.block) };
+    }
+    return delay(examView(exam));
+  }
+  return apiFetch(`/api/exams/${examId}`).then(examView);
+}
+
+const MOCK_SESSIONS_FOR_EXAM = {};
+
+/** Начать текущий пункт экзамена — ответ той же формы, что у startScenario. */
+export function startExamItem(examId) {
+  if (USE_MOCKS) {
+    const exam = MOCK_EXAMS[examId];
+    const it = exam && exam.scenarios.find((x) => !x.completed);
+    if (!it) return Promise.resolve({ error: "not_found" });
+    return mockStartScenario(it.scenarioId, exam.carClass).then((res) => {
+      if (res && !res.error) {
+        it.userProgressId = res.sessionId;
+        MOCK_SESSIONS_FOR_EXAM[res.sessionId] = { done: false, scales: res.scales };
+      }
+      return res;
+    });
+  }
+  return Promise.all([
+    apiFetch(`/api/exams/${examId}/current`, { method: "POST" }),
+    loadCatalog().catch(() => null)
+  ]).then(([progressState, catalog]) => {
+    if (!progressState || !progressState.currentNode) return { error: "not_found" };
+    return {
+      sessionId: progressState.progressId,
+      scenario: { id: progressState.scenarioId, title: progressState.scenarioCode, blockLabel: "" },
+      carClass: progressState.carClass,
+      scales: null,
+      node: realNodeView(progressState.currentNode),
+      catalog
+    };
+  }).catch(() => ({ error: "not_found" }));
+}
+
+/** В моке — отметить завершение пункта экзамена (реальный backend делает это сам). */
+export function markExamItemDone(sessionId, scales) {
+  if (MOCK_SESSIONS_FOR_EXAM[sessionId]) MOCK_SESSIONS_FOR_EXAM[sessionId] = { done: true, scales: scales || MOCK_SESSIONS_FOR_EXAM[sessionId].scales };
+}
+
+function examView(e) {
+  return {
+    ...e,
+    scenarios: (e.scenarios || []).map((it) => ({ ...it, block: String(it.block || "misc").toLowerCase(), blockLabel: blockTitle(String(it.block || "misc").toLowerCase()) })),
+    result: e.result ? { ...e.result, weakBlocks: (e.result.weakBlocks || []).map((b) => String(b).toLowerCase()) } : null
+  };
+}
+
 export const api = {
   USE_MOCKS,
   getPlayerId,

@@ -205,7 +205,8 @@ export function summarize({ cls, med, inspection, incidents }) {
   const incSafety = done.reduce((a, i) => a + (i.result?.safety ?? 0), 0) - missed.length * MISSED_PENALTY;
   const incLoyalty = done.reduce((a, i) => a + (i.result?.loyalty ?? 0), 0) - missed.length * MISSED_PENALTY;
   const critical = done.some((i) => i.result?.verdict === CRITICAL);
-  const honest = med.find((m) => m.step === "health")?.choice === "b";
+  const honestStep = med.find((m) => m.step === "health");
+  const honest = honestStep ? !!honestStep.best : true;
 
   const safety = medSafety + inspectionSafety + incSafety;
   const loyalty = medLoyalty + incLoyalty;
