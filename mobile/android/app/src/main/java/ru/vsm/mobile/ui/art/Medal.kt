@@ -1,5 +1,6 @@
 package ru.vsm.mobile.ui.art
 
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -92,9 +93,6 @@ fun Medal(
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.translate(dx: Float, dy: Float, block: androidx.compose.ui.graphics.drawscope.DrawScope.() -> Unit) {
-    androidx.compose.ui.graphics.drawscope.translate(dx, dy) { block() }
-}
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.scale(s: Float, pivot: Offset, block: androidx.compose.ui.graphics.drawscope.DrawScope.() -> Unit) {
     scale(scaleX = s, scaleY = s, pivot = pivot) { block() }
