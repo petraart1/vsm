@@ -4,10 +4,14 @@
  *
  * REST остаётся источником истины и полностью работает без WebSocket — этот клиент только
  * подписывается на пуш поверх уже идущего REST-прохождения. Тонкая обёртка без какой-либо
- * бизнес-логики: строит URL от текущего origin (nginx/vite уже проксируют /ws на backend, см.
- * nginx.conf/vite.config.js), парсит JSON и передаёт сообщение вызывающей стороне, переподключается
- * ограниченное число раз при обрыве. Весь стейт прохождения остаётся на экране.
+ * бизнес-логики: строит URL от текущего origin, когда фронт и backend на одном хосте
+ * (nginx/vite проксируют /ws на backend, см. nginx.conf.template/vite.config.js), либо от
+ * API_BASE (api.js), когда backend раздаётся отдельно (GitHub Pages без прокси) — парсит JSON
+ * и передаёт сообщение вызывающей стороне, переподключается ограниченное число раз при обрыве.
+ * Весь стейт прохождения остаётся на экране.
  */
+
+import { API_BASE } from "./api.js";
 
 const MAX_RECONNECT_ATTEMPTS = 3;
 const RECONNECT_DELAY_MS = 1500;
@@ -29,6 +33,13 @@ export function connectProgressChannel(progressId, playerId, handlers) {
   let reconnectTimeoutId = null;
 
   function wsUrl() {
+    if (API_BASE) {
+      // API_BASE — http(s)://host[:port] backend'а (см. api.js): меняем схему на ws(s) и
+      // берём хост оттуда, а не из window.location — фронт и backend на разных origin.
+      const base = new URL(API_BASE, window.location.href);
+      const protocol = base.protocol === "https:" ? "wss:" : "ws:";
+      return `${protocol}//${base.host}/ws/progress/${progressId}?playerId=${encodeURIComponent(playerId)}`;
+    }
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     return `${protocol}//${window.location.host}/ws/progress/${progressId}?playerId=${encodeURIComponent(playerId)}`;
   }

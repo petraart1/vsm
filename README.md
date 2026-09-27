@@ -95,6 +95,80 @@ cd backend && ./gradlew test jacocoTestReport
 внутри `./gradlew build`), CI загружает html-версию артефактом `backend-coverage-report` на каждый
 прогон (не только при падении, в отличие от `backend-test-reports`).
 
+## Деплой
+
+Публичное демо без локального Docker: фронтенд — статика на GitHub Pages, backend — отдельный
+Docker-контейнер на бесплатном PaaS, база — управляемый Postgres. Все три сервиса подобраны так,
+чтобы не требовать привязки банковской карты; сами платформы меняют условия бесплатных тарифов
+чаще, чем хотелось бы, так что при регистрации всё равно стоит перепроверить на месте, что карту
+не спрашивают, и при необходимости заменить конкретного провайдера — общая схема (Docker-образ +
+переменные окружения) от этого не меняется.
+
+### 1. База данных — Neon (Postgres)
+
+1. Зарегистрироваться на [neon.tech](https://neon.tech) (бесплатный план, без карты) и создать проект.
+2. В Neon Console открыть Connection Details и скопировать строку подключения вида
+   `postgresql://<user>:<password>@<host>/<db>?sslmode=require` — она понадобится на шаге 2.
+
+### 2. Backend — Koyeb (Docker)
+
+1. Зарегистрироваться на [koyeb.com](https://www.koyeb.com) (бесплатный план — один веб-сервис,
+   512 МБ RAM, без сна между запросами в отличие от многих альтернатив).
+2. Create Service → GitHub → выбрать репозиторий → Docker → Dockerfile path `backend/Dockerfile`,
+   build context `backend/` (Koyeb сам предложит эти поля при обнаружении Dockerfile).
+3. Задать переменные окружения сервиса:
+
+   | Переменная | Значение |
+   |---|---|
+   | `SPRING_PROFILES_ACTIVE` | `demo` |
+   | `SPRING_DATASOURCE_URL` | строка подключения Neon из шага 1 (`jdbc:postgresql://...`, добавить префикс `jdbc:` к тому, что дал Neon) |
+   | `SPRING_DATASOURCE_USERNAME` | `<user>` из строки Neon |
+   | `SPRING_DATASOURCE_PASSWORD` | `<password>` из строки Neon |
+   | `APP_AUTH_JWT_SECRET` | случайная строка ≥ 32 байт |
+   | `APP_SECURITY_PUBLIC_ID_SECRET` | случайная строка ≥ 32 байт |
+   | `APP_AUTH_ADMIN_PASSWORD` | пароль для встроенного admin-аккаунта |
+   | `APP_CORS_ALLOWED_ORIGINS` | `https://<github-username>.github.io` (origin фронтенда с шага 3, без пути) |
+
+   Порт слушается автоматически через `PORT`, который подставляет сама платформа
+   (`server.port=${PORT:...}` в `application.properties`) — отдельно задавать не нужно.
+4. После деплоя Koyeb даёт публичный HTTPS-адрес вида `https://<app>-<org>.koyeb.app` — он
+   понадобится на шаге 3. Swagger UI живёт там же: `<адрес>/swagger-ui.html`.
+
+### 3. Frontend — GitHub Pages
+
+1. В настройках репозитория: Settings → Pages → Source → "GitHub Actions".
+2. Settings → Secrets and variables → Actions → Variables → добавить переменную `API_BASE_URL`
+   со значением адреса backend с шага 2 (например `https://vsm-backend-xyz.koyeb.app`, без слэша
+   на конце) — это публичный адрес, не секрет, поэтому переменная, а не secret.
+3. Запушить в `main` (или запустить workflow вручную: Actions → "Deploy frontend to GitHub
+   Pages" → Run workflow) — сборка идёт по `.github/workflows/deploy-pages.yaml`, публикует
+   `frontend/dist` на `https://<github-username>.github.io/<repo>/`.
+
+Приложение целиком собирается по кругу: обновить `APP_CORS_ALLOWED_ORIGINS` на backend (шаг 2)
+значением реального адреса Pages, если оно отличается от предположенного на шаге 2.
+
+### Ограничения бесплатных тарифов
+
+- **Koyeb (backend)**: один бесплатный веб-сервис, 512 МБ RAM/0.1 vCPU — под них уже подогнан
+  `JAVA_OPTS` в `backend/Dockerfile` (SerialGC вместо G1, `TieredStopAtLevel=1` — быстрее холодный
+  старт ценой пиковой производительности).
+- **Neon (Postgres)**: бесплатный план не имеет ограничения по времени, но неактивная база
+  "засыпает" (compute suspend) — первый запрос после паузы отвечает на секунду-другую дольше.
+- **GitHub Pages**: без ограничений для статики, но без серверной части — весь API обязательно
+  идёт на отдельный backend-адрес (см. `VITE_API_BASE`/`API_BASE_URL` выше), same-origin `/api`
+  прокси здесь не работает.
+- Условия бесплатных тарифов у всех трёх провайдеров меняются нередко — если что-то из шагов
+  выше на момент чтения не совпадает с интерфейсом платформы (например, появилось требование
+  карты), стоит свериться с их текущей документацией и, если нужно, заменить конкретный
+  сервис-донор — остальная схема (Docker-образ + переменные окружения) не изменится.
+
+### Локальный self-hosted вариант
+
+Тот же `backend/Dockerfile` и `frontend/Dockerfile` можно поднять на любом VPS/сервере с Docker
+через `docker compose up --build` (см. "Запуск" выше) — тогда ограничения бесплатных тарифов
+вообще не применимы, а `frontend/nginx.conf.template` проксирует `/api` и `/ws` на backend в той
+же docker-сети без изменений.
+
 ## Архитектура
 
 Система построена как модульный монолит на Spring Boot 4.1 с разделением по доменам: сценарный движок (scenario), геймификация (gamification) и обучающая обратная связь (feedback). Сценарии — графы узлов и выборов, сохранённые в PostgreSQL; данные загружаются идемпотентно из JSON-seed при запуске приложения.

@@ -28,6 +28,11 @@ const PLAYER_ID_STORAGE_KEY = "vsm.playerId.v1";
  * относительный путь работает и там, и там без дополнительной настройки. Явный оverride —
  * через ?apiBase=http://host:port в URL, сохраняется в localStorage (например, если backend
  * поднят на нестандартном порту при демо).
+ *
+ * Когда фронт и backend не могут жить на одном origin и без прокси между ними (статический
+ * хостинг вроде GitHub Pages — там нет nginx, который проксирует /api), базовый адрес backend
+ * зашивается в сборку через VITE_API_BASE (см. .github/workflows/deploy-pages.yaml) и
+ * используется как последний fallback, если ни ?apiBase, ни localStorage ничего не задали.
  */
 function resolveApiBase() {
   try {
@@ -41,10 +46,14 @@ function resolveApiBase() {
     const stored = localStorage.getItem(API_BASE_STORAGE_KEY);
     if (stored) return stored.replace(/\/$/, "");
   } catch (e) { /* ignore */ }
-  return "";
+  const fromBuild = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_BASE) || "";
+  return fromBuild.replace(/\/$/, "");
 }
 
-const API_BASE = resolveApiBase();
+/** Базовый адрес backend (пустая строка = тот же origin, что и у фронта) — используется также
+ * в ws.js, чтобы живой WebSocket-канал подключался к тому же backend, когда фронт раздаётся
+ * отдельно от него (GitHub Pages). */
+export const API_BASE = resolveApiBase();
 
 function generateUuidV4() {
   if (window.crypto && typeof window.crypto.randomUUID === "function") {
