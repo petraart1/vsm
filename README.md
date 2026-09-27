@@ -217,8 +217,13 @@ sequenceDiagram
 | `GET` | `/api/admin/stats/overview` | Сводка по всем игрокам и прохождениям | Header: `Authorization: Bearer <admin-token>` |
 | `GET` | `/api/admin/stats/scenarios` | Статистика по каждому сценарию | Header: `Authorization: Bearer <admin-token>` |
 | `GET` | `/api/admin/stats/blocks` | Агрегат по блокам ситуаций | Header: `Authorization: Bearer <admin-token>` |
+| `GET` | `/api/admin/stats/players` | Статистика по каждому игроку (JSON-версия `players.csv`) | Header: `Authorization: Bearer <admin-token>` |
 | `GET` | `/api/admin/stats/{scenarios,blocks,players,teams}.csv` | Те же и ещё 2 отчёта (игроки, команды) в CSV для Excel (см. ниже) | Header: `Authorization: Bearer <admin-token>` |
 | `POST` | `/api/admin/challenges` | Создать событие/челлендж (рассылает `NEW_CHALLENGE`, см. «Уведомления») | Header: `Authorization: Bearer <admin-token>` |
+| `GET` | `/api/admin/users` | Список учётных записей | `q?` (поиск по логину/почте/имени); Header: `Authorization: Bearer <admin-token>` |
+| `PATCH` | `/api/admin/users/{id}` | Изменить роль/подтверждение/имя учётной записи | JSON: `role?`, `verified?`, `displayName?`; Header: `Authorization: Bearer <admin-token>` |
+| `GET` | `/api/admin/scenarios` | Список всех сценариев, включая выключенные | Header: `Authorization: Bearer <admin-token>` |
+| `PATCH` | `/api/admin/scenarios/{code}` | Включить/выключить сценарий в каталоге (`GET /api/scenarios`) | JSON: `active`; Header: `Authorization: Bearer <admin-token>` |
 | `POST` | `/api/admin/points-expiry/run` | Демо-запуск сгорания баллов за неактивность (см. «Уведомления») | `now?` (ISO-8601 instant); Header: `Authorization: Bearer <admin-token>` |
 
 ### Формат ошибок

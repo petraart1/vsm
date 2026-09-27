@@ -45,6 +45,11 @@ public class AdminStatsController {
         return statsService.getBlockStats();
     }
 
+    @GetMapping("/players")
+    public List<PlayerStatsEntryDto> getPlayerStats() {
+        return statsService.getPlayerStats();
+    }
+
     @GetMapping("/scenarios.csv")
     public ResponseEntity<byte[]> getScenarioStatsCsv() {
         List<String> header = List.of("code", "title", "block", "totalPlaythroughs", "completedPlaythroughs",
