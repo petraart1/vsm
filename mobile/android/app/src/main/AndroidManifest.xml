@@ -6,6 +6,8 @@
     <!-- ConnectivityManager.registerNetworkCallback в NetworkMonitor — триггер отправки офлайн-очереди
          при восстановлении связи (соединение в поезде пропадает на перегонах). -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Required on API 37+ for app to access local network (10.0.2.2 in emulator, local 192.168.x.x). -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
     <application
         android:name=".VsmApp"
