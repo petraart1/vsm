@@ -41,6 +41,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import ru.vsm.mobile.domain.model.Notification
 import ru.vsm.mobile.domain.model.NotificationType
 import ru.vsm.mobile.ui.common.appContainer
@@ -179,7 +182,19 @@ private fun NotificationRow(notification: Notification, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(text = notification.body, style = MaterialTheme.typography.bodyMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                Text(
+                    text = formatNotificationTime(notification.createdAt),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
         }
     }
 }
+
+private val notificationTimeFormat = DateTimeFormatter.ofPattern("d MMM, HH:mm", Locale("ru"))
+
+/** Формат времени как в колокольчике сайта: день/месяц + часы:минуты, пусто при некорректной дате. */
+private fun formatNotificationTime(createdAt: String): String =
+    runCatching { OffsetDateTime.parse(createdAt).format(notificationTimeFormat) }.getOrDefault("")

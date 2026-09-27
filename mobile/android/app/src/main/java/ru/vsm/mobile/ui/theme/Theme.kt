@@ -82,6 +82,20 @@ object VsmPalette {
 
     val danger: Color
         @Composable get() = if (isSystemInDarkTheme()) VsmColorsDark.feedbackDanger else VsmColorsLight.feedbackDanger
+
+    val amber: Color
+        @Composable get() = if (isSystemInDarkTheme()) VsmColorsDark.amber else VsmColorsLight.amber
+
+    val amberSoft: Color
+        @Composable get() = if (isSystemInDarkTheme()) VsmColorsDark.amberSoft else VsmColorsLight.amberSoft
+
+    val redSoft: Color
+        @Composable get() = if (isSystemInDarkTheme()) VsmColorsDark.redSoft else VsmColorsLight.redSoft
+
+    /** Полупрозрачная заливка «стеклянных» панелей (шапка, таб-бар) — замена недоступному blur. */
+    val glass: Color
+        @Composable get() = (if (isSystemInDarkTheme()) VsmColorsDark.glassSurface else VsmColorsLight.glassSurface)
+            .copy(alpha = if (isSystemInDarkTheme()) 0.92f else 0.86f)
 }
 
 @Composable

@@ -29,6 +29,11 @@ object VsmColorsLight {
     val feedbackSuccess = Color(0xFF0A64D8)
     val feedbackWarning = Color(0xFF5B6B82)
     val feedbackDanger = Color(0xFFD93025)
+    val amber = Color(0xFF5B6B82)
+    val amberSoft = Color(0xFFEEF1F5)
+    val redSoft = Color(0xFFFDECEA)
+    val backgroundHover = Color(0xFFEEEEF3)
+    val glassSurface = Color(0xFFF9F9FB)
 }
 
 // Тёмная тема — те же токены сайта под :root[data-theme="dark"].
@@ -57,4 +62,9 @@ object VsmColorsDark {
     val feedbackSuccess = Color(0xFF4B8FF0)
     val feedbackWarning = Color(0xFF98A4B8)
     val feedbackDanger = Color(0xFFFF5A4F)
+    val amber = Color(0xFF98A4B8)
+    val amberSoft = Color(0xFF2C2C2E)
+    val redSoft = Color(0xFF3A1512)
+    val backgroundHover = Color(0xFF2C2C2E)
+    val glassSurface = Color(0xFF1C1C1E)
 }

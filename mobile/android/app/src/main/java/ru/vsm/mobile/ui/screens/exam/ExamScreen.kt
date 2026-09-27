@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,18 +17,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -40,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -47,6 +42,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ru.vsm.mobile.R
 import ru.vsm.mobile.domain.model.CarClass
 import ru.vsm.mobile.domain.model.Exam
 import ru.vsm.mobile.domain.model.ExamScenarioItem
@@ -55,6 +51,13 @@ import ru.vsm.mobile.ui.components.EmptyState
 import ru.vsm.mobile.ui.components.ErrorState
 import ru.vsm.mobile.ui.components.LoadingState
 import ru.vsm.mobile.ui.components.SectionCard
+import ru.vsm.mobile.ui.components.StatTile
+import ru.vsm.mobile.ui.components.StatTileRow
+import ru.vsm.mobile.ui.components.VsmBadge
+import ru.vsm.mobile.ui.components.VsmButton
+import ru.vsm.mobile.ui.components.VsmButtonSize
+import ru.vsm.mobile.ui.components.VsmButtonVariant
+import ru.vsm.mobile.ui.components.VsmTone
 import ru.vsm.mobile.ui.navigation.AppNavigator
 import ru.vsm.mobile.ui.navigation.Routes
 import ru.vsm.mobile.ui.theme.VsmPalette
@@ -227,9 +230,13 @@ private fun ExamIntroContent(state: ExamUiState, viewModel: ExamViewModel) {
             item { Text("Не удалось начать экзамен. Проверьте связь и попробуйте ещё раз.", color = MaterialTheme.colorScheme.error) }
         }
         item {
-            Button(onClick = viewModel::begin, enabled = !state.creating, modifier = Modifier.fillMaxWidth()) {
-                Text(if (state.creating) "Готовим ситуации…" else "Начать экзамен")
-            }
+            VsmButton(
+                text = if (state.creating) "Готовим ситуации…" else "Начать экзамен",
+                onClick = viewModel::begin,
+                enabled = !state.creating,
+                size = VsmButtonSize.Large,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
@@ -297,11 +304,11 @@ private fun ExamResultsContent(exam: Exam, navigator: AppNavigator) {
                     Text("Экзамен · ${exam.size} ситуаций · ${CAR_CLASS_TITLES.getValue(exam.carClass)}", style = MaterialTheme.typography.labelLarge)
                     Text(gradeTitle, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     if (res.grade.name == "EXCELLENT") {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Star, contentDescription = null, tint = VsmPalette.success)
-                            Spacer(Modifier.size(6.dp))
-                            Text("Достижение «Сертификат» добавлено в профиль")
-                        }
+                        VsmBadge(
+                            text = "Сертификат добавлен в профиль",
+                            tone = VsmTone.Green,
+                            icon = { Icon(painterResource(R.drawable.ic_medal), contentDescription = null, modifier = Modifier.size(12.dp), tint = VsmPalette.success) },
+                        )
                     }
                     if (res.avgSafetyScore < 60) {
                         Text(
@@ -313,11 +320,13 @@ private fun ExamResultsContent(exam: Exam, navigator: AppNavigator) {
             }
         }
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                StatColumn(label = "Безопасность", value = res.avgSafetyScore.toInt().toString(), tint = VsmPalette.safety, modifier = Modifier.weight(1f))
-                StatColumn(label = "Лояльность", value = res.avgLoyaltyScore.toInt().toString(), tint = VsmPalette.loyalty, modifier = Modifier.weight(1f))
-                StatColumn(label = "Решено", value = "${(res.successRate * 100).toInt()}%", tint = VsmPalette.success, modifier = Modifier.weight(1f))
-            }
+            StatTileRow(
+                tiles = listOf(
+                    { StatTile(icon = painterResource(R.drawable.ic_shield), label = "Безопасность", value = res.avgSafetyScore.toInt().toString(), tone = VsmTone.Blue) },
+                    { StatTile(icon = painterResource(R.drawable.ic_smile), label = "Лояльность", value = res.avgLoyaltyScore.toInt().toString(), tone = VsmTone.Blue) },
+                    { StatTile(icon = painterResource(R.drawable.ic_check), label = "Решено", value = "${(res.successRate * 100).toInt()}%", tone = VsmTone.Green) },
+                ),
+            )
         }
         item {
             SectionCard(title = "Ситуации") {
@@ -336,23 +345,17 @@ private fun ExamResultsContent(exam: Exam, navigator: AppNavigator) {
             }
         }
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = { navigator.open(Routes.EXAM) }, modifier = Modifier.fillMaxWidth()) { Text("Новый экзамен") }
-            }
+            VsmButton(text = "Новый экзамен", onClick = { navigator.open(Routes.EXAM) }, size = VsmButtonSize.Large, modifier = Modifier.fillMaxWidth())
         }
         item {
-            OutlinedButton(onClick = { navigator.openTab(Routes.SCENARIOS) }, modifier = Modifier.fillMaxWidth()) {
-                Text("К тренировкам")
-            }
+            VsmButton(
+                text = "К тренировкам",
+                onClick = { navigator.openTab(Routes.SCENARIOS) },
+                size = VsmButtonSize.Large,
+                variant = VsmButtonVariant.Secondary,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
-    }
-}
-
-@Composable
-private fun StatColumn(label: String, value: String, tint: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier) {
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = MaterialTheme.typography.headlineSmall, color = tint, fontWeight = FontWeight.Bold)
-        Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
@@ -369,18 +372,17 @@ private fun ExamResultRow(number: Int, item: ExamScenarioItem, navigator: AppNav
             Text(item.block, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item.outcome?.let { outcome ->
-            val tint = when (outcome.name) {
-                "SUCCESS" -> VsmPalette.success
-                "PARTIAL" -> VsmPalette.warning
-                else -> VsmPalette.danger
+            val tone = when (outcome.name) {
+                "SUCCESS" -> VsmTone.Green
+                "PARTIAL" -> VsmTone.Amber
+                else -> VsmTone.Red
             }
-            Icon(Icons.Filled.Check, contentDescription = null, tint = tint)
-            Text(OUTCOME_TITLES[outcome.name] ?: outcome.name, style = MaterialTheme.typography.labelMedium)
+            VsmBadge(text = OUTCOME_TITLES[outcome.name] ?: outcome.name, tone = tone)
         }
         val progressId = item.userProgressId
         if (progressId != null) {
             IconButton(onClick = { navigator.open(Routes.debrief(progressId)) }) {
-                Icon(Icons.Filled.Info, contentDescription = "Разбор")
+                Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = "Разбор")
             }
         }
     }

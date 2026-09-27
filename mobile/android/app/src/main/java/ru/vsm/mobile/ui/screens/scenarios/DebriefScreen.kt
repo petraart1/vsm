@@ -13,15 +13,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -29,21 +24,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ru.vsm.mobile.R
 import ru.vsm.mobile.domain.model.Debrief
 import ru.vsm.mobile.domain.model.DebriefStep
 import ru.vsm.mobile.domain.model.KeyMoment
 import ru.vsm.mobile.domain.model.NodeType
 import ru.vsm.mobile.domain.model.ScenarioOutcome
 import ru.vsm.mobile.ui.common.appContainer
+import ru.vsm.mobile.ui.components.DeltaBadges
 import ru.vsm.mobile.ui.components.EmptyState
 import ru.vsm.mobile.ui.components.ErrorState
 import ru.vsm.mobile.ui.components.LoadingState
+import ru.vsm.mobile.ui.components.ScaleBar
 import ru.vsm.mobile.ui.components.SectionCard
+import ru.vsm.mobile.ui.components.VsmBadge
+import ru.vsm.mobile.ui.components.VsmButton
+import ru.vsm.mobile.ui.components.VsmButtonSize
+import ru.vsm.mobile.ui.components.VsmButtonVariant
+import ru.vsm.mobile.ui.components.VsmTone
 import ru.vsm.mobile.ui.navigation.AppNavigator
 import ru.vsm.mobile.ui.navigation.Routes
 import ru.vsm.mobile.ui.theme.VsmPalette
@@ -101,14 +105,26 @@ private fun DebriefContent(debrief: Debrief, navigator: AppNavigator) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { DebriefHeader(debrief) }
 
         item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                ScoreTile(label = "Безопасность", value = debrief.finalSafetyScore, color = VsmPalette.safety, modifier = Modifier.weight(1f))
-                ScoreTile(label = "Лояльность", value = debrief.finalLoyaltyScore, color = VsmPalette.loyalty, modifier = Modifier.weight(1f))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                ScaleBar(
+                    label = "Рейтинг безопасности",
+                    value = debrief.finalSafetyScore,
+                    color = VsmPalette.safety,
+                    modifier = Modifier.weight(1f),
+                    icon = { Icon(painterResource(R.drawable.ic_shield), contentDescription = null, tint = VsmPalette.safety, modifier = Modifier.size(14.dp)) },
+                )
+                ScaleBar(
+                    label = "Лояльность пассажира",
+                    value = debrief.finalLoyaltyScore,
+                    color = VsmPalette.loyalty,
+                    modifier = Modifier.weight(1f),
+                    icon = { Icon(painterResource(R.drawable.ic_smile), contentDescription = null, tint = VsmPalette.loyalty, modifier = Modifier.size(14.dp)) },
+                )
             }
         }
 
@@ -119,7 +135,7 @@ private fun DebriefContent(debrief: Debrief, navigator: AppNavigator) {
         }
 
         item {
-            Text("Ваши решения", style = MaterialTheme.typography.titleMedium)
+            Text("Ваши решения", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
         items(debrief.timeline, key = { it.sequenceIndex }) { step -> DebriefStepCard(step) }
 
@@ -130,21 +146,38 @@ private fun DebriefContent(debrief: Debrief, navigator: AppNavigator) {
         if (debrief.normReferences.isNotEmpty()) {
             item {
                 SectionCard(title = "Нормы регламента") {
-                    debrief.normReferences.forEach { ref ->
-                        Text("• $ref", style = MaterialTheme.typography.bodySmall)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        debrief.normReferences.forEach { ref ->
+                            Text("• $ref", style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }
         }
 
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                Button(onClick = { navigator.open(Routes.play(debrief.scenarioId)) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Пройти ещё раз")
-                }
-                OutlinedButton(onClick = { navigator.openTab(Routes.SCENARIOS) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Другие сценарии")
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                VsmButton(
+                    text = "Пройти ещё раз",
+                    onClick = { navigator.open(Routes.play(debrief.scenarioId)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    size = VsmButtonSize.Large,
+                    leadingIcon = { Icon(painterResource(R.drawable.ic_rotate), contentDescription = null, modifier = Modifier.size(16.dp)) },
+                )
+                VsmButton(
+                    text = "Другие сценарии",
+                    onClick = { navigator.openTab(Routes.SCENARIOS) },
+                    modifier = Modifier.fillMaxWidth(),
+                    size = VsmButtonSize.Large,
+                    variant = VsmButtonVariant.Secondary,
+                )
+                VsmButton(
+                    text = "Профиль",
+                    onClick = { navigator.open(Routes.PROFILE) },
+                    modifier = Modifier.fillMaxWidth(),
+                    size = VsmButtonSize.Large,
+                    variant = VsmButtonVariant.Ghost,
+                )
             }
         }
     }
@@ -154,7 +187,7 @@ private fun DebriefContent(debrief: Debrief, navigator: AppNavigator) {
 private fun DebriefHeader(debrief: Debrief) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            AssistChip(onClick = {}, label = { Text(debrief.scenarioBlock, maxLines = 1, overflow = TextOverflow.Ellipsis) })
+            VsmBadge(text = debrief.scenarioBlock, tone = VsmTone.Neutral)
             Text(
                 debrief.scenarioTitle,
                 style = MaterialTheme.typography.bodyMedium,
@@ -170,30 +203,22 @@ private fun DebriefHeader(debrief: Debrief) {
             color = colorForOutcome(debrief.outcome),
         )
         if (debrief.interrupted) {
-            Text(
-                text = "Прохождение завершено автоматически, а не последним решением.",
-                style = MaterialTheme.typography.labelMedium,
-                color = VsmPalette.warning,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(painterResource(R.drawable.ic_alert), contentDescription = null, tint = VsmPalette.warning, modifier = Modifier.size(14.dp))
+                Text(
+                    text = "Прохождение завершено автоматически, а не последним решением.",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = VsmPalette.warning,
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ScoreTile(label: String, value: Int, color: androidx.compose.ui.graphics.Color, modifier: Modifier = Modifier) {
-    Column(modifier) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value.toString(), style = MaterialTheme.typography.headlineMedium, color = color, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
 private fun DebriefStepCard(step: DebriefStep) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-    ) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    SectionCard {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -205,36 +230,50 @@ private fun DebriefStepCard(step: DebriefStep) {
                     modifier = Modifier.align(Alignment.CenterVertically),
                 )
                 if (step.nodeType == NodeType.ESCALATION) {
-                    AssistChip(onClick = {}, label = { Text("Эскалация") })
+                    VsmBadge(
+                        text = "Эскалация",
+                        tone = VsmTone.Neutral,
+                        icon = { Icon(painterResource(R.drawable.ic_phone), contentDescription = null, modifier = Modifier.size(11.dp)) },
+                    )
                 }
                 if (step.wasTimeout) {
-                    AssistChip(onClick = {}, label = { Text("Время вышло") })
+                    VsmBadge(text = "Время вышло", tone = VsmTone.Red)
                 }
                 if (step.scaleConflict) {
-                    AssistChip(onClick = {}, label = { Text("Конфликт шкал") })
+                    VsmBadge(text = "Конфликт шкал", tone = VsmTone.Amber)
                 }
             }
             Text(step.nodeText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(step.choiceText, style = MaterialTheme.typography.bodyMedium)
-            Text(
-                text = "безопасность ${formatDelta(step.safetyDelta)} · лояльность ${formatDelta(step.loyaltyDelta)}",
-                style = MaterialTheme.typography.labelMedium,
-            )
+            DeltaBadges(safetyDelta = step.safetyDelta, loyaltyDelta = step.loyaltyDelta)
             if (step.roleStepsCompleted.isNotEmpty() || step.roleStepsSkipped.isNotEmpty()) {
-                Column {
-                    step.roleStepsCompleted.forEach { label -> Text("✓ $label", style = MaterialTheme.typography.labelSmall, color = VsmPalette.success) }
-                    step.roleStepsSkipped.forEach { label -> Text("✗ $label", style = MaterialTheme.typography.labelSmall, color = VsmPalette.danger) }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    step.roleStepsCompleted.forEach { label ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = VsmPalette.success, modifier = Modifier.size(12.dp))
+                            Text(label, style = MaterialTheme.typography.labelSmall, color = VsmPalette.success)
+                        }
+                    }
+                    step.roleStepsSkipped.forEach { label ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(painterResource(R.drawable.ic_x), contentDescription = null, tint = VsmPalette.danger, modifier = Modifier.size(12.dp))
+                            Text(label, style = MaterialTheme.typography.labelSmall, color = VsmPalette.danger)
+                        }
+                    }
                 }
             }
             if (step.explanation.isNotBlank()) {
                 Text(step.explanation, style = MaterialTheme.typography.bodySmall)
             }
             if (step.hiddenCommunicationEffect) {
-                Text(
-                    text = "Решение принято в служебных переговорах: пассажир его не слышит, на лояльность не влияет, на безопасность — да.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(painterResource(R.drawable.ic_radio), contentDescription = null, modifier = Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = "Решение принято в служебных переговорах: пассажир его не слышит, на лояльность не влияет, на безопасность — да.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
@@ -243,26 +282,26 @@ private fun DebriefStepCard(step: DebriefStep) {
 @Composable
 private fun KeyMomentCard(moment: KeyMoment) {
     SectionCard(title = "Ключевая развилка") {
-        Text(moment.nodeText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(moment.nodeText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        Text("Ваш ответ", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-        Text(moment.chosenChoiceText, style = MaterialTheme.typography.bodyMedium)
-        Text(
-            "безопасность ${formatDelta(moment.chosenSafetyDelta)} · лояльность ${formatDelta(moment.chosenLoyaltyDelta)}",
-            style = MaterialTheme.typography.labelSmall,
-        )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Ваш ответ", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Text(moment.chosenChoiceText, style = MaterialTheme.typography.bodyMedium)
+                DeltaBadges(safetyDelta = moment.chosenSafetyDelta, loyaltyDelta = moment.chosenLoyaltyDelta)
+            }
 
-        Text("Сильнее", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = VsmPalette.success)
-        Text(moment.betterChoiceText, style = MaterialTheme.typography.bodyMedium)
-        Text(
-            "безопасность ${formatDelta(moment.betterSafetyDelta)} · лояльность ${formatDelta(moment.betterLoyaltyDelta)}",
-            style = MaterialTheme.typography.labelSmall,
-        )
-        if (moment.betterExplanation.isNotBlank()) {
-            Text(moment.betterExplanation, style = MaterialTheme.typography.bodySmall)
-        }
-        if (moment.adviceText.isNotBlank()) {
-            Text(moment.adviceText, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Сильнее", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = VsmPalette.success)
+                Text(moment.betterChoiceText, style = MaterialTheme.typography.bodyMedium)
+                DeltaBadges(safetyDelta = moment.betterSafetyDelta, loyaltyDelta = moment.betterLoyaltyDelta)
+                if (moment.betterExplanation.isNotBlank()) {
+                    Text(moment.betterExplanation, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            if (moment.adviceText.isNotBlank()) {
+                Text(moment.adviceText, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -274,5 +313,3 @@ private fun colorForOutcome(outcome: ScenarioOutcome?): androidx.compose.ui.grap
     ScenarioOutcome.FAILURE -> VsmPalette.danger
     null -> VsmPalette.warning
 }
-
-private fun formatDelta(value: Int): String = if (value >= 0) "+$value" else "$value"

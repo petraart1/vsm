@@ -4,56 +4,60 @@ import android.annotation.SuppressLint
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ru.vsm.mobile.R
 import ru.vsm.mobile.ui.common.appContainer
+import ru.vsm.mobile.ui.components.SectionCard
+import ru.vsm.mobile.ui.components.VsmButton
+import ru.vsm.mobile.ui.components.VsmButtonSize
 import ru.vsm.mobile.ui.navigation.AppNavigator
 import ru.vsm.mobile.ui.navigation.Routes
-import ru.vsm.mobile.ui.theme.VsmPalette
 
 /**
- * Вход / регистрация, демо-вход через Госуслуги и анонимное продолжение. После успешного входа
- * или отказа от него — переход на главную вкладку.
+ * Вход по логину/паролю, вход через Госуслуги (демо) и анонимное продолжение — отдельный экран
+ * (см. [RegisterScreen] для регистрации). После успешного входа — переход на главную вкладку.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navigator: AppNavigator) {
     val container = appContainer()
@@ -64,126 +68,192 @@ fun LoginScreen(navigator: AppNavigator) {
         if (state.done) navigator.openTab(Routes.TODAY)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (state.esiaOpen) "Госуслуги" else "Вход") },
-                navigationIcon = {
-                    if (state.esiaOpen) {
-                        IconButton(onClick = viewModel::closeEsia) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                        }
-                    }
-                },
-            )
-        },
-    ) { padding ->
+    Column(modifier = Modifier.fillMaxSize()) {
+        AuthTopBar(onBack = navigator::back)
         if (state.esiaOpen) {
             EsiaWebView(
                 url = state.esiaAuthorizeUrl,
                 exchanging = state.esiaExchanging,
                 onRedirect = viewModel::onEsiaRedirect,
-                modifier = Modifier.padding(padding),
+                modifier = Modifier.weight(1f),
             )
         } else {
-            AuthForm(state, viewModel, navigator, modifier = Modifier.padding(padding))
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .imePadding()
+                    .padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text(text = "Вход", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Войдите, чтобы прогресс, награды и допуск сохранялись в учётной записи.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                EsiaEntryRow(onClick = viewModel::openEsia)
+
+                AuthDivider(text = "ИЛИ ПО ЛОГИНУ")
+
+                OutlinedTextField(
+                    value = state.login,
+                    onValueChange = viewModel::setLogin,
+                    label = { Text("Логин") },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                PasswordField(value = state.password, onValueChange = viewModel::setPassword, label = "Пароль")
+
+                state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+
+                VsmButton(
+                    text = if (state.busy) "Входим…" else "Войти",
+                    onClick = viewModel::submitLogin,
+                    enabled = !state.busy,
+                    size = VsmButtonSize.Large,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Text(
+                    text = "Нет учётной записи? Зарегистрироваться",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { navigator.open(Routes.REGISTER) }
+                        .padding(vertical = 4.dp),
+                )
+
+                Text(
+                    text = "Продолжить без входа",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { navigator.openTab(Routes.TODAY) }
+                        .padding(vertical = 4.dp),
+                )
+                Text(
+                    text = "Без входа прогресс хранится только на этом устройстве, а очки начисляются с понижающим коэффициентом.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
 }
 
+/** Мини-шапка immersive-экранов входа/регистрации: кружок-назад слева, без заголовка (как на сайте). */
 @Composable
-private fun AuthForm(state: AuthUiState, viewModel: AuthViewModel, navigator: AppNavigator, modifier: Modifier = Modifier) {
-    Column(
-        modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .imePadding()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+internal fun AuthTopBar(onBack: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        TabRow(selectedTabIndex = if (state.tab == AuthTab.LOGIN) 0 else 1) {
-            Tab(selected = state.tab == AuthTab.LOGIN, onClick = { viewModel.selectTab(AuthTab.LOGIN) }, text = { Text("Вход") })
-            Tab(selected = state.tab == AuthTab.REGISTER, onClick = { viewModel.selectTab(AuthTab.REGISTER) }, text = { Text("Регистрация") })
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .size(36.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_chevron_left),
+                contentDescription = "Назад",
+                modifier = Modifier.size(18.dp),
+            )
         }
+    }
+}
 
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = VsmPalette.success)
-                Text("Подтверждённый аккаунт", fontWeight = FontWeight.Medium)
-                Text(
-                    "Очки без понижающего коэффициента, официальные награды и учёт результатов.",
-                    style = MaterialTheme.typography.bodySmall,
+/** Плашка входа через Госуслуги — знак+подпись+шеврон, как на сайте. */
+@Composable
+internal fun EsiaEntryRow(onClick: () -> Unit) {
+    SectionCard(modifier = Modifier.clickable(onClick = onClick)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.secondary, MaterialTheme.shapes.small),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_gosuslugi_mark),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondary,
                 )
             }
+            Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                Text(text = "Войти через Госуслуги", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = "Подтверждает личность · демо-стенд",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(painter = painterResource(R.drawable.ic_chevron_right), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+}
 
-        OutlinedButton(onClick = viewModel::openEsia, modifier = Modifier.fillMaxWidth()) {
-            Text("Войти через Госуслуги (демо)")
-        }
-
-        if (state.tab == AuthTab.REGISTER) {
-            OutlinedTextField(
-                value = state.displayName,
-                onValueChange = viewModel::setDisplayName,
-                label = { Text("Имя и фамилия (необязательно)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        OutlinedTextField(
-            value = state.login,
-            onValueChange = viewModel::setLogin,
-            label = { Text("Логин") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+/** Разделитель «ИЛИ …» между входом через Госуслуги и формой по логину/паролю. */
+@Composable
+internal fun AuthDivider(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant),
         )
-        if (state.tab == AuthTab.REGISTER) {
-            OutlinedTextField(
-                value = state.email,
-                onValueChange = viewModel::setEmail,
-                label = { Text("Почта") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        OutlinedTextField(
-            value = state.password,
-            onValueChange = viewModel::setPassword,
-            label = { Text("Пароль") },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-
-        Button(
-            onClick = { if (state.tab == AuthTab.LOGIN) viewModel.submitLogin() else viewModel.submitRegister() },
-            enabled = !state.busy,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(
-                when {
-                    state.busy && state.tab == AuthTab.LOGIN -> "Входим…"
-                    state.busy -> "Создаём…"
-                    state.tab == AuthTab.LOGIN -> "Войти"
-                    else -> "Создать учётную запись"
-                }
-            )
-        }
-
-        OutlinedButton(onClick = { navigator.openTab(Routes.TODAY) }, modifier = Modifier.fillMaxWidth()) {
-            Icon(Icons.Filled.Person, contentDescription = null)
-            Text(" Продолжить без входа")
-        }
         Text(
-            "Без входа прогресс хранится только на этом устройстве, а очки начисляются с понижающим коэффициентом.",
+            text = text,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 10.dp),
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant),
         )
     }
+}
+
+/** Поле пароля с переключателем видимости (иконка-глаз, как на сайте). */
+@Composable
+internal fun PasswordField(value: String, onValueChange: (String) -> Unit, label: String, supportingText: String? = null) {
+    var visible by remember { mutableStateOf(false) }
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = true,
+        shape = MaterialTheme.shapes.medium,
+        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        trailingIcon = {
+            IconButton(onClick = { visible = !visible }) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_eye),
+                    contentDescription = if (visible) "Скрыть пароль" else "Показать пароль",
+                    tint = if (visible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        supportingText = supportingText?.let { { Text(it, style = MaterialTheme.typography.labelSmall) } },
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 /**
@@ -193,7 +263,7 @@ private fun AuthForm(state: AuthUiState, viewModel: AuthViewModel, navigator: Ap
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun EsiaWebView(
+internal fun EsiaWebView(
     url: String?,
     exchanging: Boolean,
     onRedirect: (String) -> Boolean,

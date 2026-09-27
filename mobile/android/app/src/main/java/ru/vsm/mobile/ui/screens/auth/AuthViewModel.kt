@@ -10,17 +10,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.vsm.mobile.domain.repository.AuthRepository
 
-enum class AuthTab { LOGIN, REGISTER }
-
 /** Своя схема приложения для перехвата редиректа демо-ЕСИА (см. [AuthRepository.esiaAuthorizeUrl]). */
 const val ESIA_REDIRECT_URI = "vsm://esia-callback"
 
+/** Минимальная длина пароля при регистрации — совпадает с проверкой backend (см. [AuthRepository.register]). */
+const val MIN_PASSWORD_LENGTH = 8
+
 data class AuthUiState(
-    val tab: AuthTab = AuthTab.LOGIN,
     val login: String = "",
     val password: String = "",
     val displayName: String = "",
     val email: String = "",
+    val consentGiven: Boolean = false,
     val busy: Boolean = false,
     val error: String? = null,
     /** Открыта веб-вьюха демо-Госуслуг — [esiaAuthorizeUrl] загружен в неё. */
@@ -32,21 +33,22 @@ data class AuthUiState(
 )
 
 /**
- * Вход / регистрация по логину и паролю, демо-вход через Госуслуги (веб-вьюха на
+ * Вход и регистрация по логину/паролю, демо-вход через Госуслуги (веб-вьюха на
  * [AuthRepository.esiaAuthorizeUrl], редирект перехватывается по схеме [ESIA_REDIRECT_URI] и
  * обменивается на сессию через [AuthRepository.loginWithEsia]) и анонимное продолжение (playerId
- * устройства уже существует).
+ * устройства уже существует). [LoginScreen] и [RegisterScreen] — два раздельных экрана, каждый
+ * держит свой экземпляр этой модели.
  */
 class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
 
-    fun selectTab(tab: AuthTab) = _state.update { it.copy(tab = tab, error = null) }
-    fun setLogin(value: String) = _state.update { it.copy(login = value) }
-    fun setPassword(value: String) = _state.update { it.copy(password = value) }
+    fun setLogin(value: String) = _state.update { it.copy(login = value, error = null) }
+    fun setPassword(value: String) = _state.update { it.copy(password = value, error = null) }
     fun setDisplayName(value: String) = _state.update { it.copy(displayName = value) }
-    fun setEmail(value: String) = _state.update { it.copy(email = value) }
+    fun setEmail(value: String) = _state.update { it.copy(email = value, error = null) }
+    fun setConsentGiven(value: Boolean) = _state.update { it.copy(consentGiven = value) }
 
     fun submitLogin() {
         val s = _state.value
@@ -64,6 +66,14 @@ class AuthViewModel(private val authRepository: AuthRepository) : ViewModel() {
     fun submitRegister() {
         val s = _state.value
         if (s.busy || s.login.isBlank() || s.email.isBlank() || s.password.isBlank()) return
+        if (s.password.length < MIN_PASSWORD_LENGTH) {
+            _state.update { it.copy(error = "Пароль — минимум $MIN_PASSWORD_LENGTH символов") }
+            return
+        }
+        if (!s.consentGiven) {
+            _state.update { it.copy(error = "Нужно согласие на обработку персональных данных") }
+            return
+        }
         _state.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
             authRepository.register(

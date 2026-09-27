@@ -11,6 +11,7 @@ enum class ThemeChoice { SYSTEM, LIGHT, DARK }
 private const val PREFS_NAME = "vsm.settings"
 private const val KEY_THEME = "theme_choice"
 private const val KEY_API_BASE_URL = "api_base_url_override"
+private const val KEY_SEEN_LOGIN = "seen_login_screen"
 
 /**
  * Настройки, хранящиеся локально на устройстве: тема оформления и (для демо-стендов) адрес
@@ -60,6 +61,17 @@ object SettingsPreferences {
 
     fun setApiBaseUrlOverride(context: Context, value: String?) {
         prefs(context).edit().putString(KEY_API_BASE_URL, value?.let(::normalizeBaseUrl)).apply()
+    }
+
+    /**
+     * `true`, если экран входа уже был показан на этом устройстве хотя бы раз (по любому исходу —
+     * входу, регистрации или «Продолжить без входа»). Пока `false` — первый запуск приложения
+     * стартует с [ru.vsm.mobile.ui.navigation.Routes.LOGIN] вместо «Сегодня».
+     */
+    fun hasSeenLoginScreen(context: Context): Boolean = prefs(context).getBoolean(KEY_SEEN_LOGIN, false)
+
+    fun markLoginScreenSeen(context: Context) {
+        prefs(context).edit().putBoolean(KEY_SEEN_LOGIN, true).apply()
     }
 
     /**
